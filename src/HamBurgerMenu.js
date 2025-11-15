@@ -109,55 +109,55 @@ export default function HamburgerMenu({
   return (
     <>
       {/* Hamburger Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        style={{
-          background: 'rgba(255,255,255,0.2)',
-          backdropFilter: 'blur(10px)',
-          border: '2px solid rgba(255,255,255,0.3)',
-          borderRadius: '12px',
-          padding: '0.75rem',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.3s ease',
-          position: 'relative',
-          zIndex: 1001
-        }}
-        onMouseEnter={(e) => {
-          e.target.style.background = 'rgba(255,255,255,0.3)';
-          e.target.style.transform = 'scale(1.05)';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.background = 'rgba(255,255,255,0.2)';
-          e.target.style.transform = 'scale(1)';
-        }}
-      >
-        {isOpen ? <X size={24} style={{ color: 'white' }} /> : <Menu size={24} style={{ color: 'white' }} />}
-        
-        {/* 🔔 NOTIFICATION BADGE */}
-        {notificationCount > 0 && (
-          <div style={{
-            position: 'absolute',
-            top: '-5px',
-            right: '-5px',
-            background: '#ef4444',
-            color: 'white',
-            borderRadius: '50%',
-            width: '20px',
-            height: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.6)'
-          }}>
-            {notificationCount > 9 ? '9+' : notificationCount}
-          </div>
-        )}
-      </button>
+<button
+  onClick={() => setIsOpen(!isOpen)}
+  style={{
+    background: 'rgba(255,255,255,0.2)',
+    backdropFilter: 'blur(10px)',
+    border: '2px solid rgba(255,255,255,0.3)',
+    borderRadius: '12px',
+    padding: '0.75rem',
+    cursor: 'pointer',
+    display: isOpen ? 'none' : 'flex',  // ✅ HIDE WHEN MENU IS OPEN
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.3s ease',
+    position: 'relative',
+    zIndex: 1001
+  }}
+  onMouseEnter={(e) => {
+    e.target.style.background = 'rgba(255,255,255,0.3)';
+    e.target.style.transform = 'scale(1.05)';
+  }}
+  onMouseLeave={(e) => {
+    e.target.style.background = 'rgba(255,255,255,0.2)';
+    e.target.style.transform = 'scale(1)';
+  }}
+>
+  <Menu size={24} style={{ color: 'white' }} />  {/* ✅ ALWAYS SHOW MENU ICON */}
+  
+  {/* 🔔 NOTIFICATION BADGE */}
+  {notificationCount > 0 && (
+    <div style={{
+      position: 'absolute',
+      top: '-5px',
+      right: '-5px',
+      background: '#ef4444',
+      color: 'white',
+      borderRadius: '50%',
+      width: '20px',
+      height: '20px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '12px',
+      fontWeight: 'bold',
+      boxShadow: '0 2px 8px rgba(239, 68, 68, 0.6)'
+    }}>
+      {notificationCount > 9 ? '9+' : notificationCount}
+    </div>
+  )}
+</button>
 
       {/* Backdrop */}
       {isOpen && (
