@@ -939,7 +939,7 @@ const getWeekNumber = (date) => {
   
   // 🔔 UNIFIED NOTIFICATION TRACKING SYSTEM
   useEffect(() => {
-    if (!user || subscriptionStatus !== 'premium') return;
+    if (!user) return;
 
     const unsubscribers = [];
 
