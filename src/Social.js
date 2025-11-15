@@ -270,44 +270,60 @@ useEffect(() => {
   loadParticipantProfiles();
 }, [selectedConversation, user.uid]);
 
-  useEffect(() => {
-  const friendsQuery = query(
+ useEffect(() => {
+  console.log('🔥 Setting up real-time friends listener...');
+  
+  // Query 1: Requests I sent that were accepted
+  const sentQuery = query(
     collection(db, 'friendRequests'),
+    where('fromUserId', '==', user.uid),
     where('status', '==', 'accepted')
   );
   
-  const unsubscribe = onSnapshot(friendsQuery, (snapshot) => {
-    const friendsList = [];
-    const seenIds = new Set();
-    
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      let friendId = null;
-      let friendEmail = null;
-      
-      if (data.fromUserId === user.uid) {
-        friendId = data.toUserId;
-        friendEmail = data.toUserEmail;
-      } else if (data.toUserId === user.uid) {
-        friendId = data.fromUserId;
-        friendEmail = data.fromUserEmail;
-      }
-      
-      if (friendId && !seenIds.has(friendId)) {
-        seenIds.add(friendId);
-        friendsList.push({
-          id: friendId,
-          email: friendEmail,
-          name: friendEmail.split('@')[0]
-        });
-      }
-    });
-    
+  // Query 2: Requests I received that were accepted
+  const receivedQuery = query(
+    collection(db, 'friendRequests'),
+    where('toUserId', '==', user.uid),
+    where('status', '==', 'accepted')
+  );
+  
+  const friendsMap = new Map();
+  
+  const updateFriendsList = () => {
+    const friendsList = Array.from(friendsMap.values());
     setFriends(friendsList);
     console.log(`✅ Friends updated in real-time: ${friendsList.length} friends`);
+  };
+  
+  // Listen to both queries
+  const unsubscribe1 = onSnapshot(sentQuery, (snapshot) => {
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      friendsMap.set(data.toUserId, {
+        id: data.toUserId,
+        email: data.toUserEmail,
+        name: data.toUserEmail.split('@')[0]
+      });
+    });
+    updateFriendsList();
+  });
+  
+  const unsubscribe2 = onSnapshot(receivedQuery, (snapshot) => {
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      friendsMap.set(data.fromUserId, {
+        id: data.fromUserId,
+        email: data.fromUserEmail,
+        name: data.fromUserEmail.split('@')[0]
+      });
+    });
+    updateFriendsList();
   });
 
-  return () => unsubscribe();
+  return () => {
+    unsubscribe1();
+    unsubscribe2();
+  };
 }, [user.uid]);
 
   // 🔥 Load feed with REAL-TIME updates
