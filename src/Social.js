@@ -32,10 +32,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
   const typingTimeoutRef = useRef(null);
   const messageTimeoutsRef = useRef(new Map());
 
-  // 🔔 Don't auto-clear notifications when entering Social
-  // Instead, clear them when user actually views the content
-  
-  // Clear notifications when viewing specific tabs
+  // 🔔 Clear notifications when viewing specific tabs
   useEffect(() => {
     const clearTabNotification = async (tabName) => {
       try {
@@ -77,6 +74,8 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
       clearTabNotification(activeTab);
     }
   }, [activeTab, selectedConversation, friendRequests, user.uid]);
+
+
 
   // 🔔 NEW: Track unread message counts for each conversation
   // TEMPORARILY DISABLED TO AVOID INDEX ERRORS

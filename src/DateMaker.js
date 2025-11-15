@@ -940,7 +940,7 @@ const getWeekNumber = (date) => {
   // 🔔 UNIFIED NOTIFICATION TRACKING SYSTEM
   useEffect(() => {
     if (!user) return;
-
+ console.log('🔔 Starting notification tracker for:', user.email);
     const unsubscribers = [];
 
     // Track unread messages from conversations
@@ -2164,12 +2164,6 @@ if (category === 'nightlife') {
     <Social 
       user={user} 
       onBack={() => setShowSocial(false)}
-      onNotificationUpdate={(count) => {
-        setNotificationCounts(prev => ({
-          ...prev,
-          total: count
-        }));
-      }}
     />
   );
 }
