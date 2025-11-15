@@ -2159,10 +2159,20 @@ if (category === 'nightlife') {
     );
   }
   
-  // Show Social tab if active
   if (showSocial) {
-    return <Social user={user} onBack={() => setShowSocial(false)} />;
-  }
+  return (
+    <Social 
+      user={user} 
+      onBack={() => setShowSocial(false)}
+      onNotificationUpdate={(count) => {
+        setNotificationCounts(prev => ({
+          ...prev,
+          total: count
+        }));
+      }}
+    />
+  );
+}
   
   if (!user || !user.emailVerified || authScreen !== 'main') {
     if (authScreen === 'login') {
