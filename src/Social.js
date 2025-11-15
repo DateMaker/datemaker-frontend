@@ -270,53 +270,45 @@ useEffect(() => {
   loadParticipantProfiles();
 }, [selectedConversation, user.uid]);
 
-  // 🔥 Load friends (NO DUPLICATES!)
   useEffect(() => {
-    const loadFriends = async () => {
-      try {
-        const friendsQuery = query(
-          collection(db, 'friendRequests'),
-          where('status', '==', 'accepted')
-        );
-        
-        const snapshot = await getDocs(friendsQuery);
-        const friendsList = [];
-        const seenIds = new Set();
-        
-        snapshot.docs.forEach(doc => {
-          const data = doc.data();
-          let friendId = null;
-          let friendEmail = null;
-          
-          if (data.fromUserId === user.uid) {
-            friendId = data.toUserId;
-            friendEmail = data.toUserEmail;
-          } else if (data.toUserId === user.uid) {
-            friendId = data.fromUserId;
-            friendEmail = data.fromUserEmail;
-          }
-          
-          if (friendId && !seenIds.has(friendId)) {
-            seenIds.add(friendId);
-            friendsList.push({
-              id: friendId,
-              email: friendEmail,
-              name: friendEmail.split('@')[0]
-            });
-          }
-        });
-        
-        setFriends(friendsList);
-        console.log(`✅ Loaded ${friendsList.length} unique friends`);
-      } catch (error) {
-        console.error('Error loading friends:', error);
+  const friendsQuery = query(
+    collection(db, 'friendRequests'),
+    where('status', '==', 'accepted')
+  );
+  
+  const unsubscribe = onSnapshot(friendsQuery, (snapshot) => {
+    const friendsList = [];
+    const seenIds = new Set();
+    
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      let friendId = null;
+      let friendEmail = null;
+      
+      if (data.fromUserId === user.uid) {
+        friendId = data.toUserId;
+        friendEmail = data.toUserEmail;
+      } else if (data.toUserId === user.uid) {
+        friendId = data.fromUserId;
+        friendEmail = data.fromUserEmail;
       }
-    };
+      
+      if (friendId && !seenIds.has(friendId)) {
+        seenIds.add(friendId);
+        friendsList.push({
+          id: friendId,
+          email: friendEmail,
+          name: friendEmail.split('@')[0]
+        });
+      }
+    });
+    
+    setFriends(friendsList);
+    console.log(`✅ Friends updated in real-time: ${friendsList.length} friends`);
+  });
 
-    if (user) {
-      loadFriends();
-    }
-  }, [user]);
+  return () => unsubscribe();
+}, [user.uid]);
 
   // 🔥 Load feed with REAL-TIME updates
   useEffect(() => {
@@ -664,7 +656,7 @@ const handleSearch = async () => {
       });
       
       await batch.commit();
-      setFriends(prev => prev.filter(f => f.id !== friendId));
+      
     } catch (error) {
       console.error('Error removing friend:', error);
     }
