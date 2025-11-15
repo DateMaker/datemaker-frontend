@@ -209,32 +209,39 @@ export default function HamburgerMenu({
   position: 'relative'
 }}>
   {/* Close button - top right */}
-  <button
-    onClick={() => setIsOpen(false)}
-    style={{
-      position: 'absolute',
-      top: '1rem',
-      right: '1rem',
-      background: 'rgba(255,255,255,0.2)',
-      border: 'none',
-      borderRadius: '8px',
-      width: '36px',
-      height: '36px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      transition: 'all 0.2s ease'
-    }}
-    onMouseEnter={(e) => {
-      e.target.style.background = 'rgba(255,255,255,0.3)';
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.background = 'rgba(255,255,255,0.2)';
-    }}
-  >
-    <X size={20} style={{ color: 'white' }} />
-  </button>
+<button
+  onClick={() => setIsOpen(false)}
+  style={{
+    position: 'absolute',
+    top: '1rem',
+    right: '1rem',
+    background: 'rgba(255,255,255,0.2)',
+    border: 'none',
+    borderRadius: '50%',
+    width: '36px',
+    height: '36px',
+    minWidth: '36px',
+    minHeight: '36px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    padding: 0,
+    margin: 0,
+    WebkitAppearance: 'none',
+    WebkitTapHighlightColor: 'transparent',
+    zIndex: 10
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+  }}
+>
+  <X size={20} style={{ color: 'white' }} />
+</button>
 
   <div style={{
     display: 'flex',
