@@ -60,7 +60,7 @@ export default function HamburgerMenu({
       label: 'Social', 
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       shadow: 'rgba(16, 185, 129, 0.4)',
-badge: notificationCount > 0 ? notificationCount : null,
+      badge: notificationCount > 0 ? notificationCount : null,
       locked: subscriptionStatus === 'free'
     },
     { 
@@ -135,6 +135,28 @@ badge: notificationCount > 0 ? notificationCount : null,
         }}
       >
         {isOpen ? <X size={24} style={{ color: 'white' }} /> : <Menu size={24} style={{ color: 'white' }} />}
+        
+        {/* 🔔 NOTIFICATION BADGE */}
+        {notificationCount > 0 && (
+          <div style={{
+            position: 'absolute',
+            top: '-5px',
+            right: '-5px',
+            background: '#ef4444',
+            color: 'white',
+            borderRadius: '50%',
+            width: '20px',
+            height: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.6)'
+          }}>
+            {notificationCount > 9 ? '9+' : notificationCount}
+          </div>
+        )}
       </button>
 
       {/* Backdrop */}
