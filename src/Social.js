@@ -529,29 +529,56 @@ useEffect(() => {
     return () => unsubscribe();
   }, [selectedConversation, user.uid, user.email]);
 
-  // Search users
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+  // Search users - IMPROVED VERSION
+const handleSearch = async () => {
+  if (!searchQuery.trim()) return;
+  
+  setLoading(true);
+  try {
+    const searchTerm = searchQuery.toLowerCase().trim();
     
-    setLoading(true);
-    try {
-      const usersQuery = query(
-        collection(db, 'users'),
-        where('email', '>=', searchQuery.toLowerCase()),
-        where('email', '<=', searchQuery.toLowerCase() + '\uf8ff')
-      );
-      
-      const snapshot = await getDocs(usersQuery);
-      const users = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(u => u.id !== user.uid);
-      
-      setSearchResults(users);
-    } catch (error) {
-      console.error('Search error:', error);
+    // Search by email (prefix match)
+    const emailQuery = query(
+      collection(db, 'users'),
+      where('email', '>=', searchTerm),
+      where('email', '<=', searchTerm + '\uf8ff')
+    );
+    
+    const emailSnapshot = await getDocs(emailQuery);
+    const emailResults = emailSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Also try searching by the username part (before @)
+    const usernameQuery = query(
+      collection(db, 'users')
+    );
+    
+    const usernameSnapshot = await getDocs(usernameQuery);
+    const usernameResults = usernameSnapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(user => {
+        const email = user.email?.toLowerCase() || '';
+        const username = email.split('@')[0];
+        return username.includes(searchTerm) || email.includes(searchTerm);
+      });
+    
+    // Combine and deduplicate results
+    const allResults = [...emailResults, ...usernameResults];
+    const uniqueResults = Array.from(
+      new Map(allResults.map(user => [user.id, user])).values()
+    ).filter(u => u.id !== user.uid);
+    
+    setSearchResults(uniqueResults);
+    
+    if (uniqueResults.length === 0) {
+      alert('No users found. Make sure they have signed up!');
     }
-    setLoading(false);
-  };
+    
+  } catch (error) {
+    console.error('Search error:', error);
+    alert('Search failed: ' + error.message);
+  }
+  setLoading(false);
+};
 
   // Send friend request
   const handleSendFriendRequest = async (toUser) => {

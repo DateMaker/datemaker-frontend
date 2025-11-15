@@ -1807,6 +1807,10 @@ console.log('🎉 Complete Date finished successfully!');
       ];
       setPlaces(allPlaces);
       setShowResults(true);
+      window.scrollTo({
+  top: 0,
+  behavior: 'smooth'
+});
       
       console.log('✅ SUCCESS! Itinerary created with', generatedItinerary.stops.length, 'stops');
       console.log('═══════════════════════════════════════');

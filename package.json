@@ -11,6 +11,8 @@
     "dev": "concurrently \"npm start\" \"npm run start:backend\""
   },
   "dependencies": {
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
     "@stripe/stripe-js": "^8.3.0",
     "axios": "^1.7.7",
     "express-rate-limit": "^8.2.1",
