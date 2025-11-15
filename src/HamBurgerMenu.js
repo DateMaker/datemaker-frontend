@@ -200,53 +200,82 @@ export default function HamburgerMenu({
           touchAction: 'pan-y'
         }}
       >
-        {/* Menu Header */}
-        <div style={{
-          padding: '2rem 1.5rem',
-          borderBottom: '2px solid rgba(255,255,255,0.2)',
-          background: 'rgba(0,0,0,0.1)',
-          flexShrink: 0
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            marginBottom: '0.5rem'
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '1.5rem',
-              fontWeight: 'bold',
-              boxShadow: '0 4px 12px rgba(236, 72, 153, 0.4)'
-            }}>
-              {user.email.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <p style={{
-                color: 'white',
-                fontWeight: '700',
-                fontSize: '1rem',
-                margin: 0
-              }}>
-                {user.email.split('@')[0]}
-              </p>
-              <p style={{
-                color: 'rgba(255,255,255,0.8)',
-                fontSize: '0.875rem',
-                margin: 0
-              }}>
-                {subscriptionStatus === 'premium' ? '✨ Premium' : '🆓 Free'}
-              </p>
-            </div>
-          </div>
-        </div>
+       {/* Menu Header */}
+<div style={{
+  padding: '2rem 1.5rem',
+  borderBottom: '2px solid rgba(255,255,255,0.2)',
+  background: 'rgba(0,0,0,0.1)',
+  flexShrink: 0,
+  position: 'relative'
+}}>
+  {/* Close button - top right */}
+  <button
+    onClick={() => setIsOpen(false)}
+    style={{
+      position: 'absolute',
+      top: '1rem',
+      right: '1rem',
+      background: 'rgba(255,255,255,0.2)',
+      border: 'none',
+      borderRadius: '8px',
+      width: '36px',
+      height: '36px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease'
+    }}
+    onMouseEnter={(e) => {
+      e.target.style.background = 'rgba(255,255,255,0.3)';
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.background = 'rgba(255,255,255,0.2)';
+    }}
+  >
+    <X size={20} style={{ color: 'white' }} />
+  </button>
+
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    marginBottom: '0.5rem'
+  }}>
+    <div style={{
+      width: '48px',
+      height: '48px',
+      borderRadius: '50%',
+      background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'white',
+      fontSize: '1.5rem',
+      fontWeight: 'bold',
+      boxShadow: '0 4px 12px rgba(236, 72, 153, 0.4)'
+    }}>
+      {user.email.charAt(0).toUpperCase()}
+    </div>
+    <div>
+      <p style={{
+        color: 'white',
+        fontWeight: '700',
+        fontSize: '1rem',
+        margin: 0
+      }}>
+        {user.email.split('@')[0]}
+      </p>
+      <p style={{
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: '0.875rem',
+        margin: 0
+      }}>
+        {subscriptionStatus === 'premium' ? '✨ Premium' : '🆓 Free'}
+      </p>
+    </div>
+  </div>
+</div>
 
         {/* Menu Items */}
         <div style={{ 
