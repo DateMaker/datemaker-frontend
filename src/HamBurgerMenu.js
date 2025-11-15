@@ -60,7 +60,7 @@ export default function HamburgerMenu({
       label: 'Social', 
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       shadow: 'rgba(16, 185, 129, 0.4)',
-      badge: subscriptionStatus === 'premium' && notificationCount > 0 ? notificationCount : null,
+badge: notificationCount > 0 ? notificationCount : null,
       locked: subscriptionStatus === 'free'
     },
     { 
