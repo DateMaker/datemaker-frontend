@@ -2015,15 +2015,16 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
           </div>
         )}
 
-        {/* Search Tab */}
         {activeTab === 'search' && (
-          <div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              marginBottom: '2rem'
-            }}>
+  <div style={{
+    padding: '0 0.5rem'
+  }}>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '1rem',
+      marginBottom: '2rem'
+    }}>
               <Search size={32} style={{ color: '#a855f7' }} />
               <h2 style={{
                 fontSize: '2rem',
@@ -2110,22 +2111,27 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
             </div>
 
             {searchResults.length > 0 && (
-  <div style={{ display: 'grid', gap: '1rem' }}>
-    {searchResults.map(result => (
-      <div
-        key={result.id}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
-          padding: '1rem',
-          borderRadius: '18px',
-          border: '2px solid #e9d5ff',
-          boxShadow: '0 2px 8px rgba(168, 85, 247, 0.1)',
-          gap: '0.75rem'
-        }}
-      >
+  <div style={{ 
+    display: 'grid', 
+    gap: '1rem',
+    padding: '0 0.5rem'
+  }}>
+   <div
+  key={result.id}
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+    padding: '1rem 0.75rem',
+    borderRadius: '16px',
+    border: '2px solid #e9d5ff',
+    boxShadow: '0 2px 8px rgba(168, 85, 247, 0.1)',
+    gap: '0.75rem',
+    maxWidth: '100%',
+    overflow: 'hidden'
+  }}
+>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <div style={{
                         width: '48px',
