@@ -1047,10 +1047,8 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
         {/* Navigation Tabs */}
 <div style={{
   display: 'grid',
-  gridTemplateColumns: window.innerWidth > 768 
-    ? 'repeat(5, 1fr)' 
-    : 'repeat(5, 1fr)',
-  gap: window.innerWidth > 768 ? '1rem' : '0.5rem',
+  gridTemplateColumns: 'repeat(2, 1fr)',
+  gap: '0.75rem',
   marginBottom: '1.5rem'
 }}>
   {[
@@ -1064,8 +1062,8 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
       key={tab.id}
       onClick={() => setActiveTab(tab.id)}
       style={{
-        padding: window.innerWidth > 768 ? '1.25rem' : '0.75rem',
-        borderRadius: window.innerWidth > 768 ? '18px' : '14px',
+        padding: '1rem',
+        borderRadius: '16px',
         border: activeTab === tab.id 
           ? '3px solid white' 
           : '3px solid transparent',
@@ -1074,13 +1072,12 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
           : 'rgba(255, 255, 255, 0.15)',
         cursor: 'pointer',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: window.innerWidth > 768 ? '0.5rem' : '0.25rem',
+        gap: '0.5rem',
         transition: 'all 0.2s',
         fontWeight: '800',
-        fontSize: window.innerWidth > 768 ? '1rem' : '0.75rem',
+        fontSize: '0.95rem',
         color: activeTab === tab.id ? '#8b5cf6' : 'white',
         backdropFilter: 'blur(10px)',
         position: 'relative'
@@ -1098,13 +1095,8 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
         }
       }}
     >
-      <tab.icon size={window.innerWidth > 768 ? 24 : 20} />
-      <span style={{ 
-        fontSize: window.innerWidth > 768 ? '1rem' : '0.7rem',
-        whiteSpace: 'nowrap'
-      }}>
-        {tab.label}
-      </span>
+      <tab.icon size={22} />
+      <span>{tab.label}</span>
       {/* 🔔 Notification badges */}
       {tab.count > 0 && (
         <span style={{
@@ -1114,12 +1106,12 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
           background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
           color: 'white',
           borderRadius: '50%',
-          width: window.innerWidth > 768 ? '24px' : '20px',
-          height: window.innerWidth > 768 ? '24px' : '20px',
+          width: '22px',
+          height: '22px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: window.innerWidth > 768 ? '0.75rem' : '0.625rem',
+          fontSize: '0.7rem',
           fontWeight: '900',
           border: '2px solid white',
           boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)'
@@ -1135,14 +1127,15 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
       </div>
 
       {/* Content Area */}
-      <div style={{
-        background: 'white',
-        borderRadius: '24px',
-        padding: '2rem',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-        border: '3px solid rgba(168, 85, 247, 0.2)',
-        minHeight: '600px'
-      }}>
+<div style={{
+  background: 'white',
+  borderRadius: '24px',
+  padding: '2rem',
+  boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+  border: '3px solid rgba(168, 85, 247, 0.2)',
+  minHeight: '400px',
+  marginBottom: '2rem'
+}}>
         {/* Feed Tab */}
         {activeTab === 'feed' && !viewingDate && (
           <div>
