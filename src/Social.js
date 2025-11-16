@@ -2111,27 +2111,28 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
             </div>
 
             {searchResults.length > 0 && (
-  <div style={{ 
-    display: 'grid', 
-    gap: '1rem',
-    padding: '0 0.5rem'
-  }}>
-   <div
-  key={result.id}
-  style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
-    padding: '1rem 0.75rem',
-    borderRadius: '16px',
-    border: '2px solid #e9d5ff',
-    boxShadow: '0 2px 8px rgba(168, 85, 247, 0.1)',
-    gap: '0.75rem',
-    maxWidth: '100%',
-    overflow: 'hidden'
-  }}
->
+              <div style={{ 
+                display: 'grid', 
+                gap: '1rem',
+                padding: '0 0.5rem'
+              }}>
+                {searchResults.map(result => (
+                  <div
+                    key={result.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+                      padding: '1rem 0.75rem',
+                      borderRadius: '16px',
+                      border: '2px solid #e9d5ff',
+                      boxShadow: '0 2px 8px rgba(168, 85, 247, 0.1)',
+                      gap: '0.75rem',
+                      maxWidth: '100%',
+                      overflow: 'hidden'
+                    }}
+                  >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <div style={{
                         width: '48px',
@@ -2168,38 +2169,38 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                       </div>
                     </div>
 
-                   <button
-  onClick={() => handleSendFriendRequest(result)}
-  style={{
-    padding: '0.625rem 1rem',
-    borderRadius: '14px',
-    border: 'none',
-    background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-    color: 'white',
-    fontWeight: '800',
-    fontSize: '0.875rem',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    transition: 'all 0.2s',
-    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
-    flexShrink: 0
-  }}
-  onMouseEnter={(e) => {
-    e.target.style.transform = 'scale(1.03)';
-    e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
-  }}
-  onMouseLeave={(e) => {
-    e.target.style.transform = 'scale(1)';
-    e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
-  }}
->
-  <UserPlus size={18} />
-  <span style={{ display: window.innerWidth > 640 ? 'inline' : 'none' }}>
-    Add Friend
-  </span>
-</button>
+                    <button
+                      onClick={() => handleSendFriendRequest(result)}
+                      style={{
+                        padding: '0.625rem 1rem',
+                        borderRadius: '14px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+                        color: 'white',
+                        fontWeight: '800',
+                        fontSize: '0.875rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s',
+                        boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
+                        flexShrink: 0
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'scale(1.03)';
+                        e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'scale(1)';
+                        e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
+                      }}
+                    >
+                      <UserPlus size={18} />
+                      <span style={{ display: window.innerWidth > 640 ? 'inline' : 'none' }}>
+                        Add Friend
+                      </span>
+                    </button>
                   </div>
                 ))}
               </div>
