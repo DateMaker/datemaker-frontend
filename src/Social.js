@@ -1045,83 +1045,91 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
         </div>
 
         {/* Navigation Tabs */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1rem',
-          marginBottom: '1.5rem'
+<div style={{
+  display: 'grid',
+  gridTemplateColumns: window.innerWidth > 768 
+    ? 'repeat(5, 1fr)' 
+    : 'repeat(5, 1fr)',
+  gap: window.innerWidth > 768 ? '1rem' : '0.5rem',
+  marginBottom: '1.5rem'
+}}>
+  {[
+    { id: 'feed', icon: Sparkles, label: 'Feed', count: feedNotificationCount },
+    { id: 'search', icon: Search, label: 'Search', count: 0 },
+    { id: 'friends', icon: Users, label: 'Friends', count: 0 },
+    { id: 'requests', icon: UserPlus, label: 'Requests', count: friendRequests.filter(r => !r.seen).length },
+    { id: 'messages', icon: MessageCircle, label: 'Messages', count: totalUnreadMessages }
+  ].map(tab => (
+    <button
+      key={tab.id}
+      onClick={() => setActiveTab(tab.id)}
+      style={{
+        padding: window.innerWidth > 768 ? '1.25rem' : '0.75rem',
+        borderRadius: window.innerWidth > 768 ? '18px' : '14px',
+        border: activeTab === tab.id 
+          ? '3px solid white' 
+          : '3px solid transparent',
+        background: activeTab === tab.id
+          ? 'white'
+          : 'rgba(255, 255, 255, 0.15)',
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: window.innerWidth > 768 ? '0.5rem' : '0.25rem',
+        transition: 'all 0.2s',
+        fontWeight: '800',
+        fontSize: window.innerWidth > 768 ? '1rem' : '0.75rem',
+        color: activeTab === tab.id ? '#8b5cf6' : 'white',
+        backdropFilter: 'blur(10px)',
+        position: 'relative'
+      }}
+      onMouseEnter={(e) => {
+        if (activeTab !== tab.id) {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+          e.currentTarget.style.transform = 'scale(1.02)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (activeTab !== tab.id) {
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+          e.currentTarget.style.transform = 'scale(1)';
+        }
+      }}
+    >
+      <tab.icon size={window.innerWidth > 768 ? 24 : 20} />
+      <span style={{ 
+        fontSize: window.innerWidth > 768 ? '1rem' : '0.7rem',
+        whiteSpace: 'nowrap'
+      }}>
+        {tab.label}
+      </span>
+      {/* 🔔 Notification badges */}
+      {tab.count > 0 && (
+        <span style={{
+          position: 'absolute',
+          top: '-6px',
+          right: '-6px',
+          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          color: 'white',
+          borderRadius: '50%',
+          width: window.innerWidth > 768 ? '24px' : '20px',
+          height: window.innerWidth > 768 ? '24px' : '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: window.innerWidth > 768 ? '0.75rem' : '0.625rem',
+          fontWeight: '900',
+          border: '2px solid white',
+          boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)'
         }}>
-          {[
-            { id: 'feed', icon: Sparkles, label: 'Feed', count: feedNotificationCount },
-            { id: 'search', icon: Search, label: 'Search', count: 0 },
-            { id: 'friends', icon: Users, label: 'Friends', count: 0 },
-            { id: 'requests', icon: UserPlus, label: 'Requests', count: friendRequests.filter(r => !r.seen).length },
-            { id: 'messages', icon: MessageCircle, label: 'Messages', count: totalUnreadMessages }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: '1.25rem',
-                borderRadius: '18px',
-                border: activeTab === tab.id 
-                  ? '3px solid white' 
-                  : '3px solid transparent',
-                background: activeTab === tab.id
-                  ? 'white'
-                  : 'rgba(255, 255, 255, 0.15)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.75rem',
-                transition: 'all 0.2s',
-                fontWeight: '800',
-                fontSize: '1.125rem',
-                color: activeTab === tab.id ? '#8b5cf6' : 'white',
-                backdropFilter: 'blur(10px)',
-                position: 'relative'
-              }}
-              onMouseEnter={(e) => {
-                if (activeTab !== tab.id) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-                  e.currentTarget.style.transform = 'scale(1.02)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (activeTab !== tab.id) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                  e.currentTarget.style.transform = 'scale(1)';
-                }
-              }}
-            >
-              <tab.icon size={24} />
-              {tab.label}
-              {/* 🔔 NEW: Show notification badges on tabs */}
-              {tab.count > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-8px',
-                  right: '-8px',
-                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                  color: 'white',
-                  borderRadius: '50%',
-                  width: '28px',
-                  height: '28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.875rem',
-                  fontWeight: '900',
-                  border: '2px solid white',
-                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)'
-                }}>
-                  {tab.count > 99 ? '99+' : tab.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+          {tab.count > 99 ? '9+' : tab.count}
+        </span>
+      )}
+    </button>
+  ))}
+</div>
 
        
       </div>
@@ -2065,43 +2073,47 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                 }}
               />
               <button
-                onClick={handleSearch}
-                disabled={loading}
-                style={{
-                  padding: '1.125rem 2rem',
-                  borderRadius: '18px',
-                  border: 'none',
-                  background: loading
-                    ? '#d1d5db'
-                    : 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-                  color: 'white',
-                  fontWeight: '800',
-                  fontSize: '1rem',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.625rem',
-                  transition: 'all 0.2s',
-                  boxShadow: loading
-                    ? 'none'
-                    : '0 6px 20px rgba(168, 85, 247, 0.3)'
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading) {
-                    e.target.style.transform = 'scale(1.03)';
-                    e.target.style.boxShadow = '0 8px 24px rgba(168, 85, 247, 0.4)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'scale(1)';
-                  e.target.style.boxShadow = loading
-                    ? 'none'
-                    : '0 6px 20px rgba(168, 85, 247, 0.3)';
-                }}
-              >
-                <Search size={20} />
-                {loading ? 'Searching...' : 'Search'}
-              </button>
+  onClick={handleSearch}
+  disabled={loading}
+  style={{
+    padding: '0.875rem 1.25rem',
+    borderRadius: '18px',
+    border: 'none',
+    background: loading
+      ? '#d1d5db'
+      : 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+    color: 'white',
+    fontWeight: '800',
+    fontSize: '0.875rem',
+    cursor: loading ? 'not-allowed' : 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    transition: 'all 0.2s',
+    boxShadow: loading
+      ? 'none'
+      : '0 6px 20px rgba(168, 85, 247, 0.3)',
+    minWidth: 'fit-content',
+    whiteSpace: 'nowrap'
+  }}
+  onMouseEnter={(e) => {
+    if (!loading) {
+      e.target.style.transform = 'scale(1.03)';
+      e.target.style.boxShadow = '0 8px 24px rgba(168, 85, 247, 0.4)';
+    }
+  }}
+  onMouseLeave={(e) => {
+    e.target.style.transform = 'scale(1)';
+    e.target.style.boxShadow = loading
+      ? 'none'
+      : '0 6px 20px rgba(168, 85, 247, 0.3)';
+  }}
+>
+  <Search size={18} />
+  <span style={{ display: window.innerWidth > 640 ? 'inline' : 'none' }}>
+    {loading ? 'Searching...' : 'Search'}
+  </span>
+</button>
             </div>
 
             {searchResults.length > 0 && (
