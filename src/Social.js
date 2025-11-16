@@ -2110,101 +2110,115 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
 </button>
             </div>
 
-            {searchResults.length > 0 && (
-              <div style={{ 
-                display: 'grid', 
-                gap: '1rem',
-                padding: '0 0.5rem'
-              }}>
-                {searchResults.map(result => (
-                  <div
-                    key={result.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
-                      padding: '1rem 0.75rem',
-                      borderRadius: '16px',
-                      border: '2px solid #e9d5ff',
-                      boxShadow: '0 2px 8px rgba(168, 85, 247, 0.1)',
-                      gap: '0.75rem',
-                      maxWidth: '100%',
-                      overflow: 'hidden'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        fontWeight: '900',
-                        fontSize: '1.25rem',
-                        boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
-                      }}>
-                        {result.email[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <p style={{
-                          margin: '0 0 0.25rem',
-                          fontWeight: '800',
-                          fontSize: '1.125rem',
-                          color: '#1f2937'
-                        }}>
-                          {result.email.split('@')[0]}
-                        </p>
-                        <p style={{
-                          margin: 0,
-                          fontSize: '0.875rem',
-                          color: '#6b7280',
-                          fontWeight: '600'
-                        }}>
-                          {result.email}
-                        </p>
-                      </div>
-                    </div>
+         {searchResults.length > 0 && (
+  <div style={{ 
+    display: 'flex',
+    flexDirection: 'column',  // ✅ Vertical layout
+    gap: '1rem',
+    padding: '0'  // ✅ No side padding
+  }}>
+    {searchResults.map(result => (
+      <div
+        key={result.id}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',  // ✅ Stack vertically
+          gap: '0.75rem',
+          background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+          padding: '1.25rem',  // ✅ More padding
+          borderRadius: '16px',
+          border: '2px solid #e9d5ff',
+          boxShadow: '0 2px 8px rgba(168, 85, 247, 0.1)'
+        }}
+      >
+        {/* User info row */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '1rem',
+          width: '100%'  // ✅ Full width
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: '900',
+            fontSize: '1.25rem',
+            flexShrink: 0,
+            boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
+          }}>
+            {result.email[0].toUpperCase()}
+          </div>
+          <div style={{ 
+            flex: 1, 
+            minWidth: 0  // ✅ Allows text truncation
+          }}>
+            <p style={{
+              margin: '0 0 0.25rem',
+              fontWeight: '800',
+              fontSize: '1.125rem',
+              color: '#1f2937',
+              overflow: 'hidden',  // ✅ Handle long text
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
+              {result.email.split('@')[0]}
+            </p>
+            <p style={{
+              margin: 0,
+              fontSize: '0.875rem',
+              color: '#6b7280',
+              fontWeight: '600',
+              overflow: 'hidden',  // ✅ Handle long text
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
+              {result.email}
+            </p>
+          </div>
+        </div>
 
-                    <button
-                      onClick={() => handleSendFriendRequest(result)}
-                      style={{
-                        padding: '0.625rem 1rem',
-                        borderRadius: '14px',
-                        border: 'none',
-                        background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-                        color: 'white',
-                        fontWeight: '800',
-                        fontSize: '0.875rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
-                        flexShrink: 0
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.transform = 'scale(1.03)';
-                        e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.transform = 'scale(1)';
-                        e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
-                      }}
-                    >
-                      <UserPlus size={18} />
-                      <span style={{ display: window.innerWidth > 640 ? 'inline' : 'none' }}>
-                        Add Friend
-                      </span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* Add Friend button - full width on mobile */}
+        <button
+          onClick={() => handleSendFriendRequest(result)}
+          style={{
+            width: '100%',
+            padding: '0.875rem',
+            borderRadius: '14px',
+            border: 'none',
+            background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+            color: 'white',
+            fontWeight: '800',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.2s',
+            boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'scale(1.02)';
+            e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'scale(1)';
+            e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
+          }}
+        >
+          <UserPlus size={20} />
+          Add Friend
+        </button>
+      </div>
+    ))}
+  </div>
+)}
           </div>
         )}
 
