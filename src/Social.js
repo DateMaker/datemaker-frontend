@@ -27,10 +27,25 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
   const [optimisticMessages, setOptimisticMessages] = useState([]); // For instant message display
   const [participantProfiles, setParticipantProfiles] = useState({}); // Store user profiles for avatars
   const [isOnline, setIsOnline] = useState(navigator.onLine); // ✅ FIX #4: Offline detection
-  const [isUserScrolling, setIsUserScrolling] = useState(false);
+
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const messageTimeoutsRef = useRef(new Map());
+
+ useEffect(() => {
+    return () => {
+      console.log('🧹 Cleaning up Social component - canceling all timeouts');
+      
+      // Cancel typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Cancel all message timeouts
+      messageTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+      messageTimeoutsRef.current.clear();
+    };
+  }, []);
 
   // 🔔 Clear notifications when viewing specific tabs
   useEffect(() => {
@@ -536,7 +551,7 @@ useEffect(() => {
     return () => unsubscribe();
   }, [selectedConversation, user.uid, user.email]);
 
-  // Search users - IMPROVED VERSION
+  // Search users - OPTIMIZED VERSION ⚡💰
 const handleSearch = async () => {
   if (!searchQuery.trim()) return;
   
@@ -544,41 +559,26 @@ const handleSearch = async () => {
   try {
     const searchTerm = searchQuery.toLowerCase().trim();
     
-    // Search by email (prefix match)
+    // ✅ Single optimized query - prefix match on email
     const emailQuery = query(
       collection(db, 'users'),
       where('email', '>=', searchTerm),
-      where('email', '<=', searchTerm + '\uf8ff')
+      where('email', '<=', searchTerm + '\uf8ff'),
+      limit(20) // ✅ Limit results to prevent huge reads
     );
     
     const emailSnapshot = await getDocs(emailQuery);
-    const emailResults = emailSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    // Also try searching by the username part (before @)
-    const usernameQuery = query(
-      collection(db, 'users')
-    );
-    
-    const usernameSnapshot = await getDocs(usernameQuery);
-    const usernameResults = usernameSnapshot.docs
+    const results = emailSnapshot.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter(user => {
-        const email = user.email?.toLowerCase() || '';
-        const username = email.split('@')[0];
-        return username.includes(searchTerm) || email.includes(searchTerm);
-      });
+      .filter(u => u.id !== user.uid); // Exclude current user
     
-    // Combine and deduplicate results
-    const allResults = [...emailResults, ...usernameResults];
-    const uniqueResults = Array.from(
-      new Map(allResults.map(user => [user.id, user])).values()
-    ).filter(u => u.id !== user.uid);
+    setSearchResults(results);
     
-    setSearchResults(uniqueResults);
-    
-    if (uniqueResults.length === 0) {
-      alert('No users found. Make sure they have signed up!');
+    if (results.length === 0) {
+      alert('No users found. Make sure to type the START of their email address!');
     }
+    
+    console.log(`🔍 Search results: ${results.length} users found (optimized query)`);
     
   } catch (error) {
     console.error('Search error:', error);
@@ -756,7 +756,7 @@ const handleSearch = async () => {
     return timeA - timeB;
   });
 
-  // Handle typing indicator
+  // Track typing indicator - OPTIMIZED ⚡💰
   const handleTyping = async (isTyping) => {
     if (!selectedConversation) return;
 
@@ -764,21 +764,23 @@ const handleSearch = async () => {
       const typingRef = doc(db, 'typing', `${selectedConversation.id}_${user.uid}`);
       
       if (isTyping) {
+        // ✅ Use merge to update existing doc instead of full overwrite
         await setDoc(typingRef, {
           conversationId: selectedConversation.id,
           userId: user.uid,
           userEmail: user.email,
           isTyping: true,
           timestamp: serverTimestamp()
-        });
+        }, { merge: true }); // ✅ KEY OPTIMIZATION: merge instead of overwrite
 
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current);
         }
 
+        // ✅ Increased timeout from 3s to 5s (feels more natural + fewer writes)
         typingTimeoutRef.current = setTimeout(() => {
           handleTyping(false);
-        }, 3000);
+        }, 5000);
       } else {
         await deleteDoc(typingRef);
       }
@@ -2154,35 +2156,38 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => handleSendFriendRequest(result)}
-                      style={{
-                        padding: '0.875rem 1.5rem',
-                        borderRadius: '14px',
-                        border: 'none',
-                        background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-                        color: 'white',
-                        fontWeight: '800',
-                        fontSize: '1rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.625rem',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.transform = 'scale(1.03)';
-                        e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.transform = 'scale(1)';
-                        e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
-                      }}
-                    >
-                      <UserPlus size={20} />
-                      Add Friend
-                    </button>
+                   <button
+  onClick={() => handleSendFriendRequest(result)}
+  style={{
+    padding: '0.625rem 1rem',
+    borderRadius: '14px',
+    border: 'none',
+    background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+    color: 'white',
+    fontWeight: '800',
+    fontSize: '0.875rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
+    flexShrink: 0
+  }}
+  onMouseEnter={(e) => {
+    e.target.style.transform = 'scale(1.03)';
+    e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
+  }}
+  onMouseLeave={(e) => {
+    e.target.style.transform = 'scale(1)';
+    e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
+  }}
+>
+  <UserPlus size={18} />
+  <span style={{ display: window.innerWidth > 640 ? 'inline' : 'none' }}>
+    Add Friend
+  </span>
+</button>
                   </div>
                 ))}
               </div>
@@ -2309,34 +2314,37 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
 
                     <div style={{ display: 'flex', gap: '0.75rem' }}>
                       <button
-                        onClick={() => handleStartConversation(friend.id)}
-                        style={{
-                          padding: '0.875rem 1.5rem',
-                          borderRadius: '14px',
-                          border: 'none',
-                          background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-                          color: 'white',
-                          fontWeight: '800',
-                          fontSize: '1rem',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.625rem',
-                          transition: 'all 0.2s',
-                          boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.transform = 'scale(1.03)';
-                          e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.transform = 'scale(1)';
-                          e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
-                        }}
-                      >
-                        <MessageCircle size={20} />
-                        Message
-                      </button>
+  onClick={() => handleStartConversation(friend.id)}
+  style={{
+    padding: '0.625rem 1rem',
+    borderRadius: '14px',
+    border: 'none',
+    background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+    color: 'white',
+    fontWeight: '800',
+    fontSize: '0.875rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
+    minWidth: '0'
+  }}
+  onMouseEnter={(e) => {
+    e.target.style.transform = 'scale(1.03)';
+    e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
+  }}
+  onMouseLeave={(e) => {
+    e.target.style.transform = 'scale(1)';
+    e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
+  }}
+>
+  <MessageCircle size={18} />
+  <span style={{ display: window.innerWidth > 640 ? 'inline' : 'none' }}>
+    Message
+  </span>
+</button>
 
                       <button
                         onClick={() => handleRemoveFriend(friend.id)}
@@ -2642,35 +2650,45 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                     </h2>
                   </div>
 
-                  <button
-                    onClick={() => setShowCreateGroupChat(true)}
-                    style={{
-                      padding: '0.875rem 1.5rem',
-                      borderRadius: '14px',
-                      border: 'none',
-                      background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-                      color: 'white',
-                      fontWeight: '800',
-                      fontSize: '1rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.625rem',
-                      transition: 'all 0.2s',
-                      boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.transform = 'scale(1.03)';
-                      e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.transform = 'scale(1)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
-                    }}
-                  >
-                    <Plus size={20} />
-                    Create Group Chat
-                  </button>
+                 <button
+  onClick={() => setShowCreateGroupChat(true)}
+  style={{
+    padding: '0.75rem 1rem',
+    borderRadius: '14px',
+    border: 'none',
+    background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+    color: 'white',
+    fontWeight: '800',
+    fontSize: '0.875rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    transition: 'all 0.2s',
+    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
+    whiteSpace: 'nowrap'
+  }}
+  onMouseEnter={(e) => {
+    e.target.style.transform = 'scale(1.03)';
+    e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
+  }}
+  onMouseLeave={(e) => {
+    e.target.style.transform = 'scale(1)';
+    e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
+  }}
+>
+  <Plus size={18} />
+  <span style={{ 
+    display: window.innerWidth > 640 ? 'inline' : 'none' 
+  }}>
+    Create Group Chat
+  </span>
+  <span style={{ 
+    display: window.innerWidth <= 640 ? 'inline' : 'none' 
+  }}>
+    Group
+  </span>
+</button>
                 </div>
 
                 {conversations.length === 0 ? (
