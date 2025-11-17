@@ -1239,215 +1239,30 @@ const getWeekNumber = (date) => {
   };
 
  const handleCompleteDateItinerary = async () => {
-  console.log('═══════════════════════════════════════');
-  console.log('🎯 STEP 1: Button clicked - function started');
-  console.log('═══════════════════════════════════════');
+  alert('🎯 Complete Date Button Clicked!');
   
-  // Check subscription
-  console.log('🔒 STEP 2: Checking subscription...');
-  console.log('   subscriptionStatus:', subscriptionStatus);
-  
+  // 🔒 SUBSCRIPTION GATE
   if (subscriptionStatus === 'free') {
-    console.log('   ❌ User is FREE - showing modal and exiting');
+    alert('Subscription is FREE - showing upgrade modal');
     setShowSubscriptionModal(true);
     return;
   }
   
-  console.log('   ✅ User has premium access');
+  alert('✅ User is premium - continuing...');
   
-  try {
-    // Validate itinerary
-    console.log('📊 STEP 3: Validating itinerary...');
-    console.log('   itinerary:', itinerary ? 'EXISTS' : 'NULL');
-    console.log('   itinerary.stops:', itinerary?.stops ? `${itinerary.stops.length} stops` : 'NULL');
-    
-    if (!itinerary || !itinerary.stops) {
-      console.error('❌ No itinerary found');
-      alert('No itinerary to complete!');
-      return;
-    }
-
-    console.log('✅ STEP 4: Calculating statistics...');
-    
-    const challengesCompleted = completedChallenges.length;
-    const totalChallenges = itinerary.stops.reduce((sum, stop) => 
-      sum + (stop.challenges?.length || 0), 0);
-    
-    const basePoints = POINT_VALUES.COMPLETE_DATE;
-    const stopPoints = itinerary.stops.length * POINT_VALUES.COMPLETE_STOP;
-    const challengePoints = challengesCompleted * POINT_VALUES.COMPLETE_CHALLENGE;
-    const totalPoints = basePoints + stopPoints + challengePoints;
-    
-    console.log(`💰 Points: ${totalPoints}`);
-    
-    // Check for level up
-    console.log('📈 STEP 5: Checking for level up...');
-    const oldXP = gameStats?.xp || 0;
-    const newXP = oldXP + totalPoints;
-    const oldLevel = calculateLevel(oldXP);
-    const newLevel = calculateLevel(newXP);
-    const didLevelUp = newLevel.level > oldLevel.level;
-    
-    console.log(`   Old XP: ${oldXP}, New XP: ${newXP}`);
-    console.log(`   Old Level: ${oldLevel.level}, New Level: ${newLevel.level}`);
-    console.log(`   Did Level Up: ${didLevelUp}`);
-    
-    // Calculate streaks
-    console.log('🔥 STEP 6: Calculating streaks...');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString();
-    
-    let newStreak = 1;
-    const lastCompletedDate = gameStats?.lastCompletedDate;
-    const currentStreak = gameStats?.currentStreak || 0;
-    
-    if (lastCompletedDate) {
-      const lastDate = new Date(lastCompletedDate);
-      lastDate.setHours(0, 0, 0, 0);
-      const daysDiff = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
-      
-      if (daysDiff === 0) newStreak = currentStreak;
-      else if (daysDiff === 1) newStreak = currentStreak + 1;
-      else newStreak = 1;
-    }
-    
-    console.log(`   Streak: ${currentStreak} → ${newStreak}`);
-
-    // Track venue types
-    console.log('🏟️ STEP 7: Tracking venue types...');
-    const venueStats = gameStats?.venueStats || {
-      food: 0,
-      drinks: 0,
-      entertainment: 0,
-      outdoor: 0,
-      activity: 0
-    };
-
-    itinerary.stops.forEach(stop => {
-      const category = stop.place.category;
-      if (category === 'food') venueStats.food++;
-      if (category === 'drinks') venueStats.drinks++;
-      if (category === 'entertainment') venueStats.entertainment++;
-      if (category === 'outdoor') venueStats.outdoor++;
-      if (category === 'activity') venueStats.activity++;
-    });
-
-    // Update stats
-    console.log('💾 STEP 8: Preparing updated stats...');
-    const updatedStats = {
-      ...gameStats,
-      xp: newXP,
-      level: newLevel.level,
-      datesCompleted: (gameStats?.datesCompleted || 0) + 1,
-      placesVisited: (gameStats?.placesVisited || 0) + itinerary.stops.length,
-      challengesCompleted: (gameStats?.challengesCompleted || 0) + challengesCompleted,
-      currentStreak: newStreak,
-      longestStreak: Math.max(newStreak, gameStats?.longestStreak || 0),
-      lastCompletedDate: todayStr,
-      venueStats: venueStats
-    };
-    
-    console.log('   Updated stats prepared');
-    
-    setGameStats(updatedStats);
-    console.log('   ✅ setGameStats called');
-    
-    // Save to Firebase
-    console.log('💾 STEP 9: Saving to Firebase...');
-    const userDocRef = doc(db, 'users', user.uid);
-    await setDoc(userDocRef, { 
-      gameStats: updatedStats 
-    }, { merge: true });
-    console.log('   ✅ Saved to Firebase');
-
-    // Update dateStreaks
-    console.log('💾 STEP 10: Updating dateStreaks...');
-    const streakRef = doc(db, 'dateStreaks', user.uid);
-    const streakDoc = await getDoc(streakRef);
-
-    if (streakDoc.exists()) {
-      const streakData = streakDoc.data();
-      const goals = streakData.goals || [];
-      
-      const updatedGoals = goals.map(goal => {
-        if (goal.completed) return goal;
-        const newProgress = goal.progress + 1;
-        return {
-          ...goal,
-          progress: newProgress,
-          completed: newProgress >= goal.target
-        };
-      });
-
-      await updateDoc(streakRef, {
-        currentStreak: newStreak,
-        longestStreak: Math.max(newStreak, gameStats?.longestStreak || 0),
-        totalDates: (streakData.totalDates || 0) + 1,
-        lastDateWeek: todayStr,
-        goals: updatedGoals
-      });
-      console.log('   ✅ DateStreaks updated');
-    } else {
-      await setDoc(streakRef, {
-        currentStreak: 1,
-        longestStreak: 1,
-        totalDates: 1,
-        lastDateWeek: todayStr,
-        badges: [],
-        goals: [],
-        weeklyChallenges: {}
-      });
-      console.log('   ✅ New dateStreaks created');
-    }
-
-    // Clear challenges
-    console.log('🧹 STEP 11: Clearing completed challenges...');
-    setCompletedChallenges([]);
-
-    // Handle level up
-    console.log('🎉 STEP 12: Handling modals...');
-    if (didLevelUp) {
-      console.log('   🔥 LEVEL UP! Setting level up modal...');
-      setLevelUpData({
-        oldLevel: oldLevel,
-        newLevel: newLevel,
-        pointsEarned: totalPoints
-      });
-      setShowLevelUp(true);
-      console.log('   ✅ Level up modal state set');
-    } else {
-      console.log('   📸 No level up detected');
-    }
-
-    // ALWAYS set dateToSave
-    console.log('📸 STEP 13: Setting dateToSave...');
-    console.log('   Current dateToSave:', dateToSave);
-    console.log('   Current scrapbookMode:', scrapbookMode);
-    console.log('   Current showScrapbook:', showScrapbook);
-    
-    setDateToSave({
-      date: new Date().toISOString(),
-      location: location,
-      itinerary: itinerary
-    });
-    console.log('   ✅ setDateToSave called');
-    
-    setScrapbookMode('create');
-    console.log('   ✅ setScrapbookMode called');
-    
-    console.log('═══════════════════════════════════════');
-    console.log('✅ COMPLETE! Function finished successfully');
-    console.log('═══════════════════════════════════════');
-    
-  } catch (error) {
-    console.error('═══════════════════════════════════════');
-    console.error('❌ ERROR IN STEP:', error);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    console.error('═══════════════════════════════════════');
-    alert(`Error completing date: ${error.message}`);
-  }
+  // FORCE OPEN SCRAPBOOK IMMEDIATELY
+  console.log('📸 FORCING SCRAPBOOK TO OPEN');
+  
+  setDateToSave({
+    date: new Date().toISOString(),
+    location: location,
+    itinerary: itinerary
+  });
+  
+  setScrapbookMode('create');
+  setShowScrapbook(true);  // FORCE IT OPEN
+  
+  alert('📸 Scrapbook should be opening now!');
 };
   
  const handleSaveDate = async (place) => {
