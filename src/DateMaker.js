@@ -1239,30 +1239,167 @@ const getWeekNumber = (date) => {
   };
 
  const handleCompleteDateItinerary = async () => {
-  alert('🎯 Complete Date Button Clicked!');
+  console.log('🎯 Complete Date Started');
   
   // 🔒 SUBSCRIPTION GATE
   if (subscriptionStatus === 'free') {
-    alert('Subscription is FREE - showing upgrade modal');
     setShowSubscriptionModal(true);
     return;
   }
   
-  alert('✅ User is premium - continuing...');
-  
-  // FORCE OPEN SCRAPBOOK IMMEDIATELY
-  console.log('📸 FORCING SCRAPBOOK TO OPEN');
-  
-  setDateToSave({
-    date: new Date().toISOString(),
-    location: location,
-    itinerary: itinerary
-  });
-  
-  setScrapbookMode('create');
-  setShowScrapbook(true);  // FORCE IT OPEN
-  
-  alert('📸 Scrapbook should be opening now!');
+  try {
+    // Validate itinerary
+    if (!itinerary || !itinerary.stops) {
+      alert('No itinerary to complete!');
+      return;
+    }
+
+    // Calculate stats
+    const challengesCompleted = completedChallenges.length;
+    const basePoints = POINT_VALUES.COMPLETE_DATE;
+    const stopPoints = itinerary.stops.length * POINT_VALUES.COMPLETE_STOP;
+    const challengePoints = challengesCompleted * POINT_VALUES.COMPLETE_CHALLENGE;
+    const totalPoints = basePoints + stopPoints + challengePoints;
+    
+    // Check for level up
+    const oldXP = gameStats?.xp || 0;
+    const newXP = oldXP + totalPoints;
+    const oldLevel = calculateLevel(oldXP);
+    const newLevel = calculateLevel(newXP);
+    const didLevelUp = newLevel.level > oldLevel.level;
+    
+    // Calculate streaks
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString();
+    
+    let newStreak = 1;
+    const lastCompletedDate = gameStats?.lastCompletedDate;
+    const currentStreak = gameStats?.currentStreak || 0;
+    
+    if (lastCompletedDate) {
+      const lastDate = new Date(lastCompletedDate);
+      lastDate.setHours(0, 0, 0, 0);
+      const daysDiff = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff === 0) newStreak = currentStreak;
+      else if (daysDiff === 1) newStreak = currentStreak + 1;
+      else newStreak = 1;
+    }
+
+    // Track venue types
+    const venueStats = gameStats?.venueStats || {
+      food: 0,
+      drinks: 0,
+      entertainment: 0,
+      outdoor: 0,
+      activity: 0
+    };
+
+    itinerary.stops.forEach(stop => {
+      const category = stop.place.category;
+      if (category === 'food') venueStats.food++;
+      if (category === 'drinks') venueStats.drinks++;
+      if (category === 'entertainment') venueStats.entertainment++;
+      if (category === 'outdoor') venueStats.outdoor++;
+      if (category === 'activity') venueStats.activity++;
+    });
+
+    // Update stats
+    const updatedStats = {
+      ...gameStats,
+      xp: newXP,
+      level: newLevel.level,
+      datesCompleted: (gameStats?.datesCompleted || 0) + 1,
+      placesVisited: (gameStats?.placesVisited || 0) + itinerary.stops.length,
+      challengesCompleted: (gameStats?.challengesCompleted || 0) + challengesCompleted,
+      currentStreak: newStreak,
+      longestStreak: Math.max(newStreak, gameStats?.longestStreak || 0),
+      lastCompletedDate: todayStr,
+      venueStats: venueStats
+    };
+    
+    setGameStats(updatedStats);
+    
+    // Save to Firebase
+    const userDocRef = doc(db, 'users', user.uid);
+    await setDoc(userDocRef, { 
+      gameStats: updatedStats 
+    }, { merge: true });
+
+    // Update dateStreaks
+    const streakRef = doc(db, 'dateStreaks', user.uid);
+    const streakDoc = await getDoc(streakRef);
+
+    if (streakDoc.exists()) {
+      const streakData = streakDoc.data();
+      const goals = streakData.goals || [];
+      
+      const updatedGoals = goals.map(goal => {
+        if (goal.completed) return goal;
+        const newProgress = goal.progress + 1;
+        return {
+          ...goal,
+          progress: newProgress,
+          completed: newProgress >= goal.target
+        };
+      });
+
+      await updateDoc(streakRef, {
+        currentStreak: newStreak,
+        longestStreak: Math.max(newStreak, gameStats?.longestStreak || 0),
+        totalDates: (streakData.totalDates || 0) + 1,
+        lastDateWeek: todayStr,
+        goals: updatedGoals
+      });
+    } else {
+      await setDoc(streakRef, {
+        currentStreak: 1,
+        longestStreak: 1,
+        totalDates: 1,
+        lastDateWeek: todayStr,
+        badges: [],
+        goals: [],
+        weeklyChallenges: {}
+      });
+    }
+
+    // Clear challenges
+    setCompletedChallenges([]);
+
+    // 🔥 KEY CHANGE: Show level up OR scrapbook
+    if (didLevelUp) {
+      setLevelUpData({
+        oldLevel: oldLevel,
+        newLevel: newLevel,
+        pointsEarned: totalPoints
+      });
+      setShowLevelUp(true);
+      // Set dateToSave so scrapbook opens after level up closes
+      setDateToSave({
+        date: new Date().toISOString(),
+        location: location,
+        itinerary: itinerary
+      });
+      setScrapbookMode('create');
+    } else {
+      // No level up - open scrapbook immediately
+      setDateToSave({
+        date: new Date().toISOString(),
+        location: location,
+        itinerary: itinerary
+      });
+      setScrapbookMode('create');
+      // Force open scrapbook after a tiny delay to ensure state is set
+      setTimeout(() => {
+        setShowScrapbook(true);
+      }, 100);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error completing date:', error);
+    alert(`Error completing date: ${error.message}`);
+  }
 };
   
  const handleSaveDate = async (place) => {
