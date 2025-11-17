@@ -2820,80 +2820,81 @@ if (category === 'nightlife') {
           />
         </div>
 
-        {/* Challenges */}
-        {stop.challenges && stop.challenges.length > 0 && (
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h4 style={{ 
-              fontSize: '1.1rem', 
-              fontWeight: '700',
-              marginBottom: '0.75rem',
+       {/* Challenges */}
+{stop.challenges && stop.challenges.length > 0 && (
+  <div style={{ marginBottom: '1.5rem' }}>
+    <h4 style={{ 
+      fontSize: '1.1rem', 
+      fontWeight: '700',
+      marginBottom: '0.75rem',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      color: '#111827'
+    }}>
+      🎯 Challenges
+    </h4>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      {stop.challenges.map((challenge) => {
+        const isCompleted = completedChallenges.includes(challenge.id);
+        return (
+          <div 
+            key={challenge.id}
+            style={{
+              padding: '1rem',
+              background: isCompleted 
+                ? 'linear-gradient(135deg, #06D6A020, #06D6A010)'
+                : 'linear-gradient(135deg, #FF6B3520, #FF8C4210)',
+              borderRadius: '12px',
+              border: isCompleted
+                ? '2px solid #06D6A060'
+                : '2px solid #FF6B3540',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
-              color: '#111827'
+              justifyContent: 'space-between',
+              gap: '1rem'
+            }}
+          >
+            <p style={{ 
+              fontSize: '0.95rem',
+              fontWeight: '600',
+              color: '#111827',
+              margin: 0,
+              textDecoration: isCompleted ? 'line-through' : 'none',
+              opacity: isCompleted ? 0.7 : 1,
+              flex: 1,
+              paddingRight: '0.5rem'
             }}>
-              🎯 Challenges
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {stop.challenges.map((challenge) => {
-                const isCompleted = completedChallenges.includes(challenge.id);
-                return (
-                  <div 
-                    key={challenge.id}
-                    style={{
-                      padding: '1rem',
-                      background: isCompleted 
-                        ? 'linear-gradient(135deg, #06D6A020, #06D6A010)'
-                        : 'linear-gradient(135deg, #FF6B3520, #FF8C4210)',
-                      borderRadius: '12px',
-                      border: isCompleted
-                        ? '2px solid #06D6A060'
-                        : '2px solid #FF6B3540',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '1rem',
-                      flexWrap: 'wrap'
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: '200px' }}>
-                      <p style={{ 
-                        fontSize: '0.95rem',
-                        fontWeight: '600',
-                        color: '#111827',
-                        margin: 0,
-                        textDecoration: isCompleted ? 'line-through' : 'none',
-                        opacity: isCompleted ? 0.7 : 1
-                      }}>
-                        {challenge.text}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleCompleteChallenge(index, challenge.id)}
-                      disabled={isCompleted}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        background: isCompleted 
-                          ? '#06D6A0'
-                          : 'linear-gradient(135deg, #FF6B35, #FF8C42)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontWeight: '700',
-                        fontSize: '0.875rem',
-                        cursor: isCompleted ? 'not-allowed' : 'pointer',
-                        opacity: isCompleted ? 0.6 : 1,
-                        transition: 'all 0.3s ease',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {isCompleted ? `✓ +${challenge.points}` : `+${challenge.points} XP`}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+              {challenge.text}
+            </p>
+            <button
+              onClick={() => handleCompleteChallenge(index, challenge.id)}
+              disabled={isCompleted}
+              style={{
+                padding: '0.5rem 1rem',
+                background: isCompleted 
+                  ? '#06D6A0'
+                  : 'linear-gradient(135deg, #FF6B35, #FF8C42)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: '700',
+                fontSize: '0.875rem',
+                cursor: isCompleted ? 'not-allowed' : 'pointer',
+                opacity: isCompleted ? 0.6 : 1,
+                transition: 'all 0.3s ease',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}
+            >
+              {isCompleted ? `✓ +${challenge.points}` : `+${challenge.points} XP`}
+            </button>
           </div>
-        )}
+        );
+      })}
+    </div>
+  </div>
+)}
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
