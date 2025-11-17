@@ -291,35 +291,40 @@ const SpinningWheel = ({ onClose, onSelectActivity, language = 'en' }) => {
         maxHeight: '90vh',
         overflowY: 'auto'
       }}>
-        <button
+     <button
   onClick={onClose}
   style={{
     position: 'absolute',
-    top: '1rem',
-    right: '1rem',
+    top: '0.5rem',
+    right: '0.5rem',
     background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
     border: '3px solid white',
     borderRadius: '50%',
-    width: '44px',
-    height: '44px',
+    width: '48px',
+    height: '48px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)',
+    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.5)',
     transition: 'all 0.2s ease',
-    zIndex: 100
+    zIndex: 1000,
+    fontSize: '1.75rem',
+    fontWeight: '900',
+    color: 'white',
+    lineHeight: '1',
+    padding: 0
   }}
   onMouseEnter={(e) => {
-    e.target.style.transform = 'scale(1.1)';
-    e.target.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.6)';
+    e.currentTarget.style.transform = 'scale(1.1) rotate(90deg)';
+    e.currentTarget.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.7)';
   }}
   onMouseLeave={(e) => {
-    e.target.style.transform = 'scale(1)';
-    e.target.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+    e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
+    e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.5)';
   }}
 >
-  <X size={24} style={{ color: 'white', strokeWidth: 3 }} />
+  ✕
 </button>
 
         {/* Title */}
