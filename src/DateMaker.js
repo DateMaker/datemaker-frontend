@@ -1026,13 +1026,13 @@ const getWeekNumber = (date) => {
     console.log('🔵 dateToShare is:', dateToShare);
   }, [showShareModal, dateToShare]);
 
-  // 📸 AUTO-OPEN SCRAPBOOK when dateToSave is set
-  useEffect(() => {
-    if (dateToSave && scrapbookMode === 'create' && !showScrapbook) {
-      console.log('📸 useEffect detected dateToSave, opening scrapbook');
-      setShowScrapbook(true);
-    }
-  }, [dateToSave, scrapbookMode, showScrapbook]);
+  // 📸 AUTO-OPEN SCRAPBOOK when dateToSave is set (waits for level up modal to close)
+useEffect(() => {
+  if (dateToSave && scrapbookMode === 'create' && !showScrapbook && !showLevelUp) {
+    console.log('📸 useEffect detected dateToSave, opening scrapbook');
+    setShowScrapbook(true);
+  }
+}, [dateToSave, scrapbookMode, showScrapbook, showLevelUp]);
 
   const loadGameStats = async () => {
     try {
@@ -3536,8 +3536,7 @@ if (category === 'nightlife') {
         />
       )}
 
- {/* NEW MODALS */}
-      {showScrapbook && (
+{showScrapbook && (
         <DateMemoryScrapbook
           currentUser={user}
           mode={scrapbookMode}
@@ -3563,6 +3562,7 @@ if (category === 'nightlife') {
           onClose={closeStreaks}
         />
       )}
+
 
       {/* 💳 Subscription Manager Modal */}
 {showSubscriptionManager && (
