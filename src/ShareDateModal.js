@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { X, Users, Calendar, Clock, Globe, Lock, MessageCircle, Send, UserPlus, Check } from 'lucide-react';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, updateDoc, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import SuccessModal from './SuccessModal';
 
 const ShareDateModal = ({ user, dateData, onClose }) => {
   const [dateTitle, setDateTitle] = useState(''); // 🔥 NEW: Date name/title field
   const [caption, setCaption] = useState('');
+  const [successMessage, setSuccessMessage] = useState(null);
   const [isPublic, setIsPublic] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('18:00');
@@ -127,19 +129,19 @@ const ShareDateModal = ({ user, dateData, onClose }) => {
   const handleShare = async () => {
     // 🔥 UPDATED: Check for both title and caption
     if (!dateTitle.trim()) {
-      alert('Please give your date a name!');
-      return;
-    }
+  setSuccessMessage('Please give your date a name!');
+  return;
+}
 
     if (!caption.trim()) {
-      alert('Please write something about this date!');
-      return;
-    }
+  setSuccessMessage('Please write something about this date!');
+  return;
+}
 
     if (!selectedDate) {
-      alert('Please select a date!');
-      return;
-    }
+  setSuccessMessage('Please select a date!');
+  return;
+}
 
     setLoading(true);
 
@@ -272,16 +274,16 @@ try {
 if (selectedFriends.length > 0) {
   // Send notifications to invited friends (you can implement this)
   setShowChat(true);
-  alert(`✨ "${dateTitle}" shared! ${selectedFriends.length} friend${selectedFriends.length > 1 ? 's' : ''} invited!`);
+  setSuccessMessage(`✨ "${dateTitle}" shared! ${selectedFriends.length} friend${selectedFriends.length > 1 ? 's' : ''} invited!`);
 } else {
-  alert(`✨ "${dateTitle}" shared with the community!`);
-  onClose();
+  setSuccessMessage(`✨ "${dateTitle}" shared with the community!`);
+  setTimeout(() => onClose(), 2000); // Auto-close after 2 seconds
 }
-
-    } catch (error) {
-      console.error('Error sharing date:', error);
-      alert('Failed to share date. Please try again.');
-    } finally {
+} catch (error) {
+  console.error('Error sharing date:', error);
+  setSuccessMessage('Failed to share date. Please try again.');
+}
+     finally {
       setLoading(false);
     }
   };
@@ -347,7 +349,7 @@ if (selectedFriends.length > 0) {
             onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
             onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
             >
-              <X size={24} />
+              <X size={24} style={{ color: 'white' }} />
             </button>
           </div>
 
@@ -563,7 +565,7 @@ if (selectedFriends.length > 0) {
           onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
           onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
           >
-            <X size={24} />
+            <X size={24} style={{ color: 'white' }} />
           </button>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
@@ -949,6 +951,14 @@ if (selectedFriends.length > 0) {
           </div>
         </div>
       </div>
+
+{/* Success Modal */}
+      {successMessage && (
+        <SuccessModal
+          message={successMessage}
+          onClose={() => setSuccessMessage(null)}
+        />
+      )}
 
       <style>{`
         @keyframes fadeIn {

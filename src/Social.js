@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, UserPlus, MessageCircle, Users, Heart, MapPin, Calendar, Send, X, Check, Clock, Share2, Trash2, UserMinus, Sparkles, TrendingUp, Plus, ArrowLeft, MessageSquare, Star, WifiOff } from 'lucide-react';
 import { db } from './firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, arrayUnion, arrayRemove, serverTimestamp, onSnapshot, orderBy, getDoc, deleteDoc, setDoc, writeBatch, limit, Timestamp } from 'firebase/firestore';
+import SuccessModal from './SuccessModal';
 
 export default function Social({ user, onBack, feedNotificationCount = 0 }) {
   const [activeTab, setActiveTab] = useState('feed');
@@ -27,6 +28,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
   const [optimisticMessages, setOptimisticMessages] = useState([]); // For instant message display
   const [participantProfiles, setParticipantProfiles] = useState({}); // Store user profiles for avatars
   const [isOnline, setIsOnline] = useState(navigator.onLine); // ✅ FIX #4: Offline detection
+const [successMessage, setSuccessMessage] = useState(null);
 
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -575,15 +577,15 @@ const handleSearch = async () => {
     setSearchResults(results);
     
     if (results.length === 0) {
-      alert('No users found. Make sure to type the START of their email address!');
-    }
+  setSuccessMessage('No users found. Make sure to type the START of their email address!');
+}
     
     console.log(`🔍 Search results: ${results.length} users found (optimized query)`);
     
   } catch (error) {
-    console.error('Search error:', error);
-    alert('Search failed: ' + error.message);
-  }
+  console.error('Search error:', error);
+  setSuccessMessage('Search failed: ' + error.message);
+}
   setLoading(false);
 };
 
@@ -597,9 +599,9 @@ const handleSearch = async () => {
       ));
 
       if (!existingRequest.empty) {
-        alert('Friend request already sent!');
-        return;
-      }
+  setSuccessMessage('Friend request already sent!');
+  return;
+}
 
       await addDoc(collection(db, 'friendRequests'), {
         fromUserId: user.uid,
@@ -610,8 +612,8 @@ const handleSearch = async () => {
         createdAt: serverTimestamp()
       });
 
-      alert('Friend request sent!');
-      setSearchResults(prev => prev.filter(u => u.id !== toUser.id));
+      setSuccessMessage('Friend request sent! 🎉');
+setSearchResults(prev => prev.filter(u => u.id !== toUser.id));
     } catch (error) {
       console.error('Error sending friend request:', error);
     }
@@ -794,9 +796,9 @@ const handleSearch = async () => {
 
   // ✅ FIX #1: Message length validation
   if (messageInput.length > 1000) {
-    alert('Message too long! Maximum 1000 characters.');
-    return;
-  }
+  setSuccessMessage('Message too long! Maximum 1000 characters.');
+  return;
+}
 
   const messageText = messageInput.trim();
   const tempId = `temp_${Date.now()}_${Math.random()}`;
@@ -835,11 +837,11 @@ const handleSearch = async () => {
     console.log('✅ Message sent! Cloud Function will update conversation.');
     
   } catch (error) {
-    console.error('❌ Error sending message:', error);
-    // Remove optimistic message on error
-    setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempId));
-    alert('Failed to send message: ' + error.message);
-  }
+  console.error('❌ Error sending message:', error);
+  // Remove optimistic message on error
+  setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempId));
+  setSuccessMessage('Failed to send message: ' + error.message);
+}
 };
 
 const handleLikeDate = async (dateId, currentLikes = []) => {
@@ -849,16 +851,15 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
     
     console.log('👍 Like button clicked:', { dateId, hasLiked, currentLikes });
     
-    // Optimistic UI update - update immediately before Firebase
-    setFeed(prevFeed => prevFeed.map(date => {
-      if (date.id === dateId) {
-        const newLikes = hasLiked
-          ? (date.likes || []).filter(uid => uid !== user.uid)
-          : [...(date.likes || []), user.uid];
-        return { ...date, likes: newLikes };
-      }
-      return date;
-    }));
+    // Rollback on error
+setFeed(prevFeed => prevFeed.map(date => {
+  if (date.id === dateId) {
+    return { ...date, likes: currentLikes };
+  }
+  return date;
+}));
+
+setSuccessMessage('Failed to like. Please try again.');
     
     // Update Firebase
     if (hasLiked) {
@@ -934,12 +935,12 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
       console.error('❌ Error toggling like in detail view:', error);
       
       // Rollback on error
-      setViewingDate(prev => {
-        if (!prev || prev.id !== dateId) return prev;
-        return { ...prev, likes: currentLikes };
-      });
-      
-      alert('Failed to like. Please try again.');
+setViewingDate(prev => {
+  if (!prev || prev.id !== dateId) return prev;
+  return { ...prev, likes: currentLikes };
+});
+
+setSuccessMessage('Failed to like. Please try again.');
     }
   };
   // Delete shared date
@@ -3176,6 +3177,14 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
           </div>
         )}
       </div>
+
+ {/* Success Modal */}
+      {successMessage && (
+        <SuccessModal
+          message={successMessage}
+          onClose={() => setSuccessMessage(null)}
+        />
+      )}
 
       <style>{`
         @keyframes spin {
