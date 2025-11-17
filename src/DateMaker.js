@@ -2546,9 +2546,10 @@ if (category === 'nightlife') {
       </div>
     );
   }
-  if (showResults && itinerary) {
+ if (showResults && itinerary) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', padding: '2rem', direction: isRTL ? 'rtl' : 'ltr' }}>
+      <>
+        <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', padding: '2rem', direction: isRTL ? 'rtl' : 'ltr' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -3106,8 +3107,100 @@ if (category === 'nightlife') {
           </div>
         </div>
       </div>
-    );
+   {showPointsNotification && pointsNotificationData && (
+        <div style={{
+          position: 'fixed',
+          top: '100px',
+          right: '20px',
+          background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+          color: 'white',
+          padding: '1.5rem 2rem',
+          borderRadius: '16px',
+          boxShadow: '0 8px 30px rgba(255,215,0,0.5)',
+          zIndex: 10000,
+          animation: 'slideInRight 0.5s ease-out',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          <div style={{ fontSize: '2rem' }}>⚡</div>
+          <div>
+            <p style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: '900',
+              margin: 0,
+              marginBottom: '0.25rem'
+            }}>
+              +{pointsNotificationData.points} XP
+            </p>
+            <p style={{ 
+              fontSize: '0.875rem',
+              margin: 0,
+              opacity: 0.9
+            }}>
+              {pointsNotificationData.message}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {showLevelUp && levelUpData && (
+        <LevelUpModal 
+          oldLevel={levelUpData.oldLevel}
+          newLevel={levelUpData.newLevel}
+          onClose={() => {
+            console.log('🚪 Level up closed');
+            setShowLevelUp(false);
+          }}
+        />
+      )}
+
+      {showScrapbook && (
+        <DateMemoryScrapbook
+          currentUser={user}
+          mode={scrapbookMode}
+          dateToSave={dateToSave}
+          selectedMemory={selectedMemory}
+          onClose={closeScrapbook}
+        />
+      )}
+
+      {showShareModal && dateToShare ? (
+        <ShareDateModal 
+          user={user} 
+          dateData={dateToShare} 
+          onClose={() => {
+            setShowShareModal(false);
+            setDateToShare(null);
+            if (dateToShare.completedAt) {
+              setShowResults(false);
+              setItinerary(null);
+              setPlaces([]);
+            }
+          }} 
+        />
+      ) : null}
+
+      {showSurpriseDate && (
+        <SurpriseDateMode
+          currentUser={user}
+          mode={surpriseMode}
+          activeSurprise={activeSurprise}
+          onClose={closeSurpriseDate}
+        />
+      )}
+
+      {showStreaks && (
+        <DateStreaksGoals
+          currentUser={user}
+          streakData={userStreakData}
+          onClose={closeStreaks}
+        />
+      )}
+    </>
+  );
   }
+  
   
   // Subscription modal
   if (showSubscriptionModal) {
