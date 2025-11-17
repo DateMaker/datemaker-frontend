@@ -337,8 +337,8 @@ if (selectedFriends.length > 0) {
   position: 'absolute',
   top: '1.5rem',
   right: '1.5rem',
-  background: 'rgba(255,255,255,0.2)',
-  border: '2px solid rgba(255,255,255,0.5)',  
+  background: 'rgba(255,255,255,0.3)',
+  border: 'none',
   color: 'white',
   width: '40px',
   height: '40px',
@@ -348,13 +348,15 @@ if (selectedFriends.length > 0) {
   alignItems: 'center',
   justifyContent: 'center',
   transition: 'all 0.2s',
-  zIndex: 100  
+  zIndex: 100,
+  fontSize: '1.5rem',
+  fontWeight: 'bold'
 }}
-            onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
-            onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
-            >
-              <X size={24} style={{ color: 'white' }} />
-            </button>
+onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.5)'}
+onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
+>
+  ✕
+</button>
           </div>
 
           {/* Messages */}
@@ -551,26 +553,29 @@ if (selectedFriends.length > 0) {
           position: 'relative'
         }}>
           <button onClick={onClose} style={{
-            position: 'absolute',
-            top: '1.5rem',
-            right: '1.5rem',
-            background: 'rgba(255,255,255,0.2)',
-            border: 'none',
-            color: 'white',
-            width: '40px',
-            height: '40px',
-            borderRadius: '50%',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
-          onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
-          >
-            <X size={24} style={{ color: 'white' }} />
-          </button>
+  position: 'absolute',
+  top: '1.5rem',
+  right: '1.5rem',
+  background: 'rgba(255,255,255,0.3)',
+  border: 'none',
+  color: 'white',
+  width: '40px',
+  height: '40px',
+  borderRadius: '50%',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'all 0.2s',
+  zIndex: 100,
+  fontSize: '1.5rem',
+  fontWeight: 'bold'
+}}
+onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.5)'}
+onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
+>
+  ✕
+</button>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
             <div style={{

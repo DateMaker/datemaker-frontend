@@ -1404,35 +1404,33 @@ if (streakDoc.exists()) {
   console.log('✅ New dateStreaks document created');
 }
 
-// Clear completed challenges first
+// Clear completed challenges
 setCompletedChallenges([]);
 
 console.log('🎉 Complete Date finished successfully!');
+console.log('📊 Stats:', { didLevelUp, oldLevel: oldLevel.level, newLevel: newLevel.level });
 
-// ✅ Use setTimeout to ensure state updates are processed
-setTimeout(() => {
-  if (didLevelUp) {
-    // Show level up modal first
-    console.log('🔥 Level up detected - showing modal');
-    setLevelUpData({
-      oldLevel: oldLevel,
-      newLevel: newLevel,
-      pointsEarned: totalPoints
-    });
-    setShowLevelUp(true);
-    // DON'T open scrapbook yet - will happen when modal closes
-  } else {
-    // No level up - go straight to scrapbook
-    console.log('📸 No level up - opening scrapbook immediately');
-    setDateToSave({
-      date: new Date().toISOString(),
-      location: location,
-      itinerary: itinerary
-    });
-    setScrapbookMode('create');
-    setShowScrapbook(true);
-  }
-}, 100);
+// ✅ IMMEDIATE state updates - no setTimeout needed
+if (didLevelUp) {
+  // Show level up modal first
+  console.log('🔥 Showing level up modal');
+  setLevelUpData({
+    oldLevel: oldLevel,
+    newLevel: newLevel,
+    pointsEarned: totalPoints
+  });
+  setShowLevelUp(true);
+} else {
+  // No level up - go straight to scrapbook
+  console.log('📸 Opening scrapbook directly');
+  setDateToSave({
+    date: new Date().toISOString(),
+    location: location,
+    itinerary: itinerary
+  });
+  setScrapbookMode('create');
+  setShowScrapbook(true);
+}
     
   } catch (error) {
     console.error('❌ Error completing date:', error);
@@ -3559,20 +3557,18 @@ if (category === 'nightlife') {
     oldLevel={levelUpData.oldLevel}
     newLevel={levelUpData.newLevel}
     onClose={() => {
-      console.log('🚪 Level up modal closing');
+      console.log('🚪 Closing level up modal');
       setShowLevelUp(false);
       
-      // ✅ Now open scrapbook after modal closes
-      setTimeout(() => {
-        console.log('📸 Opening scrapbook after level up');
-        setDateToSave({
-          date: new Date().toISOString(),
-          location: location,
-          itinerary: itinerary
-        });
-        setScrapbookMode('create');
-        setShowScrapbook(true);
-      }, 100);
+      // Open scrapbook immediately after modal closes
+      console.log('📸 Opening scrapbook now');
+      setDateToSave({
+        date: new Date().toISOString(),
+        location: location,
+        itinerary: itinerary
+      });
+      setScrapbookMode('create');
+      setShowScrapbook(true);
     }}
   />
 )}
