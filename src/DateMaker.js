@@ -2850,7 +2850,7 @@ if (category === 'nightlife') {
                 ? '2px solid #06D6A060'
                 : '2px solid #FF6B3540',
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               justifyContent: 'space-between',
               gap: '1rem'
             }}
