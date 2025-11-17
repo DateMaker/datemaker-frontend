@@ -3601,4 +3601,4 @@ if (category === 'nightlife') {
       `}</style>
     </>
   );
-}
+}// Build trigger
