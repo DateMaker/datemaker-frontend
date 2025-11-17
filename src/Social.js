@@ -1909,7 +1909,7 @@ setSuccessMessage('Failed to like. Please try again.');
                                           borderRadius: '12px',
                                           border: '2px solid #fed7aa',
                                           display: 'flex',
-                                          alignItems: 'center',
+                                          alignItems: 'flex-start',
                                           justifyContent: 'space-between',
                                           gap: '1rem'
                                         }}>
