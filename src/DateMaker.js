@@ -437,7 +437,7 @@ if ((name.includes('kart') && !name.includes('train')) ||
   
   return `${displayHour}${minuteStr} ${newPeriod}`;
 };
-const createItinerary = (allPlaces, userKeywords) => {
+const createItinerary = (allPlaces, userKeywords, isRefresh = false) => {
   console.log('\n🎯 ============ CREATING ITINERARY ============');
   console.log(`📥 Input: ${allPlaces.length} places`);
   console.log(`🔑 Keywords: "${userKeywords}"`);
@@ -566,7 +566,7 @@ const createItinerary = (allPlaces, userKeywords) => {
   const used = new Set();
   let currentTime = startTime;
   
-  const pickBestFrom = (category, userKeyword) => {
+const pickBestFrom = (category, userKeyword) => {
   let available = byCategory[category].filter(p => !used.has(p.place_id));
   
   if (available.length === 0) return null;
@@ -622,10 +622,42 @@ const createItinerary = (allPlaces, userKeywords) => {
   
   if (available.length === 0) return null;
   
-  // Sort by rating and pick best
-  available.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  
-  return available[0];
+  // 🔥 NEW LOGIC - More variety based on refresh
+  if (isRefresh) {
+    // REFRESH: Accept 3.5+ stars for maximum variety
+    const decentVenues = available.filter(p => (p.rating || 0) >= 3.5);
+    const venuePool = decentVenues.length > 0 ? decentVenues : available;
+    
+    // Pick randomly from ALL decent venues
+    const randomIndex = Math.floor(Math.random() * venuePool.length);
+    console.log(`🔄 REFRESH: Picked random venue from ${venuePool.length} options (3.5+ stars)`);
+    return venuePool[randomIndex];
+    
+  } else {
+    // FIRST TIME: Prefer 4.0+ stars but accept lower if limited options
+    const highRated = available.filter(p => (p.rating || 0) >= 4.0);
+    
+    if (highRated.length >= 5) {
+      // Plenty of good options - pick randomly from top 5
+      highRated.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      const topFive = highRated.slice(0, 5);
+      const randomIndex = Math.floor(Math.random() * topFive.length);
+      console.log(`✨ FIRST TIME: Picked from top 5 venues (4.0+ stars)`);
+      return topFive[randomIndex];
+      
+    } else if (highRated.length > 0) {
+      // Limited 4.0+ options - pick randomly from what we have
+      const randomIndex = Math.floor(Math.random() * highRated.length);
+      console.log(`✨ FIRST TIME: Limited options, picked from ${highRated.length} venues (4.0+ stars)`);
+      return highRated[randomIndex];
+      
+    } else {
+      // No 4.0+ venues - accept any rating
+      const randomIndex = Math.floor(Math.random() * available.length);
+      console.log(`⚠️ FIRST TIME: No high-rated venues, picked from ${available.length} available`);
+      return available[randomIndex];
+    }
+  }
 };
   
   for (let i = 0; i < dateFlow.length; i++) {
@@ -1757,11 +1789,8 @@ useEffect(() => {
       
       setPhotoToken(token);
       
-      if (isRefresh) {
-        uniqueResults.sort(() => Math.random() - 0.5);
-      }
-      
-      const generatedItinerary = createItinerary(uniqueResults, keywords);
+     // Pass isRefresh flag to createItinerary
+const generatedItinerary = createItinerary(uniqueResults, keywords, isRefresh);
       setItinerary(generatedItinerary);
       
       const allPlaces = [
