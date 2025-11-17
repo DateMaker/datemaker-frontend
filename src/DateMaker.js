@@ -1404,34 +1404,35 @@ if (streakDoc.exists()) {
   console.log('✅ New dateStreaks document created');
 }
 
-// 🔥 Show level up modal if applicable
-if (didLevelUp) {
-  setLevelUpData({
-    oldLevel: oldLevel.level,
-    newLevel: newLevel.level,
-    newTitle: newLevel.title,
-    pointsEarned: totalPoints
-  });
-  setShowLevelUp(true);
-}
-
-// Show success alert with streak info
-alert(`🎉 Date Complete!\n\n✨ You earned ${totalPoints} XP!\n🔥 Streak: ${newStreak} days\n📍 Visited ${itinerary.stops.length} stops\n🎯 Completed ${challengesCompleted}/${totalChallenges} challenges${didLevelUp ? `\n\n🔥 LEVEL UP! You're now level ${newLevel.level}!` : ''}`);
-
-// Clear completed challenges
+// Clear completed challenges first
 setCompletedChallenges([]);
 
-// 🔥 Open scrapbook to save memory
-console.log('📸 Opening scrapbook to save memory');
-setDateToSave({
-  date: new Date().toISOString(),
-  location: location,
-  itinerary: itinerary
-});
-setScrapbookMode('create');
-setShowScrapbook(true);
-
 console.log('🎉 Complete Date finished successfully!');
+
+// ✅ Use setTimeout to ensure state updates are processed
+setTimeout(() => {
+  if (didLevelUp) {
+    // Show level up modal first
+    console.log('🔥 Level up detected - showing modal');
+    setLevelUpData({
+      oldLevel: oldLevel,
+      newLevel: newLevel,
+      pointsEarned: totalPoints
+    });
+    setShowLevelUp(true);
+    // DON'T open scrapbook yet - will happen when modal closes
+  } else {
+    // No level up - go straight to scrapbook
+    console.log('📸 No level up - opening scrapbook immediately');
+    setDateToSave({
+      date: new Date().toISOString(),
+      location: location,
+      itinerary: itinerary
+    });
+    setScrapbookMode('create');
+    setShowScrapbook(true);
+  }
+}, 100);
     
   } catch (error) {
     console.error('❌ Error completing date:', error);
@@ -3554,12 +3555,27 @@ if (category === 'nightlife') {
       )}
       
       {showLevelUp && levelUpData && (
-        <LevelUpModal 
-          oldLevel={levelUpData.oldLevel}
-          newLevel={levelUpData.newLevel}
-          onClose={() => setShowLevelUp(false)}
-        />
-      )}
+  <LevelUpModal 
+    oldLevel={levelUpData.oldLevel}
+    newLevel={levelUpData.newLevel}
+    onClose={() => {
+      console.log('🚪 Level up modal closing');
+      setShowLevelUp(false);
+      
+      // ✅ Now open scrapbook after modal closes
+      setTimeout(() => {
+        console.log('📸 Opening scrapbook after level up');
+        setDateToSave({
+          date: new Date().toISOString(),
+          location: location,
+          itinerary: itinerary
+        });
+        setScrapbookMode('create');
+        setShowScrapbook(true);
+      }, 100);
+    }}
+  />
+)}
 
       {showSpinningWheel && (
         <SpinningWheel 

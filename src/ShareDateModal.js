@@ -334,18 +334,22 @@ if (selectedFriends.length > 0) {
               </div>
             </div>
             <button onClick={onClose} style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              color: 'white',
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
+  position: 'absolute',
+  top: '1.5rem',
+  right: '1.5rem',
+  background: 'rgba(255,255,255,0.2)',
+  border: '2px solid rgba(255,255,255,0.5)',  
+  color: 'white',
+  width: '40px',
+  height: '40px',
+  borderRadius: '50%',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'all 0.2s',
+  zIndex: 100  
+}}
             onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
             onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
             >
