@@ -1410,27 +1410,29 @@ setCompletedChallenges([]);
 console.log('🎉 Complete Date finished successfully!');
 console.log('📊 Stats:', { didLevelUp, oldLevel: oldLevel.level, newLevel: newLevel.level });
 
-// ✅ IMMEDIATE state updates - no setTimeout needed
-if (didLevelUp) {
-  // Show level up modal first
-  console.log('🔥 Showing level up modal');
-  setLevelUpData({
-    oldLevel: oldLevel,
-    newLevel: newLevel,
-    pointsEarned: totalPoints
-  });
-  setShowLevelUp(true);
-} else {
-  // No level up - go straight to scrapbook
-  console.log('📸 Opening scrapbook directly');
-  setDateToSave({
-    date: new Date().toISOString(),
-    location: location,
-    itinerary: itinerary
-  });
-  setScrapbookMode('create');
-  setShowScrapbook(true);
-}
+// ✅ Wait for React to process all updates, then show modals
+setTimeout(() => {
+  if (didLevelUp) {
+    // Show level up modal first
+    console.log('🔥 Showing level up modal');
+    setLevelUpData({
+      oldLevel: oldLevel,
+      newLevel: newLevel,
+      pointsEarned: totalPoints
+    });
+    setShowLevelUp(true);
+  } else {
+    // No level up - go straight to scrapbook
+    console.log('📸 Opening scrapbook directly');
+    setDateToSave({
+      date: new Date().toISOString(),
+      location: location,
+      itinerary: itinerary
+    });
+    setScrapbookMode('create');
+    setShowScrapbook(true);
+  }
+}, 100);
     
   } catch (error) {
     console.error('❌ Error completing date:', error);
