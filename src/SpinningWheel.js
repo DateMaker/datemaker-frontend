@@ -291,27 +291,36 @@ const SpinningWheel = ({ onClose, onSelectActivity, language = 'en' }) => {
         maxHeight: '90vh',
         overflowY: 'auto'
       }}>
-        {/* Close button */}
         <button
-          onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '1rem',
-            right: '1rem',
-            background: 'rgba(255,255,255,0.9)',
-            border: 'none',
-            borderRadius: '50%',
-            width: '40px',
-            height: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-          }}
-        >
-          <X size={24} style={{ color: '#ec4899' }} />
-        </button>
+  onClick={onClose}
+  style={{
+    position: 'absolute',
+    top: '1rem',
+    right: '1rem',
+    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+    border: '3px solid white',
+    borderRadius: '50%',
+    width: '44px',
+    height: '44px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)',
+    transition: 'all 0.2s ease',
+    zIndex: 100
+  }}
+  onMouseEnter={(e) => {
+    e.target.style.transform = 'scale(1.1)';
+    e.target.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.6)';
+  }}
+  onMouseLeave={(e) => {
+    e.target.style.transform = 'scale(1)';
+    e.target.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+  }}
+>
+  <X size={24} style={{ color: 'white', strokeWidth: 3 }} />
+</button>
 
         {/* Title */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
