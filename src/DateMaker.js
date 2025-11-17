@@ -1020,10 +1020,19 @@ const getWeekNumber = (date) => {
     
     updatePhotoToken();
   }, [user, getAuthToken, itinerary]);
+  
   useEffect(() => {
     console.log('🔵 showShareModal changed to:', showShareModal);
     console.log('🔵 dateToShare is:', dateToShare);
   }, [showShareModal, dateToShare]);
+
+  // 📸 AUTO-OPEN SCRAPBOOK when dateToSave is set
+  useEffect(() => {
+    if (dateToSave && scrapbookMode === 'create' && !showScrapbook) {
+      console.log('📸 useEffect detected dateToSave, opening scrapbook');
+      setShowScrapbook(true);
+    }
+  }, [dateToSave, scrapbookMode, showScrapbook]);
 
   const loadGameStats = async () => {
     try {
@@ -1410,29 +1419,30 @@ setCompletedChallenges([]);
 console.log('🎉 Complete Date finished successfully!');
 console.log('📊 Stats:', { didLevelUp, oldLevel: oldLevel.level, newLevel: newLevel.level });
 
-// ✅ Wait for React to process all updates, then show modals
-setTimeout(() => {
-  if (didLevelUp) {
-    // Show level up modal first
-    console.log('🔥 Showing level up modal');
-    setLevelUpData({
-      oldLevel: oldLevel,
-      newLevel: newLevel,
-      pointsEarned: totalPoints
-    });
-    setShowLevelUp(true);
-  } else {
-    // No level up - go straight to scrapbook
-    console.log('📸 Opening scrapbook directly');
-    setDateToSave({
-      date: new Date().toISOString(),
-      location: location,
-      itinerary: itinerary
-    });
-    setScrapbookMode('create');
-    setShowScrapbook(true);
-  }
-}, 100);
+// Clear completed challenges
+setCompletedChallenges([]);
+
+// Set up data for scrapbook/level up
+if (didLevelUp) {
+  console.log('🔥 Level up detected');
+  setLevelUpData({
+    oldLevel: oldLevel,
+    newLevel: newLevel,
+    pointsEarned: totalPoints
+  });
+  setShowLevelUp(true);
+} else {
+  console.log('📸 No level up - preparing scrapbook data');
+}
+
+// ALWAYS set dateToSave (useEffect will handle opening scrapbook)
+console.log('📸 Setting dateToSave');
+setDateToSave({
+  date: new Date().toISOString(),
+  location: location,
+  itinerary: itinerary
+});
+setScrapbookMode('create');
     
   } catch (error) {
     console.error('❌ Error completing date:', error);
@@ -3559,18 +3569,9 @@ if (category === 'nightlife') {
     oldLevel={levelUpData.oldLevel}
     newLevel={levelUpData.newLevel}
     onClose={() => {
-      console.log('🚪 Closing level up modal');
+      console.log('🚪 Level up closed');
       setShowLevelUp(false);
-      
-      // Open scrapbook immediately after modal closes
-      console.log('📸 Opening scrapbook now');
-      setDateToSave({
-        date: new Date().toISOString(),
-        location: location,
-        itinerary: itinerary
-      });
-      setScrapbookMode('create');
-      setShowScrapbook(true);
+      // useEffect will open scrapbook automatically since dateToSave is already set
     }}
   />
 )}
