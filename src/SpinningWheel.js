@@ -1,11 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, RotateCw } from 'lucide-react';
+import { setStatusBarColor, STATUS_BAR_COLORS } from './utils/statusBar';
 
 const SpinningWheel = ({ onClose, onSelectActivity, language = 'en' }) => {
   const [isSpinning, setIsSpinning] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState(null);
   const [rotation, setRotation] = useState(0);
   const canvasRef = useRef(null);
+
+  // 📱 Set status bar color for iOS
+  useEffect(() => {
+    setStatusBarColor(STATUS_BAR_COLORS.wheel);
+    
+    return () => {
+      setStatusBarColor(STATUS_BAR_COLORS.home);
+    };
+  }, []);
   
   // Activity categories with emojis and colors
   const segments = [
@@ -227,26 +237,13 @@ const SpinningWheel = ({ onClose, onSelectActivity, language = 'en' }) => {
         setIsSpinning(false);
         
         // Calculate which segment the TOP POINTER is pointing at
-        // The pointer is at the top (270 degrees / -90 degrees from right)
         const finalRotation = currentRotation % 360;
-        
-        // Adjust for the pointer position (top = 270 degrees)
-        // We need to find which segment is under the top pointer
-        const pointerAngle = 270; // Top of circle
+        const pointerAngle = 270;
         const adjustedAngle = (pointerAngle - finalRotation + 360) % 360;
-        
-        // Calculate which segment this angle falls into
         const segmentAngle = 360 / segments.length;
         const selectedIndex = Math.floor(adjustedAngle / segmentAngle);
-        
-        // Make sure index is valid
         const validIndex = selectedIndex % segments.length;
         const selected = segments[validIndex];
-        
-        console.log('Final rotation:', finalRotation);
-        console.log('Adjusted angle:', adjustedAngle);
-        console.log('Selected index:', validIndex);
-        console.log('Selected segment:', selected.label);
         
         setSelectedSegment(selected);
       }
@@ -257,7 +254,6 @@ const SpinningWheel = ({ onClose, onSelectActivity, language = 'en' }) => {
 
   const handleUseSelection = () => {
     if (selectedSegment) {
-      // Pick a random activity from the selected category
       const randomActivity = selectedSegment.activities[
         Math.floor(Math.random() * selectedSegment.activities.length)
       ];
@@ -278,54 +274,59 @@ const SpinningWheel = ({ onClose, onSelectActivity, language = 'en' }) => {
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 10000,
-      padding: '1rem'
+      padding: '1rem',
+      paddingTop: 'calc(1rem + env(safe-area-inset-top))',
+      paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'
     }}>
+      {/* Modal */}
       <div style={{
         background: 'linear-gradient(135deg, #fce7f3 0%, #f3e8ff 100%)',
         borderRadius: '24px',
         padding: '2rem',
+        paddingTop: '2.5rem',
         maxWidth: '600px',
         width: '100%',
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
         position: 'relative',
-        maxHeight: '90vh',
+        maxHeight: 'calc(90vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
         overflowY: 'auto'
       }}>
-     <button
-  onClick={onClose}
-  style={{
-    position: 'absolute',
-    top: '0.5rem',
-    right: '0.5rem',
-    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-    border: '3px solid white',
-    borderRadius: '50%',
-    width: '48px',
-    height: '48px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.5)',
-    transition: 'all 0.2s ease',
-    zIndex: 1000,
-    fontSize: '1.75rem',
-    fontWeight: '900',
-    color: 'white',
-    lineHeight: '1',
-    padding: 0
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform = 'scale(1.1) rotate(90deg)';
-    e.currentTarget.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.7)';
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
-    e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.5)';
-  }}
->
-  ✕
-</button>
+        {/* Close button - positioned inside the modal, not blocked by safe area */}
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: '0.75rem',
+            right: '0.75rem',
+            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+            border: '3px solid white',
+            borderRadius: '50%',
+            width: '48px',
+            height: '48px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(239, 68, 68, 0.5)',
+            transition: 'all 0.2s ease',
+            zIndex: 10001,
+            fontSize: '1.75rem',
+            fontWeight: '900',
+            color: 'white',
+            lineHeight: '1',
+            padding: 0
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1) rotate(90deg)';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(239, 68, 68, 0.7)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.5)';
+          }}
+        >
+          ✕
+        </button>
 
         {/* Title */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>

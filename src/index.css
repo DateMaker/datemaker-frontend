@@ -2,25 +2,33 @@
    DATEMAKER - MOBILE-FIRST RESPONSIVE CSS
    ═══════════════════════════════════════════════════════════════ */
 
+/* ✅ iOS SCROLL FIX - Prevents scroll position persisting between pages */
+html, body {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #ffffff;  /* WHITE - prevents color bleed through safe areas */
+  margin: 0;
+  padding: 0;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
+  background: white;
+}
+
 /* ✅ RESET & BASE */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-}
-
-html, body {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  -webkit-text-size-adjust: 100%; /* Prevent iOS text scaling */
-}
-
-#root {
-  width: 100%;
-  min-height: 100vh;
-  overflow-x: hidden;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -231,10 +239,11 @@ img {
    ═══════════════════════════════════════════════════════════════ */
 
 @supports (padding: max(0px)) {
-  body {
+  #root {
     padding-left: max(0px, env(safe-area-inset-left));
     padding-right: max(0px, env(safe-area-inset-right));
     padding-bottom: max(0px, env(safe-area-inset-bottom));
+    /* NOTE: top safe area is handled by individual page components */
   }
 }
 

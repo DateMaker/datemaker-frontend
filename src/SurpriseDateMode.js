@@ -1,45 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
-import { collection, addDoc, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { Gift, Plus, Eye, EyeOff, Trash2, Calendar, MapPin, Clock, X } from 'lucide-react';
 
-export default function SurpriseDateMode({ currentUser, mode, activeSurprise, onClose }) {
-  const [viewMode, setViewMode] = useState(mode || 'track');
-  const [loading, setLoading] = useState(false);
+export default function SurpriseDateMode({ currentUser, onClose }) {
+  const [activeTab, setActiveTab] = useState('create');
   const [surprises, setSurprises] = useState([]);
-  const [selectedSurprise, setSelectedSurprise] = useState(activeSurprise || null);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   
-  // Create mode states
-  const [partnerName, setPartnerName] = useState('');
-  const [partnerContact, setPartnerContact] = useState('');
-  const [dateTime, setDateTime] = useState('');
-  const [hints, setHints] = useState(['', '', '']);
-  const [saving, setSaving] = useState(false);
+  // Form state
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
+  const [hints, setHints] = useState(['']);
+  const [revealedHints, setRevealedHints] = useState({});
 
   useEffect(() => {
-    if (viewMode === 'track') {
+    window.scrollTo(0, 0);
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
       loadSurprises();
     }
-  }, [currentUser, viewMode]);
+  }, [currentUser]);
 
   const loadSurprises = async () => {
     if (!currentUser) return;
     
     setLoading(true);
     try {
-      const q = query(
-        collection(db, 'surpriseDates'),
-        where('createdBy', '==', currentUser.uid)
-      );
-      
+      const surprisesRef = collection(db, 'surpriseDates');
+      const q = query(surprisesRef, where('creatorId', '==', currentUser.uid));
       const snapshot = await getDocs(q);
+      
       const surprisesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      })).sort((a, b) => {
-        const aTime = new Date(a.createdAt || 0);
-        const bTime = new Date(b.createdAt || 0);
-        return bTime - aTime;
-      });
+      }));
       
       setSurprises(surprisesData);
     } catch (error) {
@@ -49,101 +51,92 @@ export default function SurpriseDateMode({ currentUser, mode, activeSurprise, on
   };
 
   const createSurprise = async () => {
-    if (!currentUser) {
-      alert('You must be logged in');
-      return;
-    }
-    
-    if (!partnerName.trim()) {
-      alert('Please enter your partner\'s name');
-      return;
-    }
-    
-    if (!dateTime) {
-      alert('Please select a date and time');
+    if (!title.trim()) {
+      alert('Please enter a title for your surprise date');
       return;
     }
 
-    const validHints = hints.filter(h => h.trim() !== '');
-    if (validHints.length === 0) {
-      alert('Please add at least one hint');
-      return;
-    }
-
-    setSaving(true);
-    
+    setCreating(true);
     try {
       const surpriseData = {
-        createdBy: currentUser.uid,
-        createdByName: currentUser.displayName || currentUser.email,
-        partnerName: partnerName.trim(),
-        partnerContact: partnerContact.trim(),
-        dateTime: new Date(dateTime).toISOString(),
-        hints: validHints,
-        revealedHints: 0,
-        status: 'pending',
-        createdAt: new Date().toISOString()
+        creatorId: currentUser.uid,
+        title: title.trim(),
+        description: description.trim(),
+        scheduledDate: scheduledDate || null,
+        scheduledTime: scheduledTime || null,
+        hints: hints.filter(h => h.trim()),
+        revealed: false,
+        createdAt: new Date(),
+        status: 'planned'
       };
 
       await addDoc(collection(db, 'surpriseDates'), surpriseData);
       
-      alert('🎁 Surprise date created! Share the hints with your partner!');
-      setPartnerName('');
-      setPartnerContact('');
-      setDateTime('');
-      setHints(['', '', '']);
-      setViewMode('track');
+      // Reset form
+      setTitle('');
+      setDescription('');
+      setScheduledDate('');
+      setScheduledTime('');
+      setHints(['']);
       
+      await loadSurprises();
+      setActiveTab('track');
+      alert('🎁 Surprise date created!');
     } catch (error) {
       console.error('Error creating surprise:', error);
-      alert(`Failed to create surprise date: ${error.message}`);
+      alert('Failed to create surprise date');
     }
-    
-    setSaving(false);
-  };
-
-  const revealNextHint = async (surprise) => {
-    if (surprise.revealedHints >= surprise.hints.length) {
-      alert('All hints have been revealed!');
-      return;
-    }
-
-    try {
-      const newRevealed = surprise.revealedHints + 1;
-      const surpriseRef = doc(db, 'surpriseDates', surprise.id);
-      
-      await updateDoc(surpriseRef, {
-        revealedHints: newRevealed,
-        status: newRevealed >= surprise.hints.length ? 'completed' : 'active'
-      });
-
-      setSelectedSurprise({
-        ...surprise,
-        revealedHints: newRevealed,
-        status: newRevealed >= surprise.hints.length ? 'completed' : 'active'
-      });
-
-      loadSurprises();
-      
-      alert(`🎉 Hint ${newRevealed} revealed!`);
-    } catch (error) {
-      console.error('Error revealing hint:', error);
-      alert('Failed to reveal hint');
-    }
+    setCreating(false);
   };
 
   const deleteSurprise = async (surpriseId) => {
-    if (!window.confirm('Are you sure you want to delete this surprise date?')) return;
-
+    if (!window.confirm('Are you sure you want to delete this surprise?')) return;
+    
     try {
+      await deleteDoc(doc(db, 'surpriseDates', surpriseId));
       setSurprises(surprises.filter(s => s.id !== surpriseId));
-      if (selectedSurprise?.id === surpriseId) {
-        setSelectedSurprise(null);
-      }
-      alert('Surprise date deleted');
     } catch (error) {
       console.error('Error deleting surprise:', error);
       alert('Failed to delete surprise');
+    }
+  };
+
+  const revealSurprise = async (surpriseId) => {
+    try {
+      await updateDoc(doc(db, 'surpriseDates', surpriseId), {
+        revealed: true
+      });
+      setSurprises(surprises.map(s => 
+        s.id === surpriseId ? { ...s, revealed: true } : s
+      ));
+    } catch (error) {
+      console.error('Error revealing surprise:', error);
+    }
+  };
+
+  const toggleHintReveal = (surpriseId, hintIndex) => {
+    const key = `${surpriseId}-${hintIndex}`;
+    setRevealedHints(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const addHintField = () => {
+    if (hints.length < 5) {
+      setHints([...hints, '']);
+    }
+  };
+
+  const updateHint = (index, value) => {
+    const newHints = [...hints];
+    newHints[index] = value;
+    setHints(newHints);
+  };
+
+  const removeHint = (index) => {
+    if (hints.length > 1) {
+      setHints(hints.filter((_, i) => i !== index));
     }
   };
 
@@ -156,519 +149,498 @@ export default function SurpriseDateMode({ currentUser, mode, activeSurprise, on
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'rgba(0,0,0,0.8)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       zIndex: 9999,
-      padding: '1rem'
+      overflow: 'auto',
+      paddingTop: 'env(safe-area-inset-top)'
     }}>
-      <div style={{
-        background: 'white',
-        borderRadius: '24px',
-        maxWidth: '900px',
-        width: '100%',
-        maxHeight: '90vh',
-        overflow: 'auto',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-      }}>
+      <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{
-          background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-          padding: '2rem',
-          borderRadius: '24px 24px 0 0',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10
+          background: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)',
+          borderRadius: '24px',
+          padding: '1.5rem',
+          marginBottom: '1.5rem',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
-              🎁 Surprise Date Mode
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1rem'
+          }}>
+            <h2 style={{
+              fontSize: '1.75rem',
+              fontWeight: 'bold',
+              color: 'white',
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <Gift size={28} /> Surprise Date Mode
             </h2>
-            <button 
+            <button
               onClick={onClose}
               style={{
                 background: 'rgba(255,255,255,0.2)',
-                color: 'white',
                 border: 'none',
                 borderRadius: '50%',
                 width: '40px',
                 height: '40px',
                 cursor: 'pointer',
-                fontSize: '1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <X size={24} color="white" />
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => setActiveTab('create')}
+              style={{
+                flex: 1,
+                padding: '0.75rem',
+                borderRadius: '12px',
+                border: 'none',
+                background: activeTab === 'create' ? 'white' : 'rgba(255,255,255,0.2)',
+                color: activeTab === 'create' ? '#ec4899' : 'white',
+                fontWeight: 'bold',
+                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontWeight: 'bold'
+                gap: '0.5rem'
               }}
             >
-              ×
-            </button>
-          </div>
-          
-          {/* Mode Tabs */}
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button
-              onClick={() => setViewMode('create')}
-              style={{
-                background: viewMode === 'create' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)',
-                color: 'white',
-                border: viewMode === 'create' ? '2px solid white' : '2px solid transparent',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontSize: '0.875rem'
-              }}
-            >
-              ✨ Create
+              <Plus size={18} /> Create
             </button>
             <button
-              onClick={() => setViewMode('track')}
+              onClick={() => setActiveTab('track')}
               style={{
-                background: viewMode === 'track' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)',
-                color: 'white',
-                border: viewMode === 'track' ? '2px solid white' : '2px solid transparent',
-                padding: '0.75rem 1.5rem',
+                flex: 1,
+                padding: '0.75rem',
                 borderRadius: '12px',
-                cursor: 'pointer',
+                border: 'none',
+                background: activeTab === 'track' ? 'white' : 'rgba(255,255,255,0.2)',
+                color: activeTab === 'track' ? '#ec4899' : 'white',
                 fontWeight: 'bold',
-                fontSize: '0.875rem'
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
               }}
             >
-              📋 Track
+              <Eye size={18} /> Track
             </button>
           </div>
         </div>
 
-        {/* Content */}
-        <div style={{ padding: '2rem' }}>
-          {/* Create Mode */}
-          {viewMode === 'create' && (
-            <div>
-              <div style={{
-                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                padding: '2rem',
-                borderRadius: '16px',
-                marginBottom: '2rem',
-                border: '2px solid #fbbf24',
-                textAlign: 'center'
+        {/* Create Tab */}
+        {activeTab === 'create' && (
+          <div style={{
+            background: 'white',
+            borderRadius: '24px',
+            padding: '2rem',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
+          }}>
+            <h3 style={{
+              fontSize: '1.25rem',
+              fontWeight: 'bold',
+              marginBottom: '1.5rem',
+              color: '#333'
+            }}>
+              ✨ Plan a Surprise
+            </h3>
+
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem',
+                color: '#555'
               }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎉</div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#92400e', marginBottom: '0.5rem' }}>
-                  Plan a Surprise Date!
-                </h3>
-                <p style={{ color: '#78350f', fontSize: '1rem' }}>
-                  Create progressive hints to reveal your date plans one at a time
-                </p>
-              </div>
-
-              {/* Partner Name */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{
-                  display: 'block',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  marginBottom: '0.5rem',
-                  color: '#374151'
-                }}>
-                  💕 Partner's Name
-                </label>
-                <input
-                  type="text"
-                  value={partnerName}
-                  onChange={(e) => setPartnerName(e.target.value)}
-                  placeholder="Enter your partner's name"
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '12px',
-                    fontSize: '1rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              {/* Contact Info */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{
-                  display: 'block',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  marginBottom: '0.5rem',
-                  color: '#374151'
-                }}>
-                  📧 Contact Info (Email or Phone)
-                </label>
-                <input
-                  type="text"
-                  value={partnerContact}
-                  onChange={(e) => setPartnerContact(e.target.value)}
-                  placeholder="So you can share the surprise"
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '12px',
-                    fontSize: '1rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              {/* Date & Time */}
-              <div style={{ marginBottom: '2rem' }}>
-                <label style={{
-                  display: 'block',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  marginBottom: '0.5rem',
-                  color: '#374151'
-                }}>
-                  📅 Date & Time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={dateTime}
-                  onChange={(e) => setDateTime(e.target.value)}
-                  min={new Date().toISOString().slice(0, 16)}
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '12px',
-                    fontSize: '1rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              {/* Hints */}
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ 
-                  fontSize: '1.25rem', 
-                  fontWeight: 'bold',
-                  marginBottom: '1rem',
-                  color: '#374151'
-                }}>
-                  ✨ Create Hints
-                </h3>
-                <p style={{ 
-                  color: '#666', 
-                  marginBottom: '1rem',
-                  fontSize: '0.875rem'
-                }}>
-                  Write hints that will be revealed progressively throughout the date
-                </p>
-                
-                {hints.map((hint, index) => (
-                  <div key={index} style={{ marginBottom: '1rem' }}>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '0.875rem',
-                      fontWeight: 'bold',
-                      marginBottom: '0.5rem',
-                      color: '#374151'
-                    }}>
-                      Hint {index + 1}
-                    </label>
-                    <input
-                      type="text"
-                      value={hint}
-                      onChange={(e) => {
-                        const newHints = [...hints];
-                        newHints[index] = e.target.value;
-                        setHints(newHints);
-                      }}
-                      placeholder={`e.g., "Wear comfortable shoes!" or "We're going somewhere romantic"`}
-                      style={{
-                        width: '100%',
-                        padding: '0.875rem',
-                        border: '2px solid #e5e7eb',
-                        borderRadius: '12px',
-                        fontSize: '1rem',
-                        outline: 'none',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-                ))}
-
-                <button
-                  onClick={() => setHints([...hints, ''])}
-                  style={{
-                    background: 'white',
-                    color: '#a855f7',
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '12px',
-                    border: '2px solid #a855f7',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    fontSize: '0.875rem'
-                  }}
-                >
-                  + Add Another Hint
-                </button>
-              </div>
-
-              {/* Create Button */}
-              <button
-                onClick={createSurprise}
-                disabled={saving}
+                Surprise Title *
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g., Anniversary Adventure"
                 style={{
                   width: '100%',
-                  background: saving 
-                    ? '#d1d5db' 
-                    : 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-                  color: 'white',
-                  padding: '1.25rem',
+                  padding: '0.875rem',
                   borderRadius: '12px',
-                  border: 'none',
-                  cursor: saving ? 'not-allowed' : 'pointer',
-                  fontSize: '1.25rem',
-                  fontWeight: 'bold',
-                  boxShadow: saving ? 'none' : '0 8px 20px rgba(168,85,247,0.4)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.75rem'
+                  border: '2px solid #e5e7eb',
+                  fontSize: '1rem',
+                  boxSizing: 'border-box'
                 }}
-              >
-                {saving ? (
-                  <>
-                    <div style={{
-                      width: '24px',
-                      height: '24px',
-                      border: '3px solid white',
-                      borderTop: '3px solid transparent',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }} />
-                    Creating...
-                  </>
-                ) : (
-                  <>🎁 Create Surprise Date</>
-                )}
-              </button>
+              />
             </div>
-          )}
 
-          {/* Track Mode */}
-          {viewMode === 'track' && (
-            <div>
-              {loading ? (
-                <div style={{ textAlign: 'center', padding: '3rem' }}>
-                  <div style={{
-                    width: '50px',
-                    height: '50px',
-                    border: '5px solid #f3f4f6',
-                    borderTop: '5px solid #a855f7',
-                    borderRadius: '50%',
-                    animation: 'spin 1s linear infinite',
-                    margin: '0 auto'
-                  }} />
-                  <p style={{ marginTop: '1rem', color: '#666' }}>Loading surprises...</p>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem',
+                color: '#555'
+              }}>
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="What's the plan? (Only you can see this)"
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '0.875rem',
+                  borderRadius: '12px',
+                  border: '2px solid #e5e7eb',
+                  fontSize: '1rem',
+                  resize: 'vertical',
+                  boxSizing: 'border-box',
+                  fontFamily: 'inherit'
+                }}
+              />
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '1rem',
+              marginBottom: '1.25rem'
+            }}>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  marginBottom: '0.5rem',
+                  color: '#555'
+                }}>
+                  <Calendar size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={scheduledDate}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.875rem',
+                    borderRadius: '12px',
+                    border: '2px solid #e5e7eb',
+                    fontSize: '1rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  marginBottom: '0.5rem',
+                  color: '#555'
+                }}>
+                  <Clock size={14} style={{ display: 'inline', marginRight: '0.25rem' }} />
+                  Time
+                </label>
+                <input
+                  type="time"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.875rem',
+                    borderRadius: '12px',
+                    border: '2px solid #e5e7eb',
+                    fontSize: '1rem',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Hints */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                marginBottom: '0.5rem',
+                color: '#555'
+              }}>
+                🔍 Hints for your partner (optional)
+              </label>
+              {hints.map((hint, index) => (
+                <div key={index} style={{
+                  display: 'flex',
+                  gap: '0.5rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  <input
+                    type="text"
+                    value={hint}
+                    onChange={(e) => updateHint(index, e.target.value)}
+                    placeholder={`Hint ${index + 1}`}
+                    style={{
+                      flex: 1,
+                      padding: '0.75rem',
+                      borderRadius: '10px',
+                      border: '2px solid #e5e7eb',
+                      fontSize: '0.875rem'
+                    }}
+                  />
+                  {hints.length > 1 && (
+                    <button
+                      onClick={() => removeHint(index)}
+                      style={{
+                        background: '#fee2e2',
+                        border: 'none',
+                        borderRadius: '10px',
+                        padding: '0 0.75rem',
+                        cursor: 'pointer',
+                        color: '#dc2626'
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
-              ) : selectedSurprise ? (
-                /* Detailed View */
-                <div>
-                  <button
-                    onClick={() => setSelectedSurprise(null)}
+              ))}
+              {hints.length < 5 && (
+                <button
+                  onClick={addHintField}
+                  style={{
+                    background: '#f0f0f0',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '0.5rem 1rem',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    color: '#666'
+                  }}
+                >
+                  + Add Hint
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={createSurprise}
+              disabled={creating}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                borderRadius: '14px',
+                border: 'none',
+                background: creating
+                  ? '#ccc'
+                  : 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)',
+                color: 'white',
+                fontSize: '1.125rem',
+                fontWeight: 'bold',
+                cursor: creating ? 'not-allowed' : 'pointer',
+                boxShadow: '0 4px 12px rgba(236,72,153,0.3)'
+              }}
+            >
+              {creating ? 'Creating...' : '🎁 Create Surprise'}
+            </button>
+          </div>
+        )}
+
+        {/* Track Tab */}
+        {activeTab === 'track' && (
+          <div>
+            {loading ? (
+              <div style={{
+                background: 'white',
+                borderRadius: '24px',
+                padding: '3rem',
+                textAlign: 'center'
+              }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  border: '4px solid #f3f4f6',
+                  borderTop: '4px solid #ec4899',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto'
+                }} />
+                <p style={{ color: '#666', marginTop: '1rem' }}>Loading surprises...</p>
+              </div>
+            ) : surprises.length === 0 ? (
+              <div style={{
+                background: 'white',
+                borderRadius: '24px',
+                padding: '3rem',
+                textAlign: 'center',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
+              }}>
+                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎁</div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#333' }}>
+                  No Surprise Dates Yet
+                </h3>
+                <p style={{ color: '#666', marginTop: '0.5rem' }}>
+                  Create your first surprise date to track it here!
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {surprises.map((surprise) => (
+                  <div
+                    key={surprise.id}
                     style={{
                       background: 'white',
-                      color: '#a855f7',
-                      padding: '0.75rem 1.5rem',
-                      borderRadius: '12px',
-                      border: '2px solid #a855f7',
-                      cursor: 'pointer',
-                      fontWeight: 'bold',
-                      marginBottom: '1.5rem'
+                      borderRadius: '20px',
+                      padding: '1.5rem',
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
                     }}
                   >
-                    ← Back to All
-                  </button>
-
-                  <div style={{
-                    background: 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
-                    padding: '2rem',
-                    borderRadius: '16px',
-                    marginBottom: '2rem',
-                    border: '2px solid #f9a8d4'
-                  }}>
-                    <h3 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#831843', marginBottom: '0.5rem' }}>
-                      Surprise for {selectedSurprise.partnerName}
-                    </h3>
-                    <p style={{ color: '#9f1239', margin: 0, fontSize: '0.875rem' }}>
-                      {new Date(selectedSurprise.dateTime).toLocaleString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
-
-                  {/* Hints Progress */}
-                  <div style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-                      Progressive Hints
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      {selectedSurprise.hints.map((hint, index) => {
-                        const isRevealed = index < selectedSurprise.revealedHints;
-                        return (
-                          <div
-                            key={index}
-                            style={{
-                              background: isRevealed ? '#d1fae5' : '#f8f9fa',
-                              padding: '1.5rem',
-                              borderRadius: '12px',
-                              border: isRevealed ? '2px solid #10b981' : '2px solid #e5e7eb',
-                              position: 'relative'
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontWeight: 'bold', color: isRevealed ? '#059669' : '#666' }}>
-                                Hint {index + 1}
-                              </span>
-                              {isRevealed && (
-                                <span style={{ fontSize: '1.5rem' }}>✓</span>
-                              )}
-                            </div>
-                            <p style={{ 
-                              margin: '0.5rem 0 0 0',
-                              color: isRevealed ? '#047857' : '#999',
-                              filter: isRevealed ? 'none' : 'blur(8px)',
-                              fontSize: '1rem'
-                            }}>
-                              {hint}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {selectedSurprise.revealedHints < selectedSurprise.hints.length && (
-                      <button
-                        onClick={() => revealNextHint(selectedSurprise)}
-                        style={{
-                          width: '100%',
-                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                          color: 'white',
-                          padding: '1rem',
-                          borderRadius: '12px',
-                          border: 'none',
-                          cursor: 'pointer',
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'start',
+                      marginBottom: '1rem'
+                    }}>
+                      <div>
+                        <h4 style={{
+                          fontSize: '1.25rem',
                           fontWeight: 'bold',
-                          fontSize: '1rem',
-                          marginTop: '1.5rem'
+                          color: '#333',
+                          margin: 0
+                        }}>
+                          {surprise.revealed ? '🎉' : '🎁'} {surprise.title}
+                        </h4>
+                        {surprise.scheduledDate && (
+                          <p style={{
+                            color: '#666',
+                            fontSize: '0.875rem',
+                            marginTop: '0.25rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}>
+                            <Calendar size={14} />
+                            {new Date(surprise.scheduledDate).toLocaleDateString()}
+                            {surprise.scheduledTime && ` at ${surprise.scheduledTime}`}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => deleteSurprise(surprise.id)}
+                        style={{
+                          background: '#fee2e2',
+                          border: 'none',
+                          borderRadius: '10px',
+                          padding: '0.5rem',
+                          cursor: 'pointer',
+                          color: '#dc2626'
                         }}
                       >
-                        🎉 Reveal Next Hint
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+
+                    {surprise.description && (
+                      <p style={{
+                        color: '#555',
+                        fontSize: '0.875rem',
+                        marginBottom: '1rem',
+                        padding: '0.75rem',
+                        background: '#f9fafb',
+                        borderRadius: '10px'
+                      }}>
+                        {surprise.description}
+                      </p>
+                    )}
+
+                    {/* Hints */}
+                    {surprise.hints && surprise.hints.length > 0 && (
+                      <div style={{ marginBottom: '1rem' }}>
+                        <p style={{
+                          fontSize: '0.875rem',
+                          fontWeight: '600',
+                          color: '#666',
+                          marginBottom: '0.5rem'
+                        }}>
+                          Hints:
+                        </p>
+                        {surprise.hints.map((hint, index) => {
+                          const isRevealed = revealedHints[`${surprise.id}-${index}`];
+                          return (
+                            <div
+                              key={index}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                marginBottom: '0.5rem'
+                              }}
+                            >
+                              <button
+                                onClick={() => toggleHintReveal(surprise.id, index)}
+                                style={{
+                                  background: isRevealed ? '#dcfce7' : '#f3f4f6',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  padding: '0.5rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {isRevealed ? (
+                                  <Eye size={16} color="#16a34a" />
+                                ) : (
+                                  <EyeOff size={16} color="#666" />
+                                )}
+                              </button>
+                              <span style={{
+                                color: isRevealed ? '#333' : '#ccc',
+                                fontSize: '0.875rem',
+                                fontStyle: isRevealed ? 'normal' : 'italic'
+                              }}>
+                                {isRevealed ? hint : '••••••••'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {!surprise.revealed && (
+                      <button
+                        onClick={() => revealSurprise(surprise.id)}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          borderRadius: '12px',
+                          border: 'none',
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          color: 'white',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🎉 Reveal Surprise
                       </button>
                     )}
                   </div>
-                </div>
-              ) : surprises.length > 0 ? (
-                /* List View */
-                <div>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
-                    Your Surprise Dates
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {surprises.map((surprise) => (
-                      <div
-                        key={surprise.id}
-                        style={{
-                          background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-                          padding: '1.5rem',
-                          borderRadius: '16px',
-                          border: '2px solid #dee2e6',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => setSelectedSurprise(surprise)}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                          <div>
-                            <h4 style={{ fontSize: '1.25rem', fontWeight: 'bold', margin: 0, marginBottom: '0.5rem' }}>
-                              Surprise for {surprise.partnerName}
-                            </h4>
-                            <p style={{ color: '#666', fontSize: '0.875rem', margin: 0 }}>
-                              {new Date(surprise.dateTime).toLocaleDateString()}
-                            </p>
-                            <p style={{ 
-                              color: surprise.status === 'completed' ? '#10b981' : '#f59e0b',
-                              fontSize: '0.875rem',
-                              fontWeight: 'bold',
-                              marginTop: '0.5rem'
-                            }}>
-                              {surprise.revealedHints} / {surprise.hints.length} hints revealed
-                            </p>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteSurprise(surprise.id);
-                            }}
-                            style={{
-                              background: '#fee2e2',
-                              color: '#dc2626',
-                              border: 'none',
-                              borderRadius: '8px',
-                              width: '32px',
-                              height: '32px',
-                              cursor: 'pointer',
-                              fontSize: '1.25rem',
-                              fontWeight: 'bold'
-                            }}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div style={{
-                  background: '#f8f9fa',
-                  padding: '4rem 2rem',
-                  borderRadius: '16px',
-                  textAlign: 'center',
-                  border: '2px dashed #dee2e6'
-                }}>
-                  <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎁</div>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                    No Surprise Dates Yet
-                  </h3>
-                  <p style={{ color: '#666', marginBottom: '2rem', fontSize: '1rem' }}>
-                    Create your first surprise date to track it here!
-                  </p>
-                  <button
-                    onClick={() => setViewMode('create')}
-                    style={{
-                      background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-                      color: 'white',
-                      padding: '1rem 2rem',
-                      borderRadius: '12px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '1rem',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    Create Surprise Date
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <style>{`

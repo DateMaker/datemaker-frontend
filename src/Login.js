@@ -153,7 +153,8 @@ export default function Login({ onSwitchToSignup }) {
       alignItems: 'center', 
       justifyContent: 'center', 
       background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', 
-      padding: '2rem' 
+      padding: '2rem',
+      paddingTop: 'calc(2rem + env(safe-area-inset-top))'
     }}>
       <div style={{ 
         background: 'white', 

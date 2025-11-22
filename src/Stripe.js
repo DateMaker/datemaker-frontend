@@ -1,5 +1,6 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { auth } from './firebase';
+import { Capacitor } from '@capacitor/core';
 
 // Load Stripe (using your publishable key from .env)
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
@@ -19,6 +20,10 @@ export const createCheckoutSession = async (plan) => {
     // Get Firebase ID token for authentication
     const token = await user.getIdToken();
 
+    // Detect if running on iOS native app
+    const platform = Capacitor.isNativePlatform() ? 'ios' : 'web';
+    console.log('📱 Platform detected:', platform);
+
     // Call your backend to create checkout session
     const response = await fetch(`${API_URL}/api/create-checkout-session`, {
       method: 'POST',
@@ -27,10 +32,11 @@ export const createCheckoutSession = async (plan) => {
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-  userId: user.uid,      
-  plan: plan,
-  email: user.email
-})
+        userId: user.uid,      
+        plan: plan,
+        email: user.email,
+        platform: platform
+      })
     });
 
     if (!response.ok) {

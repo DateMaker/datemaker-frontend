@@ -1,7 +1,8 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, indexedDBLocalPersistence, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { Capacitor } from '@capacitor/core';
 
 // 🔐 Firebase configuration - with fallbacks
 const firebaseConfig = {
@@ -14,12 +15,21 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID || "G-LJVXV4GP8W"
 };
 
-// Debug: Check if using env vars or fallbacks
-const usingEnvVars = !!process.env.REACT_APP_FIREBASE_API_KEY;
-console.log(usingEnvVars ? '✅ Using environment variables' : '⚠️ Using fallback config (env vars not loaded)');
-
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+
+// Initialize Auth for Capacitor (prevents gapi iframe issues)
+let auth;
+if (Capacitor.isNativePlatform()) {
+  auth = initializeAuth(app, {
+    persistence: indexedDBLocalPersistence
+  });
+  console.log('✅ Firebase Auth initialized for Capacitor (no popups)');
+} else {
+  auth = getAuth(app);
+  console.log('✅ Firebase Auth initialized for Web');
+}
+
+export { auth };
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 

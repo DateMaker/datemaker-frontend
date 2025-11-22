@@ -4,7 +4,7 @@ import { formatXP } from './GameSystem';
 
 const XPBar = ({ level, progress, xp, onClick }) => {
   const percentage = Math.min(progress.percentage || 0, 100);
-  const isMaxLevel = level.level === 6;
+  const isMaxLevel = level.level === 7;
 
   return (
     <div 

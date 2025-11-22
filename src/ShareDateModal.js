@@ -37,36 +37,50 @@ const ShareDateModal = ({ user, dateData, onClose }) => {
   useEffect(() => {
   const loadFriends = async () => {
       try {
-        // Get user's friends from friendRequests collection
-        const friendsQuery = query(
+        const friendsList = [];
+        const seenIds = new Set();
+        
+        // Query 1: Requests I sent that were accepted
+        const sentQuery = query(
           collection(db, 'friendRequests'),
+          where('fromUserId', '==', user.uid),
           where('status', '==', 'accepted')
         );
         
-        const snapshot = await getDocs(friendsQuery);
-        const friendsList = [];
-        const seenIds = new Set(); // 🔥 Track unique friend IDs
+        // Query 2: Requests I received that were accepted
+        const receivedQuery = query(
+          collection(db, 'friendRequests'),
+          where('toUserId', '==', user.uid),
+          where('status', '==', 'accepted')
+        );
         
-        snapshot.docs.forEach(doc => {
+        const [sentSnapshot, receivedSnapshot] = await Promise.all([
+          getDocs(sentQuery),
+          getDocs(receivedQuery)
+        ]);
+        
+        // Process sent requests (friend is the recipient)
+        sentSnapshot.docs.forEach(doc => {
           const data = doc.data();
-          let friendId = null;
-          let friendEmail = null;
-          
-          if (data.fromUserId === user.uid) {
-            friendId = data.toUserId;
-            friendEmail = data.toUserEmail;
-          } else if (data.toUserId === user.uid) {
-            friendId = data.fromUserId;
-            friendEmail = data.fromUserEmail;
-          }
-          
-          // 🔥 Only add if we haven't seen this friend ID before
-          if (friendId && !seenIds.has(friendId)) {
-            seenIds.add(friendId);
+          if (!seenIds.has(data.toUserId)) {
+            seenIds.add(data.toUserId);
             friendsList.push({
-              id: friendId,
-              email: friendEmail,
-              name: friendEmail.split('@')[0]
+              id: data.toUserId,
+              email: data.toUserEmail,
+              name: data.toUserEmail?.split('@')[0] || 'Friend'
+            });
+          }
+        });
+        
+        // Process received requests (friend is the sender)
+        receivedSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          if (!seenIds.has(data.fromUserId)) {
+            seenIds.add(data.fromUserId);
+            friendsList.push({
+              id: data.fromUserId,
+              email: data.fromUserEmail,
+              name: data.fromUserEmail?.split('@')[0] || 'Friend'
             });
           }
         });

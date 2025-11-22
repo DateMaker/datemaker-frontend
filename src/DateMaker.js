@@ -28,6 +28,9 @@ import SubscribeButton from './SubscribeButton';
 import SubscriptionManager from './Subscriptionmanager';
 import TermsModal from './Terms';
 import PrivacyModal from './Privacy';
+import { App } from '@capacitor/app';
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
 export default function DateMaker() {
   const navigate = useNavigate(); 
   
@@ -127,6 +130,36 @@ useEffect(() => {
   const savedLanguage = localStorage.getItem('datemaker_language') || 'en';
   setLanguage(savedLanguage);
 }, []);
+
+// 🔗 Handle deep links from Stripe checkout
+useEffect(() => {
+  const handleDeepLink = App.addListener('appUrlOpen', async (event) => {
+    console.log('🔗 Deep link received:', event.url);
+    
+    if (event.url.includes('checkout-success')) {
+      console.log('✅ Checkout successful - refreshing subscription status');
+      if (user) {
+        try {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setSubscriptionStatus(data.subscriptionStatus || 'free');
+            console.log('✅ Subscription status updated:', data.subscriptionStatus);
+          }
+        } catch (error) {
+          console.error('Error refreshing subscription:', error);
+        }
+      }
+    } else if (event.url.includes('checkout-cancelled')) {
+      console.log('❌ Checkout was cancelled');
+    }
+  });
+
+  return () => {
+    handleDeepLink.remove();
+  };
+}, [user]);
   
   // 🔔 Unified notification system
   const [notificationCounts, setNotificationCounts] = useState({
@@ -1097,8 +1130,59 @@ useEffect(() => {
       console.error('Error loading game stats:', error);
     }
   };
-  // Old notification tracking removed - now using unified system above
+
   
+// Set iOS status bar color
+useEffect(() => {
+  const setupStatusBar = async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await StatusBar.setBackgroundColor({ color: '#7c3aed' });
+        await StatusBar.setStyle({ style: Style.Dark });
+      } catch (error) {
+        console.log('StatusBar setup:', error);
+      }
+    }
+  };
+  setupStatusBar();
+}, []);
+
+// 🔧 Re-check subscription when app returns from background (Stripe fix)
+useEffect(() => {
+  const checkSubscriptionOnResume = async () => {
+    if (!user) return;
+    
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        const newStatus = data.subscriptionStatus || 'free';
+        
+        if (newStatus !== subscriptionStatus) {
+          console.log('✅ Subscription updated:', newStatus);
+          setSubscriptionStatus(newStatus);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+    }
+  };
+
+  // Listen for app returning from background
+  const listener = App.addListener('appStateChange', ({ isActive }) => {
+    if (isActive) {
+      console.log('📱 App resumed - checking subscription...');
+      checkSubscriptionOnResume();
+    }
+  });
+
+  return () => {
+    listener.remove();
+  };
+}, [user, subscriptionStatus]);
+
   // handleClearNotifications kept for compatibility
   const handleClearNotifications = async () => {
     try {
@@ -1125,25 +1209,41 @@ useEffect(() => {
     }
   };
   
-  const handleLogout = async () => {
-    try {
-      // Set user offline before logging out
+ const handleLogout = async () => {
+  try {
+    // Set user offline before logging out
+    if (user?.uid) {
       await setDoc(doc(db, 'userStatus', user.uid), {
         online: false,
         lastSeen: serverTimestamp()
       }, { merge: true });
-      
-      await signOut(auth);
-      setShowResults(false);
-      setShowSavedDates(false);
-      setShowProfile(false);
-      setShowSocial(false);
-      setPlaces([]);
-      setItinerary(null);
-    } catch (err) {
-      console.error('Logout error:', err);
     }
-  };
+    
+    await signOut(auth);
+    
+    // Clear all UI states
+    setShowResults(false);
+    setShowSavedDates(false);
+    setShowProfile(false);
+    setShowSocial(false);
+    setPlaces([]);
+    setItinerary(null);
+    
+    // Clear form data (Bug #6 fix)
+    setLocation('');
+    setSelectedActivities([]);
+    setCustomActivities([]);
+    setSelectedHobbies([]);
+    setCustomActivityInput('');
+    setIncludeEvents(false);
+    setDateRange('anytime');
+    setStartTime('7:00 PM');
+    setDuration('4');
+    
+  } catch (err) {
+    console.error('Logout error:', err);
+  }
+};
   
   const handleUploadPhoto = async (e) => {
     const file = e.target.files[0];
@@ -2326,10 +2426,10 @@ if (category === 'nightlife') {
     }
   }
   
-  if (showProfile) {
+ if (showProfile) {
   return (
     <>
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', padding: '2rem', direction: isRTL ? 'rtl' : 'ltr' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', padding: '2rem', paddingTop: 'calc(2rem + env(safe-area-inset-top))', direction: isRTL ? 'rtl' : 'ltr' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ec4899' }}>{t('myProfile')}</h1>
@@ -2466,9 +2566,9 @@ if (category === 'nightlife') {
   );
 }
   
-  if (showSavedDates) {
+ if (showSavedDates) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', padding: '2rem', direction: isRTL ? 'rtl' : 'ltr' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', padding: '2rem', paddingTop: 'calc(2rem + env(safe-area-inset-top))', direction: isRTL ? 'rtl' : 'ltr' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -3241,7 +3341,7 @@ if (category === 'nightlife') {
     <>
     
       {/* ✅ RESPONSIVE HEADER */}
-      <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', padding: '1rem' }}>
+      <div style={{ background: 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', padding: '1rem', paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
           
           {/* Logo */}

@@ -5,6 +5,7 @@ import { Search, UserPlus, MessageCircle, Users, Heart, MapPin, Calendar, Send, 
 import { db } from './firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, arrayUnion, arrayRemove, serverTimestamp, onSnapshot, orderBy, getDoc, deleteDoc, setDoc, writeBatch, limit, Timestamp } from 'firebase/firestore';
 import SuccessModal from './SuccessModal';
+import { setStatusBarColor, STATUS_BAR_COLORS } from './utils/statusBar';
 
 export default function Social({ user, onBack, feedNotificationCount = 0 }) {
   const [activeTab, setActiveTab] = useState('feed');
@@ -48,6 +49,15 @@ const [successMessage, setSuccessMessage] = useState(null);
       messageTimeoutsRef.current.clear();
     };
   }, []);
+
+// 📱 Set status bar color for iOS
+useEffect(() => {
+  setStatusBarColor(STATUS_BAR_COLORS.social);
+  
+  return () => {
+    setStatusBarColor(STATUS_BAR_COLORS.home);
+  };
+}, []);
 
   // 🔔 Clear notifications when viewing specific tabs
   useEffect(() => {
@@ -961,7 +971,8 @@ setSuccessMessage('Failed to like. Please try again.');
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 25%, #fcd34d 50%, #fbbf24 75%, #f59e0b 100%)',
-      padding: '2rem'
+      padding: '2rem',
+      paddingTop: 'calc(2rem + env(safe-area-inset-top))'
     }}>
       
       {/* ✅ OFFLINE INDICATOR - ADD THIS ENTIRE BLOCK */}
@@ -2184,38 +2195,56 @@ setSuccessMessage('Failed to like. Please try again.');
           </div>
         </div>
 
-        {/* Add Friend button - full width on mobile */}
-        <button
-          onClick={() => handleSendFriendRequest(result)}
-          style={{
-            width: '100%',
-            padding: '0.875rem',
-            borderRadius: '14px',
-            border: 'none',
-            background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-            color: 'white',
-            fontWeight: '800',
-            fontSize: '1rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s',
-            boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'scale(1.02)';
-            e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'scale(1)';
-            e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
-          }}
-        >
-          <UserPlus size={20} />
-          Add Friend
-        </button>
+       {/* Add Friend button - full width on mobile */}
+<button
+  onClick={() => !sentRequests.some(r => r.toUserId === result.id) && handleSendFriendRequest(result)}
+  disabled={sentRequests.some(r => r.toUserId === result.id)}
+  style={{
+    width: '100%',
+    padding: '0.875rem',
+    borderRadius: '14px',
+    border: 'none',
+    background: sentRequests.some(r => r.toUserId === result.id)
+      ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+      : 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+    color: 'white',
+    fontWeight: '800',
+    fontSize: '1rem',
+    cursor: sentRequests.some(r => r.toUserId === result.id) ? 'not-allowed' : 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5rem',
+    transition: 'all 0.2s',
+    boxShadow: sentRequests.some(r => r.toUserId === result.id)
+      ? 'none'
+      : '0 4px 12px rgba(168, 85, 247, 0.3)'
+  }}
+  onMouseEnter={(e) => {
+    if (!sentRequests.some(r => r.toUserId === result.id)) {
+      e.target.style.transform = 'scale(1.02)';
+      e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
+    }
+  }}
+  onMouseLeave={(e) => {
+    e.target.style.transform = 'scale(1)';
+    e.target.style.boxShadow = sentRequests.some(r => r.toUserId === result.id)
+      ? 'none'
+      : '0 4px 12px rgba(168, 85, 247, 0.3)';
+  }}
+>
+  {sentRequests.some(r => r.toUserId === result.id) ? (
+    <>
+      <Clock size={20} />
+      Pending
+    </>
+  ) : (
+    <>
+      <UserPlus size={20} />
+      Add Friend
+    </>
+  )}
+</button>
       </div>
     ))}
   </div>

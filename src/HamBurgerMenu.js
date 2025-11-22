@@ -118,7 +118,7 @@ export default function HamburgerMenu({
     borderRadius: '12px',
     padding: '0.75rem',
     cursor: 'pointer',
-    display: isOpen ? 'none' : 'flex',  // ✅ HIDE WHEN MENU IS OPEN
+    display: isOpen ? 'none' : 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     transition: 'all 0.3s ease',
@@ -134,7 +134,7 @@ export default function HamburgerMenu({
     e.target.style.transform = 'scale(1)';
   }}
 >
-  <Menu size={24} style={{ color: 'white' }} />  {/* ✅ ALWAYS SHOW MENU ICON */}
+  <Menu size={24} style={{ color: 'white' }} />
   
   {/* 🔔 NOTIFICATION BADGE */}
   {notificationCount > 0 && (
@@ -200,9 +200,10 @@ export default function HamburgerMenu({
           touchAction: 'pan-y'
         }}
       >
-        {/* Menu Header */}
+        {/* Menu Header - ✅ SAFE AREA FIX */}
         <div style={{
           padding: '2rem 1.5rem',
+          paddingTop: 'calc(2rem + env(safe-area-inset-top))',
           borderBottom: '2px solid rgba(255,255,255,0.2)',
           background: 'rgba(0,0,0,0.1)',
           flexShrink: 0,
@@ -213,7 +214,7 @@ export default function HamburgerMenu({
             onClick={() => setIsOpen(false)}
             style={{
               position: 'absolute',
-              top: '1rem',
+              top: 'calc(1rem + env(safe-area-inset-top))',
               right: '1rem',
               background: 'rgba(255,255,255,0.2)',
               borderRadius: '50%',
