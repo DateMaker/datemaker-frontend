@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { MapPin, Heart, Navigation, ExternalLink, Star, Sparkles, BookmarkPlus, BookmarkCheck, RefreshCw, User, Clock, ArrowRight, MessageCircle, Share2, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut, sendEmailVerification } from 'firebase/auth';
@@ -53,7 +53,8 @@ export default function DateMaker() {
 const [showTerms, setShowTerms] = useState(false);
 const [showPrivacy, setShowPrivacy] = useState(false);
   const [userData, setUserData] = useState(null);
-  
+  const resultsTopRef = useRef(null);
+
   // Date generation states
   const [location, setLocation] = useState('');
   const [selectedHobbies, setSelectedHobbies] = useState([]);
@@ -130,6 +131,25 @@ useEffect(() => {
   const savedLanguage = localStorage.getItem('datemaker_language') || 'en';
   setLanguage(savedLanguage);
 }, []);
+// 🔝 Scroll to top when results are shown - useLayoutEffect fires BEFORE paint
+useLayoutEffect(() => {
+  if (showResults && itinerary) {
+    // Target the actual scrolling container (#root), not window
+    const root = document.getElementById('root');
+    if (root) {
+      root.scrollTop = 0;
+    }
+    // Also try standard methods as fallbacks
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    
+    // Also scroll the ref into view
+    if (resultsTopRef.current) {
+      resultsTopRef.current.scrollIntoView({ behavior: 'instant', block: 'start' });
+    }
+  }
+}, [showResults, itinerary]);
 
 // 🔗 Handle deep links from Stripe checkout
 useEffect(() => {
@@ -137,7 +157,15 @@ useEffect(() => {
     console.log('🔗 Deep link received:', event.url);
     
     if (event.url.includes('checkout-success')) {
-      console.log('✅ Checkout successful - refreshing subscription status');
+      console.log('✅ Checkout successful!');
+      
+      // Close the subscription modal immediately
+      setShowSubscriptionModal(false);
+      
+      // Wait a moment for webhook to process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Refresh subscription status
       if (user) {
         try {
           const userDocRef = doc(db, 'users', user.uid);
@@ -145,7 +173,11 @@ useEffect(() => {
           if (userDoc.exists()) {
             const data = userDoc.data();
             setSubscriptionStatus(data.subscriptionStatus || 'free');
-            console.log('✅ Subscription status updated:', data.subscriptionStatus);
+            console.log('✅ Subscription status:', data.subscriptionStatus);
+            
+            if (data.subscriptionStatus === 'trial' || data.subscriptionStatus === 'premium') {
+              alert('🎉 Welcome to DateMaker Premium! Your 7-day free trial has started.');
+            }
           }
         } catch (error) {
           console.error('Error refreshing subscription:', error);
@@ -153,6 +185,7 @@ useEffect(() => {
       }
     } else if (event.url.includes('checkout-cancelled')) {
       console.log('❌ Checkout was cancelled');
+      setShowSubscriptionModal(false);
     }
   });
 
@@ -1898,11 +1931,32 @@ const generatedItinerary = createItinerary(uniqueResults, keywords, isRefresh);
         ...generatedItinerary.alternatives
       ];
       setPlaces(allPlaces);
-      setShowResults(true);
-      window.scrollTo({
-  top: 0,
-  behavior: 'smooth'
-});
+
+// Reset scroll FIRST before any state changes
+const root = document.getElementById('root');
+if (root) root.scrollTop = 0;
+window.scrollTo(0, 0);
+document.documentElement.scrollTop = 0;
+document.body.scrollTop = 0;
+
+// Reset itinerary first to force fresh render
+setItinerary(null);
+setShowResults(false);
+
+// Small delay then set new data
+setTimeout(() => {
+  // Scroll again after state update
+  const root = document.getElementById('root');
+  if (root) root.scrollTop = 0;
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  
+  setItinerary(generatedItinerary);
+  setShowResults(true);
+}, 50);
+      
+
       
       console.log('✅ SUCCESS! Itinerary created with', generatedItinerary.stops.length, 'stops');
       console.log('═══════════════════════════════════════');
@@ -2675,10 +2729,11 @@ if (category === 'nightlife') {
       </div>
     );
   }
- if (showResults && itinerary) {
+if (showResults && itinerary) {
     return (
       <>
-        <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', padding: '2rem', direction: isRTL ? 'rtl' : 'ltr' }}>
+       <div ref={resultsTopRef} style={{ position: 'absolute', top: 0, left: 0, height: '1px', width: '1px' }} />
+       <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', padding: '1rem', paddingTop: 'calc(1rem + env(safe-area-inset-top))', direction: isRTL ? 'rtl' : 'ltr' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -2699,7 +2754,7 @@ if (category === 'nightlife') {
               </button>
             </div>
           </div>
-          <div style={{ background: 'white', borderRadius: '24px', padding: '2.5rem', marginBottom: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}>
+          <div style={{ background: 'white', borderRadius: '20px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}>
             <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
               <h2 style={{ fontSize: '2rem', fontWeight: 'bold', background: 'linear-gradient(to right, #ec4899, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '0.5rem' }}>
                 🎉 {t('dateNightItinerary')}
@@ -2753,8 +2808,8 @@ if (category === 'nightlife') {
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ padding: '1.5rem' }}>
+     {/* Content */}
+      <div style={{ padding: '1rem' }}>
         <p style={{ 
           color: '#6b7280', 
           fontSize: '0.95rem', 
@@ -2767,7 +2822,7 @@ if (category === 'nightlife') {
         {/* Venue Image */}
         <div style={{ 
           position: 'relative', 
-          height: '250px',
+          height: '320px',
           borderRadius: '16px',
           overflow: 'hidden',
           marginBottom: '1.5rem'
@@ -3820,6 +3875,9 @@ if (category === 'nightlife') {
             transform: translateX(0);
             opacity: 1;
           }
+        }
+        html, body {
+          scroll-behavior: auto !important;
         }
       `}</style>
     </>

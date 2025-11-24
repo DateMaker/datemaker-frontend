@@ -61,7 +61,7 @@ export default function DateStreaksGoals({ currentUser, streakData, onClose }) {
       return;
     }
 
-    const target = parseInt(newGoalTarget);
+    const target = parseInt(newGoalTarget.replace(/,/g, ''));
     if (isNaN(target) || target < 1) {
       alert('Please enter a valid target number');
       return;
@@ -380,8 +380,10 @@ export default function DateStreaksGoals({ currentUser, streakData, onClose }) {
                           Target (number of dates)
                         </label>
                         <input
-                          type="number"
-                          value={newGoalTarget}
+  type="text"
+  inputMode="numeric"
+  pattern="[0-9,]*"
+  value={newGoalTarget}
                           onChange={(e) => setNewGoalTarget(e.target.value)}
                           placeholder="10"
                           min="1"

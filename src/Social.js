@@ -868,7 +868,6 @@ setFeed(prevFeed => prevFeed.map(date => {
   }
   return date;
 }));
-
 setSuccessMessage('Failed to like. Please try again.');
     
     // Update Firebase

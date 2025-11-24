@@ -181,21 +181,22 @@ export default function SurpriseDateMode({ currentUser, onClose }) {
               <Gift size={28} /> Surprise Date Mode
             </h2>
             <button
-              onClick={onClose}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: 'none',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <X size={24} color="white" />
-            </button>
+  onClick={onClose}
+  style={{
+    background: 'rgba(255,255,255,0.95)',
+    border: 'none',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+  }}
+>
+  <X size={24} color="#ec4899" />
+</button>
           </div>
 
           {/* Tabs */}
