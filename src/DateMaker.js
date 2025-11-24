@@ -50,6 +50,7 @@ export default function DateMaker() {
   const [dateToShare, setDateToShare] = useState(null);
   const [photoToken, setPhotoToken] = useState('');
   const [showSubscriptionManager, setShowSubscriptionManager] = useState(false);
+  const [lastViewedSavedCount, setLastViewedSavedCount] = useState(0);
 const [showTerms, setShowTerms] = useState(false);
 const [showPrivacy, setShowPrivacy] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -988,13 +989,14 @@ const getWeekNumber = (date) => {
           const userDocRef = doc(db, 'users', currentUser.uid);
           const userDoc = await getDoc(userDocRef);
           
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            setUserData(data);
-            setSubscriptionStatus(data.subscriptionStatus || 'free');
-            setSavedDates(data.savedDates || []);
-            setProfilePhoto(data.profilePhoto || '');
-          } else {
+           if (userDoc.exists()) {
+  const data = userDoc.data();
+  setUserData(data);
+  setSubscriptionStatus(data.subscriptionStatus || 'free');
+  setSavedDates(data.savedDates || []);
+  setProfilePhoto(data.profilePhoto || '');
+  setLastViewedSavedCount(data.lastViewedSavedCount || 0);
+}else {
             setSubscriptionStatus('free');
             setSavedDates([]);
           }
@@ -1278,6 +1280,20 @@ useEffect(() => {
   }
 };
   
+const handleOpenSaved = async () => {
+  setShowSavedDates(true);
+  // Clear notification by updating last viewed count
+  if (savedDates.length !== lastViewedSavedCount) {
+    setLastViewedSavedCount(savedDates.length);
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, { lastViewedSavedCount: savedDates.length }, { merge: true });
+    } catch (error) {
+      console.error('Error updating last viewed saved count:', error);
+    }
+  }
+};
+
   const handleUploadPhoto = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -3434,7 +3450,7 @@ if (showResults && itinerary) {
             <HamburgerMenu
               user={user}
               subscriptionStatus={subscriptionStatus}
-              savedDatesCount={savedDates.length}
+              savedDatesCount={Math.max(0, savedDates.length - lastViewedSavedCount)}
               notificationCount={notificationCounts.total}
               onNavigate={(destination) => {
                 if (destination === 'spin') setShowSpinningWheel(true);
@@ -3449,7 +3465,7 @@ if (showResults && itinerary) {
                     setShowSocial(true);
                   }
                 }
-                if (destination === 'saved') setShowSavedDates(true);
+                if (destination === 'saved') handleOpenSaved();
                 
                 if (destination === 'scrapbook') openScrapbookMemories();
     if (destination === 'surprise') openSurpriseDateTracker();

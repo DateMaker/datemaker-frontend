@@ -652,14 +652,26 @@ setSearchResults(prev => prev.filter(u => u.id !== toUser.id));
     }
   };
 
-  // Reject friend request
-  const handleRejectFriendRequest = async (requestId) => {
-    try {
-      await deleteDoc(doc(db, 'friendRequests', requestId));
-    } catch (error) {
-      console.error('Error rejecting friend request:', error);
-    }
-  };
+
+// Reject friend request
+const handleRejectFriendRequest = async (requestId) => {
+  try {
+    await deleteDoc(doc(db, 'friendRequests', requestId));
+  } catch (error) {
+    console.error('Error rejecting friend request:', error);
+  }
+};
+
+// Cancel sent friend request
+const handleCancelFriendRequest = async (requestId) => {
+  try {
+    await deleteDoc(doc(db, 'friendRequests', requestId));
+    setSuccessMessage('Friend request cancelled');
+  } catch (error) {
+    console.error('Error cancelling friend request:', error);
+    setSuccessMessage('Failed to cancel request');
+  }
+};
 
   // Remove friend
   const handleRemoveFriend = async (friendId) => {
@@ -859,44 +871,37 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
     const dateRef = doc(db, 'sharedDates', dateId);
     const hasLiked = currentLikes.includes(user.uid);
     
-    console.log('👍 Like button clicked:', { dateId, hasLiked, currentLikes });
+    // Optimistic update - update UI immediately
+    setFeed(prevFeed => prevFeed.map(date => {
+      if (date.id === dateId) {
+        const newLikes = hasLiked
+          ? currentLikes.filter(uid => uid !== user.uid)
+          : [...currentLikes, user.uid];
+        return { ...date, likes: newLikes };
+      }
+      return date;
+    }));
     
-    // Rollback on error
-setFeed(prevFeed => prevFeed.map(date => {
-  if (date.id === dateId) {
-    return { ...date, likes: currentLikes };
-  }
-  return date;
-}));
-setSuccessMessage('Failed to like. Please try again.');
-    
-    // Update Firebase
+    // Update Firebase silently
     if (hasLiked) {
-      // Unlike
       await updateDoc(dateRef, {
         likes: arrayRemove(user.uid)
       });
-      console.log('💔 Unliked post');
     } else {
-      // Like
       await updateDoc(dateRef, {
         likes: arrayUnion(user.uid)
       });
-      console.log('❤️ Liked post');
     }
     
   } catch (error) {
     console.error('❌ Error toggling like:', error);
-    
-    // Rollback on error
+    // Silently rollback on error
     setFeed(prevFeed => prevFeed.map(date => {
       if (date.id === dateId) {
         return { ...date, likes: currentLikes };
       }
       return date;
     }));
-    
-    alert('Failed to like. Please try again.');
   }
 };
 // Like/Unlike date in detail view
@@ -2666,7 +2671,26 @@ setSuccessMessage('Failed to like. Please try again.');
                         </div>
                       </div>
 
-                      <Clock size={24} style={{ color: '#9ca3af' }} />
+                      <button
+  onClick={() => handleCancelFriendRequest(request.id)}
+  style={{
+    padding: '0.75rem 1.25rem',
+    borderRadius: '12px',
+    border: '2px solid rgba(239, 68, 68, 0.3)',
+    background: 'rgba(239, 68, 68, 0.1)',
+    color: '#ef4444',
+    fontWeight: '700',
+    fontSize: '0.875rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    transition: 'all 0.2s'
+  }}
+>
+  <X size={18} />
+  Cancel
+</button>
                     </div>
                   ))}
                 </div>

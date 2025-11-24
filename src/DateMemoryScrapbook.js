@@ -554,24 +554,7 @@ if (selectedPhoto) {
           }}>
             📸 Date Scrapbook
           </h1>
-          {/* X button on right side for VIEW mode too */}
-          <button
-            onClick={onClose}
-            style={{
-              background: 'white',
-              border: 'none',
-              borderRadius: '50%',
-              width: '44px',
-              height: '44px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
-            }}
-          >
-            <X size={24} color="#FF6B35" strokeWidth={3} />
-          </button>
+          <div style={{ width: '44px' }} />
         </div>
 
         {/* Content */}
