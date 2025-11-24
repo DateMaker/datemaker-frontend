@@ -180,7 +180,7 @@ export default function SurpriseDateMode({ currentUser, onClose }) {
             }}>
               <Gift size={28} /> Surprise Date Mode
             </h2>
-            <button
+           <button
   onClick={onClose}
   style={{
     background: 'rgba(255,255,255,0.95)',
@@ -195,7 +195,7 @@ export default function SurpriseDateMode({ currentUser, onClose }) {
     boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
   }}
 >
-  <X size={24} color="#ec4899" />
+  <X size={24} style={{ color: '#ec4899' }} strokeWidth={3} />
 </button>
           </div>
 
@@ -242,14 +242,14 @@ export default function SurpriseDateMode({ currentUser, onClose }) {
           </div>
         </div>
 
-        {/* Create Tab */}
         {activeTab === 'create' && (
-          <div style={{
-            background: 'white',
-            borderRadius: '24px',
-            padding: '2rem',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
-          }}>
+  <div style={{
+    background: 'white',
+    borderRadius: '24px',
+    padding: '1.5rem',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+    overflow: 'hidden'
+  }}>
             <h3 style={{
               fontSize: '1.25rem',
               fontWeight: 'bold',
