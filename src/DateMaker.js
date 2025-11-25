@@ -3068,76 +3068,6 @@ if (showResults && itinerary) {
   </div>
 )}
 
-{/* End of Date Option */}
-<div style={{
-  marginBottom: '1.5rem',
-  padding: '1.5rem',
-  background: 'linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%)',
-  borderRadius: '16px',
-  border: '2px solid #fbbf24'
-}}>
-  <h4 style={{
-    fontSize: '1.1rem',
-    fontWeight: '700',
-    marginBottom: '0.75rem',
-    color: '#92400e',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem'
-  }}>
-    🏁 End of Date?
-  </h4>
-  <p style={{
-    fontSize: '0.9rem',
-    color: '#78350f',
-    marginBottom: '1rem',
-    lineHeight: '1.5'
-  }}>
-    Feeling done, or ready for more adventures?
-  </p>
-  <div style={{
-    display: 'flex',
-    gap: '0.75rem',
-    flexWrap: 'wrap'
-  }}>
-    <button
-      style={{
-        flex: 1,
-        minWidth: '120px',
-        padding: '0.75rem 1rem',
-        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-        color: 'white',
-        border: 'none',
-        borderRadius: '12px',
-        fontWeight: '700',
-        fontSize: '0.9rem',
-        cursor: 'pointer',
-        boxShadow: '0 4px 12px rgba(239,68,68,0.3)'
-      }}
-      onClick={handleCompleteDateItinerary}
-    >
-      🏁 End Date Here
-    </button>
-    <button
-      style={{
-        flex: 1,
-        minWidth: '120px',
-        padding: '0.75rem 1rem',
-        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-        color: 'white',
-        border: 'none',
-        borderRadius: '12px',
-        fontWeight: '700',
-        fontSize: '0.9rem',
-        cursor: 'pointer',
-        boxShadow: '0 4px 12px rgba(16,185,129,0.3)'
-      }}
-    >
-      ➡️ Continue On
-    </button>
-  </div>
-</div>
-
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <button 
@@ -3225,6 +3155,43 @@ if (showResults && itinerary) {
 ))}
             </div>
           </div>
+          
+          {/* Date Finished Section */}
+          <div style={{
+            background: 'white',
+            borderRadius: '24px',
+            padding: '2.5rem',
+            marginBottom: '2rem',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              fontSize: '4rem',
+              marginBottom: '1rem'
+            }}>
+              🎉
+            </div>
+            <h3 style={{
+              fontSize: '2rem',
+              fontWeight: '900',
+              marginBottom: '1rem',
+              background: 'linear-gradient(to right, #ec4899, #a855f7)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>
+              Date Finished!
+            </h3>
+            <p style={{
+              fontSize: '1.1rem',
+              color: '#6b7280',
+              lineHeight: '1.6',
+              maxWidth: '600px',
+              margin: '0 auto'
+            }}>
+              End here or continue on - check out the alternative options below or generate another date
+            </p>
+          </div>
+          
           {itinerary.alternatives && itinerary.alternatives.length > 0 && (
             <div style={{ background: 'white', borderRadius: '24px', padding: '2rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', color: '#111827' }}>
