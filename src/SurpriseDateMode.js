@@ -268,46 +268,47 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
       zIndex: 10000
     }}>
       {/* Header */}
-      <div style={{
-        position: 'sticky',
-        top: 0,
-        background: 'rgba(236, 72, 153, 0.95)',
-        backdropFilter: 'blur(10px)',
-        padding: '1.5rem',
-        borderRadius: '0 0 30px 30px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-        zIndex: 100,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Gift size={32} color="white" />
-          <h2 style={{ color: 'white', fontSize: '1.8rem', fontWeight: '900', margin: 0 }}>
-            Surprise Date Mode
-          </h2>
-        </div>
-        <button
-          onClick={onClose}
-          style={{
-            background: 'white',
-            borderRadius: '50%',
-            width: '44px',
-            height: '44px',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
-          }}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ec4899" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
+<div style={{
+  position: 'sticky',
+  top: 0,
+  background: 'rgba(236, 72, 153, 0.95)',
+  backdropFilter: 'blur(10px)',
+  padding: '1.5rem',
+  paddingTop: 'calc(1.5rem + env(safe-area-inset-top))', // ✅ iOS STATUS BAR FIX
+  borderRadius: '0 0 30px 30px',
+  boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+  zIndex: 100,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between'
+}}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+    <Gift size={32} color="white" />
+    <h2 style={{ color: 'white', fontSize: '1.8rem', fontWeight: '900', margin: 0 }}>
+      Surprise Date Mode
+    </h2>
+  </div>
+  <button
+    onClick={onClose}
+    style={{
+      background: 'white',
+      borderRadius: '50%',
+      width: '44px',
+      height: '44px',
+      border: 'none',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+    }}
+  >
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ec4899" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  </button>
+</div>
 
       {/* Tab Navigation */}
       <div style={{ padding: '2rem 1.5rem' }}>
@@ -519,60 +520,78 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
             </div>
 
             {/* Date and Time */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '1rem',
-                fontWeight: '900',
-                marginBottom: '0.75rem',
-                color: '#333'
-              }}>
-                <Calendar size={18} />
-                Date
-              </label>
-              <input
-                type="date"
-                value={scheduledDate}
-                onChange={(e) => setScheduledDate(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  borderRadius: '15px',
-                  border: '2px solid #e5e7eb',
-                  fontSize: '1rem',
-                  boxSizing: 'border-box',
-                  marginBottom: '1rem'
-                }}
-              />
-              
-              <label style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '1rem',
-                fontWeight: '900',
-                marginBottom: '0.75rem',
-                color: '#333'
-              }}>
-                <Clock size={18} />
-                Time
-              </label>
-              <input
-                type="time"
-                value={scheduledTime}
-                onChange={(e) => setScheduledTime(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  borderRadius: '15px',
-                  border: '2px solid #e5e7eb',
-                  fontSize: '1rem',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
+<div style={{ marginBottom: '1.5rem' }}>
+  <label style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    fontSize: '1rem',
+    fontWeight: '900',
+    marginBottom: '0.75rem',
+    color: '#333'
+  }}>
+    <Calendar size={18} />
+    Date
+  </label>
+  <div style={{ 
+    width: '100%',
+    overflow: 'hidden' // Prevent overflow
+  }}>
+    <input
+      type="date"
+      value={scheduledDate}
+      onChange={(e) => setScheduledDate(e.target.value)}
+      style={{
+        width: '100%',
+        maxWidth: '100%', // Ensure it doesn't exceed container
+        padding: '1rem',
+        borderRadius: '15px',
+        border: '2px solid #e5e7eb',
+        fontSize: '1rem',
+        boxSizing: 'border-box',
+        marginBottom: '1rem',
+        WebkitAppearance: 'none', // iOS fix
+        MozAppearance: 'none', // Firefox fix
+        appearance: 'none'
+      }}
+    />
+  </div>
+  
+  <label style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    fontSize: '1rem',
+    fontWeight: '900',
+    marginBottom: '0.75rem',
+    color: '#333'
+  }}>
+    <Clock size={18} />
+    Time
+  </label>
+  <div style={{ 
+    width: '100%',
+    overflow: 'hidden' // Prevent overflow
+  }}>
+    <input
+      type="time"
+      value={scheduledTime}
+      onChange={(e) => setScheduledTime(e.target.value)}
+      style={{
+        width: '100%',
+        maxWidth: '100%', // Ensure it doesn't exceed container
+        padding: '1rem',
+        borderRadius: '15px',
+        border: '2px solid #e5e7eb',
+        fontSize: '1rem',
+        boxSizing: 'border-box',
+        WebkitAppearance: 'none', // iOS fix
+        MozAppearance: 'none', // Firefox fix
+        appearance: 'none'
+      }}
+    />
+  </div>
+</div>
 
             {/* Hints */}
             <div style={{ marginBottom: '2rem' }}>
