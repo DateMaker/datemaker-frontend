@@ -17,26 +17,22 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
   const [scheduledTime, setScheduledTime] = useState('');
   const [partnerEmail, setPartnerEmail] = useState('');
   const [hints, setHints] = useState(['']);
-  const [itinerary, setItinerary] = useState(null); // NEW: Store itinerary
+  const [itinerary, setItinerary] = useState(null);
   const [revealedHints, setRevealedHints] = useState({});
   const [unlockedHints, setUnlockedHints] = useState({});
 
-  // NEW: Pre-fill form if itinerary is provided
+  // ✅ FIXED: Use .stops instead of .activities
   useEffect(() => {
     if (prefilledItinerary) {
       setItinerary(prefilledItinerary);
       setTitle(prefilledItinerary.title || 'Surprise Date');
-      setDescription(`Full itinerary with ${prefilledItinerary.activities?.length || 0} stops`);
+      setDescription(`Full itinerary with ${prefilledItinerary.stops?.length || 0} stops`);
       
-      // Extract date/time from first activity if available
-      if (prefilledItinerary.activities && prefilledItinerary.activities.length > 0) {
-        const firstActivity = prefilledItinerary.activities[0];
-        if (firstActivity.time) {
-          // Try to parse the time
-          const timeMatch = firstActivity.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-          if (timeMatch) {
-            setScheduledTime(firstActivity.time);
-          }
+      // Extract date/time from first stop if available
+      if (prefilledItinerary.stops && prefilledItinerary.stops.length > 0) {
+        const firstStop = prefilledItinerary.stops[0];
+        if (firstStop.time) {
+          setScheduledTime(firstStop.time);
         }
       }
     }
@@ -123,7 +119,7 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
         scheduledDate: scheduledDate || null,
         scheduledTime: scheduledTime || null,
         hints: hints.filter(h => h.trim()),
-        itinerary: itinerary || null, // NEW: Store itinerary
+        itinerary: itinerary || null,
         revealed: false,
         accepted: false,
         createdAt: new Date().toISOString(),
@@ -255,6 +251,18 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
   // Get unaccepted surprises count for badge
   const unacceptedCount = receivedSurprises.filter(s => !s.accepted).length;
 
+  // ✅ Helper function to get stop count from itinerary (handles both .stops and .activities)
+  const getStopCount = (itinerary) => {
+    if (!itinerary) return 0;
+    return itinerary.stops?.length || itinerary.activities?.length || 0;
+  };
+
+  // ✅ Helper function to get stops array from itinerary
+  const getStops = (itinerary) => {
+    if (!itinerary) return [];
+    return itinerary.stops || itinerary.activities || [];
+  };
+
   return (
     <div style={{
       position: 'fixed',
@@ -274,7 +282,7 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
   background: 'rgba(236, 72, 153, 0.95)',
   backdropFilter: 'blur(10px)',
   padding: '1.5rem',
-  paddingTop: 'calc(1.5rem + env(safe-area-inset-top))', // ✅ iOS STATUS BAR FIX
+  paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
   borderRadius: '0 0 30px 30px',
   boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
   zIndex: 100,
@@ -403,7 +411,7 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
               </h3>
             </div>
 
-            {/* NEW: Show itinerary preview if provided */}
+            {/* ✅ FIXED: Show itinerary preview if provided - use getStopCount */}
             {itinerary && (
               <div style={{
                 background: 'linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%)',
@@ -419,7 +427,7 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                   </h4>
                 </div>
                 <p style={{ margin: '0.5rem 0', fontSize: '0.95rem', color: '#78350f' }}>
-                  <strong>{itinerary.activities?.length || 0} stops</strong> planned
+                  <strong>{getStopCount(itinerary)} stops</strong> planned
                 </p>
                 <p style={{ margin: '0.5rem 0', fontSize: '0.9rem', color: '#92400e' }}>
                   Your partner will see the full itinerary when they reveal the surprise!
@@ -535,7 +543,7 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
   </label>
   <div style={{ 
     width: '100%',
-    overflow: 'hidden' // Prevent overflow
+    overflow: 'hidden'
   }}>
     <input
       type="date"
@@ -543,15 +551,15 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
       onChange={(e) => setScheduledDate(e.target.value)}
       style={{
         width: '100%',
-        maxWidth: '100%', // Ensure it doesn't exceed container
+        maxWidth: '100%',
         padding: '1rem',
         borderRadius: '15px',
         border: '2px solid #e5e7eb',
         fontSize: '1rem',
         boxSizing: 'border-box',
         marginBottom: '1rem',
-        WebkitAppearance: 'none', // iOS fix
-        MozAppearance: 'none', // Firefox fix
+        WebkitAppearance: 'none',
+        MozAppearance: 'none',
         appearance: 'none'
       }}
     />
@@ -571,7 +579,7 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
   </label>
   <div style={{ 
     width: '100%',
-    overflow: 'hidden' // Prevent overflow
+    overflow: 'hidden'
   }}>
     <input
       type="time"
@@ -579,14 +587,14 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
       onChange={(e) => setScheduledTime(e.target.value)}
       style={{
         width: '100%',
-        maxWidth: '100%', // Ensure it doesn't exceed container
+        maxWidth: '100%',
         padding: '1rem',
         borderRadius: '15px',
         border: '2px solid #e5e7eb',
         fontSize: '1rem',
         boxSizing: 'border-box',
-        WebkitAppearance: 'none', // iOS fix
-        MozAppearance: 'none', // Firefox fix
+        WebkitAppearance: 'none',
+        MozAppearance: 'none',
         appearance: 'none'
       }}
     />
@@ -711,6 +719,7 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                   const countdown = getCountdown(surprise.scheduledDate);
                   const isRevealed = surprise.revealed;
                   const isAccepted = surprise.accepted;
+                  const stops = getStops(surprise.itinerary);
                   
                   return (
                     <div
@@ -875,8 +884,8 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                         </div>
                       )}
 
-                      {/* NEW: Show Itinerary if Revealed */}
-                      {isRevealed && surprise.itinerary && surprise.itinerary.activities && (
+                      {/* ✅ FIXED: Show Itinerary if Revealed - use getStops helper */}
+                      {isRevealed && stops.length > 0 && (
                         <div style={{
                           background: 'rgba(255,255,255,0.9)',
                           borderRadius: '20px',
@@ -897,7 +906,7 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                             Full Date Itinerary:
                           </h5>
                           
-                          {surprise.itinerary.activities.map((activity, index) => (
+                          {stops.map((stop, index) => (
                             <div
                               key={index}
                               style={{
@@ -926,7 +935,8 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                                   fontSize: '1.5rem',
                                   flexShrink: 0
                                 }}>
-                                  {activity.emoji || '📍'}
+                                  {/* ✅ FIXED: Use stop.icon instead of activity.emoji */}
+                                  {stop.icon || stop.emoji || '📍'}
                                 </div>
                                 <div style={{ flex: 1 }}>
                                   <h6 style={{
@@ -935,31 +945,35 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                                     margin: '0 0 0.25rem 0',
                                     color: '#92400e'
                                   }}>
-                                    {activity.time && `${activity.time} - `}{activity.name}
+                                    {/* ✅ FIXED: Use stop.time and stop.place.name or stop.title */}
+                                    {stop.time && `${stop.time} - `}{stop.place?.name || stop.name || stop.title}
                                   </h6>
                                   <p style={{
                                     fontSize: '0.9rem',
                                     color: '#78350f',
                                     margin: '0.25rem 0'
                                   }}>
-                                    📍 {activity.address}
+                                    {/* ✅ FIXED: Use stop.place.vicinity or stop.address */}
+                                    📍 {stop.place?.vicinity || stop.address || 'Address not available'}
                                   </p>
-                                  {activity.description && (
+                                  {/* ✅ FIXED: Use stop.description */}
+                                  {stop.description && (
                                     <p style={{
                                       fontSize: '0.9rem',
                                       color: '#92400e',
                                       margin: '0.5rem 0 0 0',
                                       lineHeight: '1.5'
                                     }}>
-                                      {activity.description}
+                                      {stop.description}
                                     </p>
                                   )}
                                 </div>
                               </div>
                               
-                              {activity.place_id && (
+                              {/* ✅ FIXED: Use stop.place.place_id for Google Maps link */}
+                              {(stop.place?.place_id || stop.place_id) && (
                                 <a
-                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.name)}&query_place_id=${activity.place_id}`}
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.place?.name || stop.name || stop.title)}&query_place_id=${stop.place?.place_id || stop.place_id}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   style={{
@@ -1060,6 +1074,7 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                 
                 {mySurprises.map(surprise => {
                   const status = getStatusBadge(surprise);
+                  const stops = getStops(surprise.itinerary);
                   
                   return (
                     <div
@@ -1134,8 +1149,8 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                         </div>
                       )}
 
-                      {/* NEW: Show itinerary if attached */}
-                      {surprise.itinerary && surprise.itinerary.activities && (
+                      {/* ✅ FIXED: Show itinerary if attached - use getStopCount */}
+                      {stops.length > 0 && (
                         <div style={{
                           background: '#f0fdf4',
                           borderRadius: '15px',
@@ -1152,7 +1167,7 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                             gap: '0.5rem'
                           }}>
                             <MapPin size={16} />
-                            <strong>Full itinerary attached:</strong> {surprise.itinerary.activities.length} stops
+                            <strong>Full itinerary attached:</strong> {stops.length} stops
                           </p>
                         </div>
                       )}

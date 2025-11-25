@@ -6,15 +6,14 @@ export default function HamburgerMenu({
   subscriptionStatus,
   savedDatesCount,
   notificationCount,
+  surpriseCount = 0, // ✅ NEW: Unrevealed surprises count (default 0)
   onNavigate,
   onLogout 
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // ✅ SIMPLER: Just prevent scrolling on backdrop touch
   useEffect(() => {
     if (isOpen) {
-      // Prevent scroll on body but allow it in menu
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -83,7 +82,8 @@ export default function HamburgerMenu({
       icon: '🎁', 
       label: 'Surprise Dates', 
       gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-      shadow: 'rgba(139, 92, 246, 0.4)'
+      shadow: 'rgba(139, 92, 246, 0.4)',
+      badge: surpriseCount > 0 ? surpriseCount : null // ✅ NEW: Surprise badge
     },
     { 
       id: 'streaks', 
@@ -106,58 +106,61 @@ export default function HamburgerMenu({
     onNavigate(itemId);
   };
 
+  // ✅ Calculate total notifications for hamburger button badge (includes surprises)
+  const totalNotifications = (notificationCount || 0) + (surpriseCount || 0);
+
   return (
     <>
       {/* Hamburger Button */}
-<button
-  onClick={() => setIsOpen(!isOpen)}
-  style={{
-    background: 'rgba(255,255,255,0.2)',
-    backdropFilter: 'blur(10px)',
-    border: '2px solid rgba(255,255,255,0.3)',
-    borderRadius: '12px',
-    padding: '0.75rem',
-    cursor: 'pointer',
-    display: isOpen ? 'none' : 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.3s ease',
-    position: 'relative',
-    zIndex: 1001
-  }}
-  onMouseEnter={(e) => {
-    e.target.style.background = 'rgba(255,255,255,0.3)';
-    e.target.style.transform = 'scale(1.05)';
-  }}
-  onMouseLeave={(e) => {
-    e.target.style.background = 'rgba(255,255,255,0.2)';
-    e.target.style.transform = 'scale(1)';
-  }}
->
-  <Menu size={24} style={{ color: 'white' }} />
-  
-  {/* 🔔 NOTIFICATION BADGE */}
-  {notificationCount > 0 && (
-    <div style={{
-      position: 'absolute',
-      top: '-5px',
-      right: '-5px',
-      background: '#ef4444',
-      color: 'white',
-      borderRadius: '50%',
-      width: '20px',
-      height: '20px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '12px',
-      fontWeight: 'bold',
-      boxShadow: '0 2px 8px rgba(239, 68, 68, 0.6)'
-    }}>
-      {notificationCount > 9 ? '9+' : notificationCount}
-    </div>
-  )}
-</button>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          background: 'rgba(255,255,255,0.2)',
+          backdropFilter: 'blur(10px)',
+          border: '2px solid rgba(255,255,255,0.3)',
+          borderRadius: '12px',
+          padding: '0.75rem',
+          cursor: 'pointer',
+          display: isOpen ? 'none' : 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.3s ease',
+          position: 'relative',
+          zIndex: 1001
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.background = 'rgba(255,255,255,0.3)';
+          e.target.style.transform = 'scale(1.05)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.background = 'rgba(255,255,255,0.2)';
+          e.target.style.transform = 'scale(1)';
+        }}
+      >
+        <Menu size={24} style={{ color: 'white' }} />
+        
+        {/* 🔔 NOTIFICATION BADGE - Now includes surprises */}
+        {totalNotifications > 0 && (
+          <div style={{
+            position: 'absolute',
+            top: '-5px',
+            right: '-5px',
+            background: '#ef4444',
+            color: 'white',
+            borderRadius: '50%',
+            width: '20px',
+            height: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.6)'
+          }}>
+            {totalNotifications > 9 ? '9+' : totalNotifications}
+          </div>
+        )}
+      </button>
 
       {/* Backdrop */}
       {isOpen && (
@@ -200,7 +203,7 @@ export default function HamburgerMenu({
           touchAction: 'pan-y'
         }}
       >
-        {/* Menu Header - ✅ SAFE AREA FIX */}
+        {/* Menu Header */}
         <div style={{
           padding: '2rem 1.5rem',
           paddingTop: 'calc(2rem + env(safe-area-inset-top))',
@@ -209,7 +212,7 @@ export default function HamburgerMenu({
           flexShrink: 0,
           position: 'relative'
         }}>
-          {/* Close button - top right */}
+          {/* Close button */}
           <div
             onClick={() => setIsOpen(false)}
             style={{

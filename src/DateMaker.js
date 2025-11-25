@@ -86,7 +86,7 @@ const [initialLoading, setInitialLoading] = useState(true);     // ← ADD THIS
   const [profileError, setProfileError] = useState('');
   const [showSpinningWheel, setShowSpinningWheel] = useState(false);
   const [gameStats, setGameStats] = useState(null);
-  
+
 
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpData, setLevelUpData] = useState(null);
@@ -105,6 +105,7 @@ const [dateToSave, setDateToSave] = useState(null); // Current itinerary to save
 const [showSurpriseDate, setShowSurpriseDate] = useState(false);
 const [surpriseMode, setSurpriseMode] = useState('create'); // 'create', 'track', or 'reveal'
 const [activeSurprise, setActiveSurprise] = useState(null);
+const [surpriseCount, setSurpriseCount] = useState(0);
 
 // 🔥 STREAK STATE
 const [showStreaks, setShowStreaks] = useState(false);
@@ -784,6 +785,7 @@ const pickBestFrom = (category, userKeyword) => {
   };
 };
 
+
 const openScrapbookForDate = (itinerary) => {
   // 🔒 SUBSCRIPTION GATE
   if (subscriptionStatus === 'free') {
@@ -1100,6 +1102,26 @@ const getWeekNumber = (date) => {
   }
 );
     unsubscribers.push(unsubRequests);
+
+// ✅ NEW: Track unrevealed surprises for current user
+    const surprisesQuery = query(
+      collection(db, 'surpriseDates'),
+      where('partnerEmail', '==', user.email?.toLowerCase()),
+      where('revealed', '==', false)
+    );
+
+    const unsubSurprises = onSnapshot(
+      surprisesQuery,
+      (snapshot) => {
+        const count = snapshot.size;
+        setSurpriseCount(count);
+        console.log('🎁 Unrevealed surprises:', count);
+      },
+      (error) => {
+        console.error('Error loading surprise notifications:', error);
+      }
+    );
+    unsubscribers.push(unsubSurprises);
 
     return () => unsubscribers.forEach(unsub => unsub());
   }, [user, subscriptionStatus]);
