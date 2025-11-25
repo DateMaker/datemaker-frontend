@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { MapPin, Heart, Navigation, ExternalLink, Star, Sparkles, BookmarkPlus, BookmarkCheck, RefreshCw, User, Clock, ArrowRight, MessageCircle, Share2, CheckCircle } from 'lucide-react';
+import { MapPin, Heart, Navigation, ExternalLink, Star, Sparkles, BookmarkPlus, BookmarkCheck, RefreshCw, User, Clock, ArrowRight, MessageCircle, Share2, CheckCircle, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut, sendEmailVerification } from 'firebase/auth';
 import { collection, query, where, onSnapshot, getDocs, writeBatch, doc, getDoc, setDoc, serverTimestamp, orderBy, limit, updateDoc } from 'firebase/firestore';
@@ -76,7 +76,8 @@ const [initialLoading, setInitialLoading] = useState(true);     // ← ADD THIS
   const [dateRange, setDateRange] = useState('anytime');
   const [startTime, setStartTime] = useState('6:00 PM');
   const [duration, setDuration] = useState('6');
-  
+  const [itineraryToShare, setItineraryToShare] = useState(null);
+
   // Profile states
   const [showProfile, setShowProfile] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState('');
@@ -597,7 +598,7 @@ const createItinerary = (allPlaces, userKeywords, isRefresh = false) => {
       dateFlow.push(mappedCat);
     }
   });
-  
+
   console.log(`\n📋 Final flow: ${dateFlow.join(' → ')}`);
   
   // Calculate timing
@@ -3271,41 +3272,77 @@ if (showResults && itinerary) {
           )}
           
           <div style={{ 
-            position: 'fixed', 
-            bottom: '2rem', 
-            right: '2rem',
-            zIndex: 100
-          }}>
+  display: 'flex', 
+  flexDirection: 'column',
+  gap: '1rem',
+  position: 'fixed', 
+  bottom: '2rem', 
+  right: '2rem',
+  zIndex: 100
+}}>
+  
+  {/* 🎁 Make This a Surprise Button */}
   <button
-  onClick={handleCompleteDateItinerary}
-  style={{
-    background: 'linear-gradient(135deg, #06D6A0 0%, #1B9AAA 100%)',
-    color: 'white',
-    fontWeight: '900',
-    fontSize: '1.1rem',
-    padding: '1.25rem 2.5rem',
-    borderRadius: '50px',
-    border: 'none',
-    cursor: 'pointer',
-    boxShadow: '0 8px 30px rgba(6,214,160,0.4)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-    transition: 'all 0.3s ease'
-  }}
-  onMouseEnter={(e) => {
-    e.target.style.transform = 'translateY(-4px) scale(1.05)';
-    e.target.style.boxShadow = '0 12px 40px rgba(6,214,160,0.6)';
-  }}
-  onMouseLeave={(e) => {
-    e.target.style.transform = 'translateY(0) scale(1)';
-    e.target.style.boxShadow = '0 8px 30px rgba(6,214,160,0.4)';
-  }}
->
-  <CheckCircle size={24} />
-  Complete Date
-</button>
-          </div>
+    onClick={() => createSurpriseFromItinerary(itinerary)}
+    style={{
+      background: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)',
+      color: 'white',
+      fontWeight: '900',
+      fontSize: '1.1rem',
+      padding: '1.25rem 2.5rem',
+      borderRadius: '50px',
+      border: 'none',
+      cursor: 'pointer',
+      boxShadow: '0 8px 30px rgba(236,72,153,0.4)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.75rem',
+      transition: 'all 0.3s ease'
+    }}
+    onMouseEnter={(e) => {
+      e.target.style.transform = 'translateY(-4px) scale(1.05)';
+      e.target.style.boxShadow = '0 12px 40px rgba(236,72,153,0.6)';
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.transform = 'translateY(0) scale(1)';
+      e.target.style.boxShadow = '0 8px 30px rgba(236,72,153,0.4)';
+    }}
+  >
+    <Gift size={24} />
+    🎁 Make This a Surprise
+  </button>
+
+  {/* ✓ Complete Date Button */}
+  <button
+    onClick={handleCompleteDateItinerary}
+    style={{
+      background: 'linear-gradient(135deg, #06D6A0 0%, #1B9AAA 100%)',
+      color: 'white',
+      fontWeight: '900',
+      fontSize: '1.1rem',
+      padding: '1.25rem 2.5rem',
+      borderRadius: '50px',
+      border: 'none',
+      cursor: 'pointer',
+      boxShadow: '0 8px 30px rgba(6,214,160,0.4)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.75rem',
+      transition: 'all 0.3s ease'
+    }}
+    onMouseEnter={(e) => {
+      e.target.style.transform = 'translateY(-4px) scale(1.05)';
+      e.target.style.boxShadow = '0 12px 40px rgba(6,214,160,0.6)';
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.transform = 'translateY(0) scale(1)';
+      e.target.style.boxShadow = '0 8px 30px rgba(6,214,160,0.4)';
+    }}
+  >
+    <CheckCircle size={24} />
+    Complete Date
+  </button>
+</div>
         </div>
       </div>
    {showPointsNotification && pointsNotificationData && (
@@ -3383,13 +3420,14 @@ if (showResults && itinerary) {
       ) : null}
 
       {showSurpriseDate && (
-        <SurpriseDateMode
-          currentUser={user}
-          mode={surpriseMode}
-          activeSurprise={activeSurprise}
-          onClose={closeSurpriseDate}
-        />
-      )}
+  <SurpriseDateMode
+    currentUser={user}
+    mode={surpriseMode}
+    activeSurprise={activeSurprise}
+    prefilledItinerary={activeSurprise?.itinerary || null}
+    onClose={closeSurpriseDate}
+  />
+)}
 
       {showStreaks && (
         <DateStreaksGoals
