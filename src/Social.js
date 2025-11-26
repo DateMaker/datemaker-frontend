@@ -1069,35 +1069,37 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
       <div style={{
         background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #8b5cf6 100%)',
         borderRadius: '24px',
-        padding: '2rem',
-        marginBottom: '2rem',
+        padding: '1.5rem',
+        marginBottom: '1.5rem',
         boxShadow: '0 10px 30px rgba(168, 85, 247, 0.3)',
         border: '3px solid rgba(255, 255, 255, 0.3)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
           <button
             onClick={onBack}
             style={{
               background: 'rgba(255, 255, 255, 0.2)',
               border: '2px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '16px',
-              padding: '0.875rem',
+              borderRadius: '14px',
+              padding: '0.75rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               backdropFilter: 'blur(10px)',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              flexShrink: 0
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-              e.target.style.transform = 'scale(1.05)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+              e.currentTarget.style.transform = 'scale(1.05)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-              e.target.style.transform = 'scale(1)';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
-            <ArrowLeft size={24} style={{ color: 'white' }} />
+            <ArrowLeft size={22} style={{ color: 'white' }} />
           </button>
 
           {/* 🔔 Notification Bell */}
@@ -1108,7 +1110,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                 case 'feed':
                   setActiveTab('feed');
                   if (itemId) {
-                    // Find and view the specific date
                     const dateToView = feed.find(d => d.id === itemId);
                     if (dateToView) setViewingDate(dateToView);
                   }
@@ -1132,25 +1133,26 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
             }}
           />
 
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{
-              fontSize: '3rem',
+              fontSize: 'clamp(1.5rem, 5vw, 2.5rem)',
               fontWeight: '900',
-              margin: '0 0 0.5rem',
+              margin: 0,
               background: 'linear-gradient(to right, #fde68a, #ffffff)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
+              backgroundClip: 'text',
+              lineHeight: 1.2
             }}>
-              DateMaker <span style={{ color: '#8b5cf6' }}>Social</span>
+              DateMaker Social
             </h1>
             <p style={{
-              margin: 0,
-              color: 'rgba(255, 255, 255, 0.95)',
-              fontSize: '1.125rem',
+              margin: '0.25rem 0 0 0',
+              color: 'rgba(255, 255, 255, 0.9)',
+              fontSize: 'clamp(0.75rem, 2.5vw, 1rem)',
               fontWeight: '600'
             }}>
-              Connect, share, and plan amazing dates together! ✨
+              Connect, share, and plan together! ✨
             </p>
           </div>
         </div>
