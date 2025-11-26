@@ -2523,28 +2523,21 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                     key={request.id}
                     style={{
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
+                      flexDirection: 'column',
+                      gap: '1rem',
                       background: 'linear-gradient(135deg, #ffffff 0%, #fffbeb 100%)',
-                      padding: '1.5rem',
+                      padding: '1.25rem',
                       borderRadius: '18px',
                       border: '2px solid #fef3c7',
                       boxShadow: '0 2px 8px rgba(251, 191, 36, 0.1)',
                       transition: 'all 0.2s'
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateX(4px)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(251, 191, 36, 0.2)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateX(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(251, 191, 36, 0.1)';
-                    }}
                   >
+                    {/* User info row */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <div style={{
-                        width: '48px',
-                        height: '48px',
+                        width: '44px',
+                        height: '44px',
                         borderRadius: '50%',
                         background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
                         display: 'flex',
@@ -2552,88 +2545,84 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                         justifyContent: 'center',
                         color: 'white',
                         fontWeight: '900',
-                        fontSize: '1.25rem',
+                        fontSize: '1.125rem',
+                        flexShrink: 0,
                         boxShadow: '0 4px 12px rgba(251, 191, 36, 0.3)'
                       }}>
                         {request.fromUserEmail[0].toUpperCase()}
                       </div>
-                      <div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
                         <p style={{
                           margin: '0 0 0.25rem',
                           fontWeight: '800',
-                          fontSize: '1.125rem',
-                          color: '#1f2937'
+                          fontSize: '1rem',
+                          color: '#1f2937',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
                         }}>
                           {request.fromUserEmail.split('@')[0]}
                         </p>
                         <p style={{
                           margin: 0,
-                          fontSize: '0.875rem',
+                          fontSize: '0.8rem',
                           color: '#6b7280',
-                          fontWeight: '600'
+                          fontWeight: '600',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
                         }}>
                           {request.fromUserEmail}
                         </p>
                       </div>
                     </div>
 
+                    {/* Buttons row - full width */}
                     <div style={{ display: 'flex', gap: '0.75rem' }}>
                       <button
                         onClick={() => handleAcceptFriendRequest(request.id)}
                         style={{
-                          padding: '0.875rem 1.5rem',
-                          borderRadius: '14px',
+                          flex: 1,
+                          padding: '0.75rem 1rem',
+                          borderRadius: '12px',
                           border: 'none',
                           background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                           color: 'white',
                           fontWeight: '800',
-                          fontSize: '1rem',
+                          fontSize: '0.9rem',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.625rem',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
                           transition: 'all 0.2s',
                           boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
                         }}
-                        onMouseEnter={(e) => {
-                          e.target.style.transform = 'scale(1.03)';
-                          e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.transform = 'scale(1)';
-                          e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
-                        }}
                       >
-                        <Check size={20} />
+                        <Check size={18} />
                         Accept
                       </button>
 
                       <button
                         onClick={() => handleRejectFriendRequest(request.id)}
                         style={{
-                          padding: '0.875rem 1.5rem',
-                          borderRadius: '14px',
+                          flex: 1,
+                          padding: '0.75rem 1rem',
+                          borderRadius: '12px',
                           border: '2px solid rgba(239, 68, 68, 0.3)',
                           background: 'rgba(239, 68, 68, 0.1)',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.625rem',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
                           fontWeight: '800',
-                          fontSize: '1rem',
+                          fontSize: '0.9rem',
                           color: '#ef4444',
                           transition: 'all 0.2s'
                         }}
-                        onMouseEnter={(e) => {
-                          e.target.style.background = 'rgba(239, 68, 68, 0.2)';
-                          e.target.style.transform = 'scale(1.03)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.background = 'rgba(239, 68, 68, 0.1)';
-                          e.target.style.transform = 'scale(1)';
-                        }}
                       >
-                        <X size={20} />
+                        <X size={18} />
                         Decline
                       </button>
                     </div>
@@ -3191,12 +3180,12 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
 
                 {/* Message input */}
                 <div style={{
-                  padding: '1.25rem',
+                  padding: '1rem',
                   borderTop: '2px solid #e9d5ff',
                   background: 'white',
                   borderRadius: '0 0 20px 20px'
                 }}>
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <input
                       type="text"
                       value={messageInput}
@@ -3217,8 +3206,9 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                       placeholder="Type a message..."
                       style={{
                         flex: 1,
-                        padding: '1rem 1.25rem',
-                        borderRadius: '18px',
+                        minWidth: 0,
+                        padding: '0.875rem 1rem',
+                        borderRadius: '16px',
                         border: '2px solid #e9d5ff',
                         fontSize: '1rem',
                         outline: 'none',
@@ -3229,8 +3219,8 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                       onClick={handleSendMessage}
                       disabled={!messageInput.trim()}
                       style={{
-                        padding: '1rem 1.75rem',
-                        borderRadius: '18px',
+                        padding: '0.875rem',
+                        borderRadius: '16px',
                         border: 'none',
                         background: messageInput.trim()
                           ? 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)'
@@ -3241,27 +3231,17 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                         cursor: messageInput.trim() ? 'pointer' : 'not-allowed',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.625rem',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        width: '48px',
+                        height: '48px',
                         transition: 'all 0.2s',
                         boxShadow: messageInput.trim()
-                          ? '0 6px 20px rgba(168, 85, 247, 0.3)'
+                          ? '0 4px 12px rgba(168, 85, 247, 0.3)'
                           : 'none'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (messageInput.trim()) {
-                          e.target.style.transform = 'scale(1.03)';
-                          e.target.style.boxShadow = '0 8px 24px rgba(168, 85, 247, 0.4)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.transform = 'scale(1)';
-                        e.target.style.boxShadow = messageInput.trim()
-                          ? '0 6px 20px rgba(168, 85, 247, 0.3)'
-                          : 'none';
                       }}
                     >
                       <Send size={20} />
-                      Send
                     </button>
                   </div>
                 </div>
