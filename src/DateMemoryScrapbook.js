@@ -2,6 +2,48 @@ import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
 import { collection, query, where, orderBy, getDocs, deleteDoc, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ChevronLeft, Star, Trash2, Edit3, X, Check, Camera } from 'lucide-react';
+import heic2any from 'heic2any';
+
+// =====================================================
+// CONVERT HEIC TO JPEG (for iPhone photos)
+// =====================================================
+const convertHeicToJpeg = async (file) => {
+  // Check if it's a HEIC file
+  const isHeic = file.type === 'image/heic' || 
+                 file.type === 'image/heif' || 
+                 file.name.toLowerCase().endsWith('.heic') ||
+                 file.name.toLowerCase().endsWith('.heif');
+  
+  if (!isHeic) {
+    console.log('📸 Not a HEIC file, no conversion needed');
+    return file;
+  }
+  
+  console.log('📸 Converting HEIC to JPEG...');
+  
+  try {
+    const convertedBlob = await heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.85
+    });
+    
+    // heic2any can return an array or single blob
+    const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+    
+    // Create a new file with .jpg extension
+    const newFileName = file.name.replace(/\.heic$/i, '.jpg').replace(/\.heif$/i, '.jpg');
+    const convertedFile = new File([blob], newFileName, { type: 'image/jpeg' });
+    
+    console.log(`📸 HEIC converted: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(convertedFile.size / 1024 / 1024).toFixed(2)}MB`);
+    
+    return convertedFile;
+  } catch (error) {
+    console.error('📸 HEIC conversion failed:', error);
+    // Return original file if conversion fails
+    return file;
+  }
+};
 
 export default function DateMemoryScrapbook({ currentUser, mode = 'view', dateToSave, onClose }) {
   const [memories, setMemories] = useState([]);
@@ -105,40 +147,44 @@ export default function DateMemoryScrapbook({ currentUser, mode = 'view', dateTo
   };
 
   const handlePhotoSelect = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      console.log(`📸 Selected photo: ${file.name}, size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+    let file = e.target.files[0];
+    if (!file) return;
+    
+    console.log(`📸 Selected photo: ${file.name}, size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+    
+    if (file.size > 15000000) {
+      alert('Photo must be under 15MB');
+      return;
+    }
+    
+    try {
+      setSaveStatus('Processing photo...');
       
-      if (file.size > 15000000) {
-        alert('Photo must be under 15MB');
-        return;
-      }
+      // Step 1: Convert HEIC to JPEG if needed (for iPhone photos)
+      file = await convertHeicToJpeg(file);
       
-      try {
-        // Compress the image for better iOS compatibility
-        setSaveStatus('Processing photo...');
-        const compressedBlob = await compressImage(file);
-        const compressedFile = new File([compressedBlob], file.name, { type: 'image/jpeg' });
-        setSelectedPhoto(compressedFile);
-        
-        // Create preview
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPhotoPreview(reader.result);
-          setSaveStatus('');
-        };
-        reader.readAsDataURL(compressedBlob);
-      } catch (error) {
-        console.error('Error processing photo:', error);
-        // Fall back to original file
-        setSelectedPhoto(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPhotoPreview(reader.result);
-          setSaveStatus('');
-        };
-        reader.readAsDataURL(file);
-      }
+      // Step 2: Compress the image for better iOS compatibility
+      const compressedBlob = await compressImage(file);
+      const compressedFile = new File([compressedBlob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
+      setSelectedPhoto(compressedFile);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+        setSaveStatus('');
+      };
+      reader.readAsDataURL(compressedBlob);
+    } catch (error) {
+      console.error('Error processing photo:', error);
+      // Fall back to original file
+      setSelectedPhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+        setSaveStatus('');
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -182,7 +228,7 @@ export default function DateMemoryScrapbook({ currentUser, mode = 'view', dateTo
           console.log(`📸 Base64 length: ${base64Data.length} chars`);
           
           // Upload via backend API
-          const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+          const apiUrl = process.env.REACT_APP_API_URL || 'https://datemaker-backend-1.onrender.com';
           console.log('📸 Uploading to:', `${apiUrl}/api/upload-photo`);
           
           // Use AbortController for timeout
@@ -502,7 +548,7 @@ export default function DateMemoryScrapbook({ currentUser, mode = 'view', dateTo
               <>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.heic,.heif"
                   onChange={handlePhotoSelect}
                   style={{ display: 'none' }}
                   id="photo-upload"
