@@ -1074,87 +1074,95 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
         boxShadow: '0 10px 30px rgba(168, 85, 247, 0.3)',
         border: '3px solid rgba(255, 255, 255, 0.3)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-          <button
-            onClick={onBack}
-            style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '14px',
-              padding: '0.75rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backdropFilter: 'blur(10px)',
-              transition: 'all 0.2s',
-              flexShrink: 0
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-              e.currentTarget.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-          >
-            <ArrowLeft size={22} style={{ color: 'white' }} />
-          </button>
+        {/* Top row - Back button and Bell */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          marginBottom: '1rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button
+              onClick={onBack}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '14px',
+                padding: '0.75rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backdropFilter: 'blur(10px)',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <ArrowLeft size={22} style={{ color: 'white' }} />
+            </button>
 
-          {/* 🔔 Notification Bell */}
-          <NotificationBell 
-            user={user} 
-            onNavigate={(section, itemId) => {
-              switch (section) {
-                case 'feed':
-                  setActiveTab('feed');
-                  if (itemId) {
-                    const dateToView = feed.find(d => d.id === itemId);
-                    if (dateToView) setViewingDate(dateToView);
-                  }
-                  break;
-                case 'messages':
-                  setActiveTab('messages');
-                  if (itemId) {
-                    const conv = conversations.find(c => c.id === itemId);
-                    if (conv) setSelectedConversation(conv);
-                  }
-                  break;
-                case 'requests':
-                  setActiveTab('requests');
-                  break;
-                case 'friends':
-                  setActiveTab('friends');
-                  break;
-                default:
-                  break;
-              }
-            }}
-          />
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{
-              fontSize: 'clamp(1.5rem, 5vw, 2.5rem)',
-              fontWeight: '900',
-              margin: 0,
-              background: 'linear-gradient(to right, #fde68a, #ffffff)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              lineHeight: 1.2
-            }}>
-              DateMaker Social
-            </h1>
-            <p style={{
-              margin: '0.25rem 0 0 0',
-              color: 'rgba(255, 255, 255, 0.9)',
-              fontSize: 'clamp(0.75rem, 2.5vw, 1rem)',
-              fontWeight: '600'
-            }}>
-              Connect, share, and plan together! ✨
-            </p>
+            {/* 🔔 Notification Bell */}
+            <NotificationBell 
+              user={user} 
+              onNavigate={(section, itemId) => {
+                switch (section) {
+                  case 'feed':
+                    setActiveTab('feed');
+                    if (itemId) {
+                      const dateToView = feed.find(d => d.id === itemId);
+                      if (dateToView) setViewingDate(dateToView);
+                    }
+                    break;
+                  case 'messages':
+                    setActiveTab('messages');
+                    if (itemId) {
+                      const conv = conversations.find(c => c.id === itemId);
+                      if (conv) setSelectedConversation(conv);
+                    }
+                    break;
+                  case 'requests':
+                    setActiveTab('requests');
+                    break;
+                  case 'friends':
+                    setActiveTab('friends');
+                    break;
+                  default:
+                    break;
+                }
+              }}
+            />
           </div>
+        </div>
+
+        {/* Title - Centered */}
+        <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+          <h1 style={{
+            fontSize: 'clamp(2rem, 8vw, 3rem)',
+            fontWeight: '900',
+            margin: 0,
+            background: 'linear-gradient(to right, #fde68a, #ffffff)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            lineHeight: 1.1
+          }}>
+            DateMaker Social
+          </h1>
+          <p style={{
+            margin: '0.5rem 0 0 0',
+            color: 'rgba(255, 255, 255, 0.95)',
+            fontSize: '1rem',
+            fontWeight: '600'
+          }}>
+            Connect, share, and plan together! ✨
+          </p>
         </div>
 
         {/* Navigation Tabs */}

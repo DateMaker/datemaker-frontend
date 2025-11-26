@@ -294,44 +294,44 @@ const NotificationBell = ({ user, onNavigate }) => {
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(0,0,0,0.3)',
-              zIndex: 998,
+              background: 'rgba(0,0,0,0.5)',
+              zIndex: 9998,
               animation: 'fadeIn 0.2s ease-out'
             }}
           />
           
           {/* Notification Panel */}
           <div style={{
-            position: 'absolute',
-            top: '100%',
-            right: '-50px',
-            marginTop: '0.75rem',
-            width: '380px',
-            maxWidth: '95vw',
+            position: 'fixed',
+            top: 'calc(100px + env(safe-area-inset-top))',
+            left: '1rem',
+            right: '1rem',
+            maxWidth: '400px',
+            margin: '0 auto',
             background: 'white',
             borderRadius: '24px',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
             border: '3px solid #a855f7',
-            zIndex: 999,
+            zIndex: 9999,
             overflow: 'hidden',
-            maxHeight: '80vh',
+            maxHeight: '70vh',
             display: 'flex',
             flexDirection: 'column',
             animation: 'slideDown 0.3s ease-out'
           }}>
             {/* Header */}
             <div style={{
-              padding: '1.25rem 1.5rem',
+              padding: '1rem 1.25rem',
               background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Sparkles size={24} style={{ color: 'white' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Sparkles size={20} style={{ color: 'white' }} />
                 <h3 style={{
                   margin: 0,
-                  fontSize: '1.25rem',
+                  fontSize: '1.125rem',
                   fontWeight: '900',
                   color: 'white'
                 }}>
@@ -341,9 +341,9 @@ const NotificationBell = ({ user, onNavigate }) => {
                   <span style={{
                     background: 'rgba(255,255,255,0.3)',
                     color: 'white',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '20px',
-                    fontSize: '0.8125rem',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '12px',
+                    fontSize: '0.75rem',
                     fontWeight: '800'
                   }}>
                     {unreadCount} new
@@ -354,28 +354,26 @@ const NotificationBell = ({ user, onNavigate }) => {
               <button
                 onClick={() => setShowDropdown(false)}
                 style={{
-                  background: 'rgba(255,255,255,0.2)',
+                  background: 'white',
                   border: 'none',
                   borderRadius: '50%',
-                  width: '36px',
-                  height: '36px',
+                  width: '32px',
+                  height: '32px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'all 0.2s'
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.3)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
               >
-                <X size={20} style={{ color: 'white' }} />
+                <X size={18} style={{ color: '#a855f7' }} />
               </button>
             </div>
 
             {/* Action Bar */}
             {notifications.length > 0 && (
               <div style={{
-                padding: '0.75rem 1.5rem',
+                padding: '0.5rem 1rem',
                 borderBottom: '2px solid #f3e8ff',
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -389,17 +387,17 @@ const NotificationBell = ({ user, onNavigate }) => {
                     border: 'none',
                     color: unreadCount > 0 ? '#a855f7' : '#d1d5db',
                     fontWeight: '700',
-                    fontSize: '0.875rem',
+                    fontSize: '0.8125rem',
                     cursor: unreadCount > 0 ? 'pointer' : 'not-allowed',
-                    padding: '0.5rem',
+                    padding: '0.4rem',
                     borderRadius: '8px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
+                    gap: '0.4rem',
                     transition: 'all 0.2s'
                   }}
                 >
-                  <Check size={16} />
+                  <Check size={14} />
                   Mark all read
                 </button>
                 
@@ -410,17 +408,17 @@ const NotificationBell = ({ user, onNavigate }) => {
                     border: 'none',
                     color: '#ef4444',
                     fontWeight: '700',
-                    fontSize: '0.875rem',
+                    fontSize: '0.8125rem',
                     cursor: 'pointer',
-                    padding: '0.5rem',
+                    padding: '0.4rem',
                     borderRadius: '8px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
+                    gap: '0.4rem',
                     transition: 'all 0.2s'
                   }}
                 >
-                  <X size={16} />
+                  <X size={14} />
                   Clear all
                 </button>
               </div>
