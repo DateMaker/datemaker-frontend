@@ -295,7 +295,7 @@ if (selectedFriends.length > 0) {
 }
 } catch (error) {
   console.error('Error sharing date:', error);
-  setSuccessMessage('Failed to share date. Please try again.');
+  alert('Failed to share date. Please try again.');
 }
      finally {
       setLoading(false);
