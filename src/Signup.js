@@ -46,10 +46,16 @@ export default function Signup({ onSwitchToLogin, onShowSuccess }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // ✅ FIX: Store email in LOWERCASE for searchability
+      // Also store searchable name field (lowercase)
+      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedName = name.trim();
+      
       // Create user document in Firestore
       await setDoc(doc(db, 'users', user.uid), {
-        name: name.trim(),
-        email: email.trim(),
+        name: normalizedName,
+        nameLower: normalizedName.toLowerCase(), // ✅ NEW: For case-insensitive name search
+        email: normalizedEmail, // ✅ FIX: Always lowercase
         subscriptionStatus: 'free',
         createdAt: new Date().toISOString(),
         uid: user.uid,

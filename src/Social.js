@@ -29,7 +29,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
   const [optimisticMessages, setOptimisticMessages] = useState([]); // For instant message display
   const [participantProfiles, setParticipantProfiles] = useState({}); // Store user profiles for avatars
   const [isOnline, setIsOnline] = useState(navigator.onLine); // ✅ FIX #4: Offline detection
-const [successMessage, setSuccessMessage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -563,41 +563,65 @@ useEffect(() => {
     return () => unsubscribe();
   }, [selectedConversation, user.uid, user.email]);
 
-  // Search users - OPTIMIZED VERSION ⚡💰
-const handleSearch = async () => {
-  if (!searchQuery.trim()) return;
-  
-  setLoading(true);
-  try {
-    const searchTerm = searchQuery.toLowerCase().trim();
+  // ✅ FIXED: Search users - CASE INSENSITIVE
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
     
-    // ✅ Single optimized query - prefix match on email
-    const emailQuery = query(
-      collection(db, 'users'),
-      where('email', '>=', searchTerm),
-      where('email', '<=', searchTerm + '\uf8ff'),
-      limit(20) // ✅ Limit results to prevent huge reads
-    );
-    
-    const emailSnapshot = await getDocs(emailQuery);
-    const results = emailSnapshot.docs
-      .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter(u => u.id !== user.uid); // Exclude current user
-    
-    setSearchResults(results);
-    
-    if (results.length === 0) {
-  setSuccessMessage('No users found. Make sure to type the START of their email address!');
-}
-    
-    console.log(`🔍 Search results: ${results.length} users found (optimized query)`);
-    
-  } catch (error) {
-  console.error('Search error:', error);
-  setSuccessMessage('Search failed: ' + error.message);
-}
-  setLoading(false);
-};
+    setLoading(true);
+    try {
+      // ✅ Always search lowercase (emails are now stored lowercase after migration)
+      const searchTerm = searchQuery.toLowerCase().trim();
+      
+      // Query for email prefix match
+      const emailQuery = query(
+        collection(db, 'users'),
+        where('email', '>=', searchTerm),
+        where('email', '<=', searchTerm + '\uf8ff'),
+        limit(20)
+      );
+      
+      const emailSnapshot = await getDocs(emailQuery);
+      const emailResults = emailSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(u => u.id !== user.uid);
+      
+      // ✅ NEW: Also search by nameLower field for name search
+      let nameResults = [];
+      try {
+        const nameQuery = query(
+          collection(db, 'users'),
+          where('nameLower', '>=', searchTerm),
+          where('nameLower', '<=', searchTerm + '\uf8ff'),
+          limit(20)
+        );
+        
+        const nameSnapshot = await getDocs(nameQuery);
+        nameResults = nameSnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(u => u.id !== user.uid);
+      } catch (nameError) {
+        // nameLower field might not exist on all users yet - that's ok
+        console.log('Name search skipped (nameLower field may not exist)');
+      }
+      
+      // ✅ Combine and deduplicate results
+      const combinedMap = new Map();
+      [...emailResults, ...nameResults].forEach(user => {
+        combinedMap.set(user.id, user);
+      });
+      const results = Array.from(combinedMap.values());
+      
+      setSearchResults(results);
+      
+      // No modal needed - empty results show inline message
+      
+      console.log(`🔍 Search results: ${results.length} users found (case-insensitive)`);
+      
+    } catch (error) {
+      console.error('Search error:', error);
+    }
+    setLoading(false);
+  };
 
   // Send friend request
   const handleSendFriendRequest = async (toUser) => {
@@ -609,9 +633,9 @@ const handleSearch = async () => {
       ));
 
       if (!existingRequest.empty) {
-  setSuccessMessage('Friend request already sent!');
-  return;
-}
+        setSuccessMessage('Friend request already sent!');
+        return;
+      }
 
       await addDoc(collection(db, 'friendRequests'), {
         fromUserId: user.uid,
@@ -623,7 +647,7 @@ const handleSearch = async () => {
       });
 
       setSuccessMessage('Friend request sent! 🎉');
-setSearchResults(prev => prev.filter(u => u.id !== toUser.id));
+      setSearchResults(prev => prev.filter(u => u.id !== toUser.id));
     } catch (error) {
       console.error('Error sending friend request:', error);
     }
@@ -818,9 +842,9 @@ const handleCancelFriendRequest = async (requestId) => {
 
   // ✅ FIX #1: Message length validation
   if (messageInput.length > 1000) {
-  setSuccessMessage('Message too long! Maximum 1000 characters.');
-  return;
-}
+    alert('Message too long! Maximum 1000 characters.');
+    return;
+  }
 
   const messageText = messageInput.trim();
   const tempId = `temp_${Date.now()}_${Math.random()}`;
@@ -859,11 +883,11 @@ const handleCancelFriendRequest = async (requestId) => {
     console.log('✅ Message sent! Cloud Function will update conversation.');
     
   } catch (error) {
-  console.error('❌ Error sending message:', error);
-  // Remove optimistic message on error
-  setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempId));
-  setSuccessMessage('Failed to send message: ' + error.message);
-}
+    console.error('❌ Error sending message:', error);
+    // Remove optimistic message on error
+    setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempId));
+    alert('Failed to send message. Please try again.');
+  }
 };
 
 const handleLikeDate = async (dateId, currentLikes = []) => {
@@ -949,12 +973,12 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
       console.error('❌ Error toggling like in detail view:', error);
       
       // Rollback on error
-setViewingDate(prev => {
-  if (!prev || prev.id !== dateId) return prev;
-  return { ...prev, likes: currentLikes };
-});
+      setViewingDate(prev => {
+        if (!prev || prev.id !== dateId) return prev;
+        return { ...prev, likes: currentLikes };
+      });
 
-setSuccessMessage('Failed to like. Please try again.');
+      alert('Failed to like. Please try again.');
     }
   };
   // Delete shared date
@@ -2063,7 +2087,7 @@ setSuccessMessage('Failed to like. Please try again.');
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') handleSearch();
                 }}
-                placeholder="Search by email..."
+                placeholder="Search by email or name..."
                 style={{
                   flex: 1,
                   padding: '1.125rem 1.5rem',
@@ -2126,6 +2150,23 @@ setSuccessMessage('Failed to like. Please try again.');
 </button>
             </div>
 
+            {/* No results message - inline instead of modal */}
+            {searchResults.length === 0 && searchQuery.trim() && !loading && (
+              <div style={{
+                textAlign: 'center',
+                padding: '3rem 2rem',
+                color: '#6b7280'
+              }}>
+                <Search size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
+                <p style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.5rem', color: '#374151' }}>
+                  No users found
+                </p>
+                <p style={{ fontSize: '0.95rem' }}>
+                  Try the start of their email address (e.g., "john" or "j")
+                </p>
+              </div>
+            )}
+
          {searchResults.length > 0 && (
   <div style={{ 
     display: 'flex',
@@ -2183,7 +2224,7 @@ setSuccessMessage('Failed to like. Please try again.');
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap'
             }}>
-              {result.email.split('@')[0]}
+              {result.name || result.email.split('@')[0]}
             </p>
             <p style={{
               margin: 0,
@@ -3230,7 +3271,7 @@ setSuccessMessage('Failed to like. Please try again.');
         )}
       </div>
 
- {/* Success Modal */}
+      {/* Success Modal */}
       {successMessage && (
         <SuccessModal
           message={successMessage}
