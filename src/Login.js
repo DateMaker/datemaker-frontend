@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Mail, Lock } from 'lucide-react';
-import { signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
@@ -12,7 +12,12 @@ export default function Login({ onSwitchToSignup }) {
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
-  const [cooldownTime, setCooldownTime] = useState(0); // Cooldown timer in seconds
+  const [cooldownTime, setCooldownTime] = useState(0);
+  
+  // Forgot password states
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetError, setResetError] = useState('');
 
   // Cooldown timer effect
   useEffect(() => {
@@ -24,8 +29,58 @@ export default function Login({ onSwitchToSignup }) {
     }
   }, [cooldownTime]);
 
+  // Handle Forgot Password
+  const handleForgotPassword = async () => {
+    setResetError('');
+    setResetSuccess(false);
+    
+    if (!email.trim()) {
+      setResetError('Please enter your email address first');
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setResetError('Please enter a valid email address');
+      return;
+    }
+
+    setResetLoading(true);
+
+    try {
+      await sendPasswordResetEmail(auth, email.trim().toLowerCase());
+      setResetSuccess(true);
+      console.log('✅ Password reset email sent to:', email);
+      
+      // Auto-hide success message after 10 seconds
+      setTimeout(() => {
+        setResetSuccess(false);
+      }, 10000);
+      
+    } catch (err) {
+      console.error('❌ Password reset error:', err);
+      
+      switch (err.code) {
+        case 'auth/user-not-found':
+          // Don't reveal if email exists for security
+          setResetSuccess(true); // Show success anyway for security
+          break;
+        case 'auth/too-many-requests':
+          setResetError('Too many requests. Please wait a few minutes and try again.');
+          break;
+        case 'auth/invalid-email':
+          setResetError('Invalid email address');
+          break;
+        default:
+          setResetError('Failed to send reset email. Please try again.');
+      }
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const handleResendVerification = async () => {
-    // Check if in cooldown
     if (cooldownTime > 0) {
       return;
     }
@@ -35,21 +90,16 @@ export default function Login({ onSwitchToSignup }) {
     setError('');
     
     try {
-      // Sign in temporarily to get user object
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      // Send verification email
       await sendEmailVerification(user);
-      
-      // Sign them back out immediately
       await auth.signOut();
       
       setResendSuccess(true);
-      setCooldownTime(60); // Set 60 second cooldown
+      setCooldownTime(60);
       console.log('✅ Verification email resent successfully');
       
-      // Auto-hide success message after 5 seconds
       setTimeout(() => {
         setResendSuccess(false);
       }, 5000);
@@ -57,10 +107,9 @@ export default function Login({ onSwitchToSignup }) {
     } catch (err) {
       console.error('❌ Error resending verification email:', err);
       
-      // Handle specific Firebase errors
       if (err.code === 'auth/too-many-requests') {
         setError('Too many requests. Please wait a few minutes before trying again.');
-        setCooldownTime(120); // Force 2 minute cooldown on rate limit
+        setCooldownTime(120);
       } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
         setError('Invalid password. Please check your password and try again.');
       } else {
@@ -76,6 +125,8 @@ export default function Login({ onSwitchToSignup }) {
     setError('');
     setNeedsVerification(false);
     setResendSuccess(false);
+    setResetSuccess(false);
+    setResetError('');
 
     if (!email || !password) {
       setError('Please enter both email and password');
@@ -85,18 +136,14 @@ export default function Login({ onSwitchToSignup }) {
     setLoading(true);
 
     try {
-      // Sign in with Firebase Auth
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       console.log('🔐 User logged in, checking verification...');
       console.log('📧 Email verified:', user.emailVerified);
 
-      // Check email verification FIRST
       if (!user.emailVerified) {
         console.log('⚠️ Email NOT verified - showing banner');
-        
-        // Just prevent login and show banner (don't sign out)
         setNeedsVerification(true);
         setError('Please verify your email before logging in. Check your inbox and spam folder.');
         setLoading(false);
@@ -105,7 +152,6 @@ export default function Login({ onSwitchToSignup }) {
 
       console.log('✅ Email verified! Proceeding with login...');
 
-      // Only check Firestore AFTER email is verified
       try {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         
@@ -232,7 +278,6 @@ export default function Login({ onSwitchToSignup }) {
               </div>
             </div>
 
-            {/* Success message after resending */}
             {resendSuccess && (
               <div style={{
                 background: '#d1fae5',
@@ -257,7 +302,6 @@ export default function Login({ onSwitchToSignup }) {
               </div>
             )}
 
-            {/* Error message for rate limiting */}
             {error && needsVerification && (
               <div style={{
                 background: '#fee2e2',
@@ -277,7 +321,6 @@ export default function Login({ onSwitchToSignup }) {
               </div>
             )}
 
-            {/* Resend button with cooldown */}
             <button
               onClick={handleResendVerification}
               disabled={resendLoading || cooldownTime > 0}
@@ -312,7 +355,6 @@ export default function Login({ onSwitchToSignup }) {
               )}
             </button>
 
-            {/* Helpful hint about cooldown */}
             {cooldownTime > 0 && (
               <p style={{
                 color: '#78350f',
@@ -324,6 +366,44 @@ export default function Login({ onSwitchToSignup }) {
                 This prevents spam. You can request another email in {cooldownTime} seconds.
               </p>
             )}
+          </div>
+        )}
+
+        {/* 🔑 PASSWORD RESET SUCCESS BANNER */}
+        {resetSuccess && (
+          <div style={{
+            background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+            border: '3px solid #10b981',
+            borderRadius: '16px',
+            padding: '1.25rem',
+            marginBottom: '1.5rem',
+            boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
+            animation: 'fadeIn 0.3s ease-in'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem'
+            }}>
+              <div style={{ fontSize: '1.75rem', flexShrink: 0 }}>✅</div>
+              <div>
+                <h3 style={{
+                  color: '#065f46',
+                  fontSize: '1rem',
+                  fontWeight: '800',
+                  margin: '0 0 0.25rem 0'
+                }}>
+                  Password Reset Email Sent!
+                </h3>
+                <p style={{
+                  color: '#047857',
+                  fontSize: '0.875rem',
+                  margin: 0
+                }}>
+                  Check your inbox and spam folder for the reset link.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -394,6 +474,46 @@ export default function Login({ onSwitchToSignup }) {
               onFocus={(e) => e.target.style.border = '2px solid #ec4899'}
               onBlur={(e) => e.target.style.border = '2px solid #fbcfe8'}
             />
+            
+            {/* 🔑 FORGOT PASSWORD LINK */}
+            <div style={{ 
+              marginTop: '0.5rem', 
+              textAlign: 'right' 
+            }}>
+              <button
+                onClick={handleForgotPassword}
+                disabled={resetLoading}
+                type="button"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: resetLoading ? '#9ca3af' : '#a855f7',
+                  fontWeight: '600',
+                  fontSize: '0.875rem',
+                  cursor: resetLoading ? 'not-allowed' : 'pointer',
+                  textDecoration: 'underline',
+                  padding: 0
+                }}
+              >
+                {resetLoading ? 'Sending...' : 'Forgot password?'}
+              </button>
+            </div>
+            
+            {/* Reset error message */}
+            {resetError && (
+              <div style={{ 
+                marginTop: '0.5rem',
+                padding: '0.75rem', 
+                background: '#fef2f2', 
+                border: '2px solid #fecaca', 
+                borderRadius: '10px', 
+                color: '#b91c1c', 
+                fontWeight: '600',
+                fontSize: '0.8rem'
+              }}>
+                {resetError}
+              </div>
+            )}
           </div>
 
           {/* Error message (only show if NOT showing verification banner) */}

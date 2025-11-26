@@ -308,10 +308,14 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+      boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+      fontSize: '24px',
+      fontWeight: '900',
+      color: '#ec4899',
+      lineHeight: 1
     }}
   >
-    <X size={24} color="#ec4899" strokeWidth={3} />
+    ✕
   </button>
 </div>
 
