@@ -355,7 +355,8 @@ if (selectedFriends.length > 0) {
         }}>
           {/* Chat Header */}
 <div style={{
-  background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
+  position: 'relative',
+      background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
   padding: '1.5rem',
   paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
   borderRadius: '24px 24px 0 0',
@@ -588,7 +589,8 @@ onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
       }}>
         {/* Header */}
 <div style={{
-  background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
+  position: 'relative',
+      background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
   padding: '2rem',
   paddingTop: 'calc(2rem + env(safe-area-inset-top))',
   borderRadius: '24px 24px 0 0',
@@ -848,7 +850,8 @@ onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
                       width: '44px',
                       height: '44px',
                       borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
+                      position: 'relative',
+      background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
