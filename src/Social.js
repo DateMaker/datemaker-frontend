@@ -6,6 +6,13 @@ import { db } from './firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, arrayUnion, arrayRemove, serverTimestamp, onSnapshot, orderBy, getDoc, deleteDoc, setDoc, writeBatch, limit, Timestamp } from 'firebase/firestore';
 import SuccessModal from './SuccessModal';
 import { setStatusBarColor, STATUS_BAR_COLORS } from './utils/statusBar';
+import NotificationBell from './NotificationBell';
+import { 
+  sendFriendRequestNotification, 
+  sendFriendAcceptedNotification,
+  sendDateLikedNotification,
+  sendMessageNotification 
+} from './NotificationService';
 
 export default function Social({ user, onBack, feedNotificationCount = 0 }) {
   const [activeTab, setActiveTab] = useState('feed');
@@ -646,6 +653,10 @@ useEffect(() => {
         createdAt: serverTimestamp()
       });
 
+      // 🔔 Send notification to the recipient
+      await sendFriendRequestNotification(user, toUser.id);
+      console.log('🔔 Friend request notification sent to:', toUser.email);
+
       setSuccessMessage('Friend request sent! 🎉');
       setSearchResults(prev => prev.filter(u => u.id !== toUser.id));
     } catch (error) {
@@ -670,6 +681,10 @@ useEffect(() => {
           isGroup: false,
           createdAt: serverTimestamp()
         });
+
+        // 🔔 Send notification to the person who sent the request
+        await sendFriendAcceptedNotification(user, request.fromUserId);
+        console.log('🔔 Friend accepted notification sent to:', request.fromUserEmail);
       }
     } catch (error) {
       console.error('Error accepting friend request:', error);
@@ -881,6 +896,18 @@ const handleCancelFriendRequest = async (requestId) => {
     });
 
     console.log('✅ Message sent! Cloud Function will update conversation.');
+
+    // 🔔 Send notification to other participants (not yourself)
+    const otherParticipants = selectedConversation.participants?.filter(p => p !== user.uid) || [];
+    for (const recipientId of otherParticipants) {
+      await sendMessageNotification(user, recipientId, {
+        conversationId: selectedConversation.id,
+        text: messageText
+      });
+    }
+    if (otherParticipants.length > 0) {
+      console.log('🔔 Message notifications sent to:', otherParticipants.length, 'recipients');
+    }
     
   } catch (error) {
     console.error('❌ Error sending message:', error);
@@ -894,6 +921,9 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
   try {
     const dateRef = doc(db, 'sharedDates', dateId);
     const hasLiked = currentLikes.includes(user.uid);
+    
+    // Get the date from feed to find owner
+    const dateData = feed.find(d => d.id === dateId);
     
     // Optimistic update - update UI immediately
     setFeed(prevFeed => prevFeed.map(date => {
@@ -915,6 +945,15 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
       await updateDoc(dateRef, {
         likes: arrayUnion(user.uid)
       });
+
+      // 🔔 Send notification when LIKING (not unliking), and not your own date
+      if (dateData && dateData.userId !== user.uid) {
+        await sendDateLikedNotification(user, dateData.userId, {
+          dateId: dateId,
+          title: dateData.title || 'a date'
+        });
+        console.log('🔔 Like notification sent to:', dateData.userId);
+      }
     }
     
   } catch (error) {
@@ -1060,6 +1099,38 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
           >
             <ArrowLeft size={24} style={{ color: 'white' }} />
           </button>
+
+          {/* 🔔 Notification Bell */}
+          <NotificationBell 
+            user={user} 
+            onNavigate={(section, itemId) => {
+              switch (section) {
+                case 'feed':
+                  setActiveTab('feed');
+                  if (itemId) {
+                    // Find and view the specific date
+                    const dateToView = feed.find(d => d.id === itemId);
+                    if (dateToView) setViewingDate(dateToView);
+                  }
+                  break;
+                case 'messages':
+                  setActiveTab('messages');
+                  if (itemId) {
+                    const conv = conversations.find(c => c.id === itemId);
+                    if (conv) setSelectedConversation(conv);
+                  }
+                  break;
+                case 'requests':
+                  setActiveTab('requests');
+                  break;
+                case 'friends':
+                  setActiveTab('friends');
+                  break;
+                default:
+                  break;
+              }
+            }}
+          />
 
           <div style={{ flex: 1 }}>
             <h1 style={{

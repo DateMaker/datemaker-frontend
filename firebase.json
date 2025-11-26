@@ -1,4 +1,8 @@
 {
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
   "functions": [
     {
       "codebase": "default",
@@ -16,16 +20,16 @@
       "source": "functions"
     },
     {
-  "source": "JavaScript",
-  "codebase": "emailnotifications",
-  "disallowLegacyRuntimeConfig": true,
-  "ignore": [
-    "node_modules",
-    ".git",
-    "firebase-debug.log",
-    "firebase-debug.*.log",
-    "*.local"
-  ]
-}
+      "source": "JavaScript",
+      "codebase": "emailnotifications",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
   ]
 }

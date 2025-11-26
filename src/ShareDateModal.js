@@ -284,6 +284,32 @@ try {
   console.error('Error tracking share:', error);
 }
 
+// 🔔 NEW: Send notifications to invited friends
+if (selectedFriends.length > 0) {
+  console.log('📬 Sending notifications to', selectedFriends.length, 'friends');
+  
+  for (const friendId of selectedFriends) {
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        type: 'date_invite',
+        userId: friendId,  // recipient
+        fromUserId: user.uid,
+        fromUserEmail: user.email,
+        dateId: sharedDateDoc.id,
+        dateTitle: dateTitle,
+        message: `${user.email.split('@')[0]} invited you to "${dateTitle}"`,
+        scheduledDate: selectedDate,
+        scheduledTime: selectedTime,
+        createdAt: serverTimestamp(),
+        read: false
+      });
+      console.log('✅ Notification sent to:', friendId);
+    } catch (error) {
+      console.error('❌ Error sending notification to', friendId, error);
+    }
+  }
+}
+
 // If friends invited, show chat
 if (selectedFriends.length > 0) {
   // Send notifications to invited friends (you can implement this)
@@ -328,10 +354,11 @@ if (selectedFriends.length > 0) {
           border: '2px solid #fb923c'
         }}>
           {/* Chat Header */}
-          <div style={{
-            background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
-            padding: '1.5rem',
-            borderRadius: '24px 24px 0 0',
+<div style={{
+  background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
+  padding: '1.5rem',
+  paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
+  borderRadius: '24px 24px 0 0',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center'
@@ -560,12 +587,13 @@ onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
         animation: 'slideUp 0.3s ease-out'
       }}>
         {/* Header */}
-        <div style={{
-          background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
-          padding: '2rem',
-          borderRadius: '24px 24px 0 0',
-          position: 'relative'
-        }}>
+<div style={{
+  background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
+  padding: '2rem',
+  paddingTop: 'calc(2rem + env(safe-area-inset-top))',
+  borderRadius: '24px 24px 0 0',
+  position: 'relative'
+}}>
           <button onClick={onClose} style={{
   position: 'absolute',
   top: '1.5rem',
