@@ -15,14 +15,13 @@ export default function DateMemoryScrapbook({ currentUser, mode = 'view', dateTo
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState(''); // For showing progress
+  const [saveStatus, setSaveStatus] = useState('');
 
   useEffect(() => {
     window.scrollTo(0, 0);
     document.body.scrollTop = 0;
     document.documentElement.scrollTop = 0;
     
-    // Also scroll #root for iOS
     const root = document.getElementById('root');
     if (root) root.scrollTop = 0;
   }, []);
@@ -60,19 +59,86 @@ export default function DateMemoryScrapbook({ currentUser, mode = 'view', dateTo
     setLoading(false);
   };
 
-  const handlePhotoSelect = (e) => {
+  // 📸 Compress image for iOS compatibility
+  const compressImage = (file, maxWidth = 1200, quality = 0.7) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Scale down if too large
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to blob
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                console.log(`📸 Compressed: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
+                resolve(blob);
+              } else {
+                reject(new Error('Failed to compress image'));
+              }
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handlePhotoSelect = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 10000000) {
-        alert('Photo must be under 10MB');
+      console.log(`📸 Selected photo: ${file.name}, size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      
+      if (file.size > 15000000) {
+        alert('Photo must be under 15MB');
         return;
       }
-      setSelectedPhoto(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      
+      try {
+        // Compress the image for better iOS compatibility
+        setSaveStatus('Processing photo...');
+        const compressedBlob = await compressImage(file);
+        const compressedFile = new File([compressedBlob], file.name, { type: 'image/jpeg' });
+        setSelectedPhoto(compressedFile);
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPhotoPreview(reader.result);
+          setSaveStatus('');
+        };
+        reader.readAsDataURL(compressedBlob);
+      } catch (error) {
+        console.error('Error processing photo:', error);
+        // Fall back to original file
+        setSelectedPhoto(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPhotoPreview(reader.result);
+          setSaveStatus('');
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -92,61 +158,93 @@ export default function DateMemoryScrapbook({ currentUser, mode = 'view', dateTo
     try {
       let photoUrl = null;
 
-      // Inside saveMemory function - photo upload section
-if (selectedPhoto) {
-  setSaveStatus('Uploading photo...');
-  console.log('📸 Starting photo upload via backend...');
-  
-  try {
-    // Get auth token
-    const token = await currentUser.getIdToken();
-    
-    // Convert photo to base64
-    const base64Data = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(selectedPhoto);
-    });
-    
-    // Upload via backend API as JSON (not FormData)
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-    console.log('📸 Uploading to:', `${apiUrl}/api/upload-photo`);
-    
-    const response = await fetch(`${apiUrl}/api/upload-photo`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        photo: base64Data,
-        fileName: selectedPhoto.name
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Upload failed');
-    }
-    
-    const result = await response.json();
-    photoUrl = result.url;
-    console.log('📸 Photo URL:', photoUrl);
-  } catch (photoError) {
-    console.error('❌ Photo upload failed:', photoError);
-    if (!window.confirm('Photo upload failed. Save without photo?')) {
-      setSaving(false);
-      setSaveStatus('');
-      return;
-    }
-    photoUrl = null;
-  }
-}
+      // 📸 IMPROVED iOS PHOTO UPLOAD
+      if (selectedPhoto) {
+        setSaveStatus('Uploading photo...');
+        console.log('📸 Starting photo upload via backend...');
+        console.log(`📸 Photo size: ${(selectedPhoto.size / 1024 / 1024).toFixed(2)}MB`);
+        
+        try {
+          // Get auth token
+          const token = await currentUser.getIdToken();
+          
+          // Convert photo to base64
+          const base64Data = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = (err) => {
+              console.error('FileReader error:', err);
+              reject(new Error('Failed to read file'));
+            };
+            reader.readAsDataURL(selectedPhoto);
+          });
+          
+          console.log(`📸 Base64 length: ${base64Data.length} chars`);
+          
+          // Upload via backend API
+          const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+          console.log('📸 Uploading to:', `${apiUrl}/api/upload-photo`);
+          
+          // Use AbortController for timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+          
+          const response = await fetch(`${apiUrl}/api/upload-photo`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              photo: base64Data,
+              fileName: selectedPhoto.name || 'photo.jpg'
+            }),
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          console.log('📸 Response status:', response.status);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('📸 Error response:', errorText);
+            let errorData;
+            try {
+              errorData = JSON.parse(errorText);
+            } catch {
+              errorData = { error: errorText || 'Upload failed' };
+            }
+            throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+          }
+          
+          const result = await response.json();
+          photoUrl = result.url;
+          console.log('📸 Photo URL:', photoUrl);
+          
+        } catch (photoError) {
+          console.error('❌ Photo upload failed:', photoError);
+          console.error('❌ Error name:', photoError.name);
+          console.error('❌ Error message:', photoError.message);
+          
+          let errorMessage = 'Photo upload failed.';
+          if (photoError.name === 'AbortError') {
+            errorMessage = 'Photo upload timed out. Try a smaller photo.';
+          } else if (photoError.message) {
+            errorMessage = `Photo upload failed: ${photoError.message}`;
+          }
+          
+          if (!window.confirm(`${errorMessage}\n\nSave without photo?`)) {
+            setSaving(false);
+            setSaveStatus('');
+            return;
+          }
+          photoUrl = null;
+        }
+      }
 
       setSaveStatus('Saving to database...');
       console.log('💾 Saving memory to Firestore...');
-      console.log('dateToSave:', dateToSave);
 
       // Prepare stops data safely
       let stops = [];
@@ -183,8 +281,6 @@ if (selectedPhoto) {
       onClose();
     } catch (error) {
       console.error('❌ Error saving memory:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
       alert(`Failed to save memory: ${error.message}\n\nPlease try again.`);
     }
     setSaving(false);
@@ -274,24 +370,27 @@ if (selectedPhoto) {
             }}>
               📸 Date Memory Scrapbook
             </h1>
-            {/* More visible X button */}
             <button
-  onClick={onClose}
-  style={{
-    background: 'white',
-    border: 'none',
-    borderRadius: '50%',
-    width: '44px',
-    height: '44px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
-  }}
->
-  <X size={24} color="#FF6B35" strokeWidth={3} />
-</button>
+              onClick={onClose}
+              style={{
+                background: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '44px',
+                height: '44px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                fontSize: '24px',
+                fontWeight: '900',
+                color: '#FF6B35',
+                lineHeight: 1
+              }}
+            >
+              ✕
+            </button>
           </div>
 
           {/* Save Your Memory Card */}
@@ -390,10 +489,13 @@ if (selectedPhoto) {
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    color: 'white',
+                    lineHeight: 1
                   }}
                 >
-                  <X size={18} color="white" />
+                  ✕
                 </button>
               </div>
             ) : (
@@ -425,6 +527,18 @@ if (selectedPhoto) {
                   Choose Photos
                 </label>
               </>
+            )}
+            
+            {/* Show processing status */}
+            {saveStatus && !saving && (
+              <p style={{ 
+                textAlign: 'center', 
+                color: '#666', 
+                marginTop: '0.5rem',
+                fontSize: '0.875rem' 
+              }}>
+                {saveStatus}
+              </p>
             )}
           </div>
 
@@ -694,7 +808,7 @@ if (selectedPhoto) {
                             fontWeight: '600'
                           }}
                         >
-                          <X size={16} /> Cancel
+                          ✕ Cancel
                         </button>
                       </div>
                     </div>
