@@ -1,290 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Terms of Service - DateMaker</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-      line-height: 1.8;
-      color: #374151;
-      background: linear-gradient(135deg, #fdf2f8 0%, #f5f3ff 100%);
-      min-height: 100vh;
-    }
-    
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-    
-    .card {
-      background: white;
-      border-radius: 24px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-      overflow: hidden;
-    }
-    
-    header {
-      background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
-      padding: 3rem 2rem;
-      text-align: center;
-    }
-    
-    header h1 {
-      color: white;
-      font-size: 2.5rem;
-      font-weight: 900;
-      margin-bottom: 0.5rem;
-    }
-    
-    header p {
-      color: rgba(255,255,255,0.9);
-      font-size: 1rem;
-    }
-    
-    .content {
-      padding: 3rem;
-    }
-    
-    .updated {
-      color: #6b7280;
-      margin-bottom: 2rem;
-      font-style: italic;
-    }
-    
-    section {
-      margin-bottom: 2.5rem;
-    }
-    
-    h2 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #111827;
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid #f3e8ff;
-    }
-    
-    h3 {
-      font-size: 1.15rem;
-      font-weight: 600;
-      color: #374151;
-      margin-top: 1.5rem;
-      margin-bottom: 0.75rem;
-    }
-    
-    p {
-      margin-bottom: 1rem;
-    }
-    
-    ul {
-      margin-left: 1.5rem;
-      margin-bottom: 1rem;
-    }
-    
-    li {
-      margin-bottom: 0.5rem;
-    }
-    
-    strong {
-      color: #111827;
-    }
-    
-    .legal-notice {
-      background: #f9fafb;
-      padding: 1.5rem;
-      border-radius: 12px;
-      border-left: 4px solid #a855f7;
-      margin: 1rem 0;
-    }
-    
-    .contact-box {
-      background: linear-gradient(135deg, #fdf2f8 0%, #f5f3ff 100%);
-      padding: 1.5rem;
-      border-radius: 12px;
-      margin-top: 1rem;
-    }
-    
-    .contact-box a {
-      color: #a855f7;
-      text-decoration: none;
-      font-weight: 600;
-    }
-    
-    .contact-box a:hover {
-      text-decoration: underline;
-    }
-    
-    .back-link {
-      display: inline-block;
-      margin-top: 2rem;
-      padding: 1rem 2rem;
-      background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
-      color: white;
-      text-decoration: none;
-      border-radius: 12px;
-      font-weight: 700;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .back-link:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(168, 85, 247, 0.3);
-    }
-    
-    @media (max-width: 640px) {
-      .container {
-        padding: 1rem;
-      }
-      
-      .content {
-        padding: 1.5rem;
-      }
-      
-      header {
-        padding: 2rem 1.5rem;
-      }
-      
-      header h1 {
-        font-size: 2rem;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service - DateMaker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #fdf2f8;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container {
+            background: white;
+            border-radius: 24px;
+            max-width: 900px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: white;
+            padding: 2rem;
+            border-bottom: 2px solid #f3f4f6;
+        }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: bold;
+            background: linear-gradient(to right, #ec4899, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .content {
+            padding: 2rem 3rem 3rem 3rem;
+            line-height: 1.8;
+            color: #374151;
+        }
+        .last-updated {
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+        section {
+            margin-bottom: 2rem;
+        }
+        h2 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #111827;
+        }
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: #111827;
+        }
+        p {
+            margin-bottom: 0.5rem;
+        }
+        ul {
+            margin-left: 2rem;
+            margin-top: 0.5rem;
+        }
+        li {
+            margin-bottom: 0.25rem;
+        }
+        .contact-info {
+            margin-top: 1rem;
+            font-weight: 600;
+        }
+        .back-button {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(to right, #ec4899, #a855f7);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.4);
+        }
+        @media (max-width: 640px) {
+            body {
+                padding: 1rem;
+            }
+            .content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <header>
-        <h1>Terms of Service</h1>
-        <p>DateMaker - AI-Powered Date Planning</p>
-      </header>
-      
-      <div class="content">
-        <p class="updated">Last Updated: November 27, 2025</p>
+    <div class="container">
+        <div class="header">
+            <h1>Terms of Service</h1>
+        </div>
+        
+        <div class="content">
+            <p class="last-updated">Last Updated: November 27, 2025</p>
 
-        <section>
-          <h2>1. Acceptance of Terms</h2>
-          <p>By accessing and using DateMaker ("the Service"), you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to these Terms of Service, please do not use the Service.</p>
-        </section>
+            <section>
+                <h2>1. Acceptance of Terms</h2>
+                <p>By accessing and using DateMaker ("the Service"), you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to these Terms of Service, please do not use the Service.</p>
+            </section>
 
-        <section>
-          <h2>2. Description of Service</h2>
-          <p>DateMaker is a date itinerary planning platform that helps users discover and plan date activities using AI-powered recommendations. The Service includes both free and premium subscription tiers with different feature access levels.</p>
-        </section>
+            <section>
+                <h2>2. Description of Service</h2>
+                <p>DateMaker is a date itinerary planning platform that helps users discover and plan date activities. The Service includes both free and premium subscription tiers with different feature access levels.</p>
+            </section>
 
-        <section>
-          <h2>3. Account Registration</h2>
-          <p>To use certain features of the Service, you must register for an account. You agree to:</p>
-          <ul>
-            <li>Provide accurate, current, and complete information during registration</li>
-            <li>Maintain and promptly update your account information</li>
-            <li>Maintain the security of your password and account</li>
-            <li>Accept responsibility for all activities under your account</li>
-            <li>Immediately notify us of any unauthorized use of your account</li>
-          </ul>
-        </section>
+            <section>
+                <h2>3. Account Registration</h2>
+                <p>To use certain features of the Service, you must register for an account. You agree to:</p>
+                <ul>
+                    <li>Provide accurate, current, and complete information during registration</li>
+                    <li>Maintain and promptly update your account information</li>
+                    <li>Maintain the security of your password and account</li>
+                    <li>Accept responsibility for all activities under your account</li>
+                    <li>Immediately notify us of any unauthorized use of your account</li>
+                </ul>
+            </section>
 
-        <section>
-          <h2>4. Subscription and Billing</h2>
-          
-          <h3>4.1 Free Trial</h3>
-          <p>New users are eligible for a 7-day free trial of the Premium subscription. You will not be charged during the trial period. At the end of the trial, you will be automatically charged $9.99/month unless you cancel before the trial ends.</p>
+            <section>
+                <h2>4. Subscription and Billing</h2>
+                
+                <h3>4.1 Free Trial</h3>
+                <p>New users are eligible for a 7-day free trial of the Premium subscription. You will not be charged during the trial period. At the end of the trial, you will be automatically charged $9.99/month unless you cancel before the trial ends.</p>
 
-          <h3>4.2 Premium Subscription</h3>
-          <p>Premium subscriptions are billed monthly at $9.99/month. By subscribing, you authorize us to charge your payment method on a recurring basis until you cancel.</p>
+                <h3>4.2 Premium Subscription</h3>
+                <p>Premium subscriptions are billed monthly at $9.99/month. By subscribing, you authorize us to charge your payment method on a recurring basis until you cancel.</p>
 
-          <h3>4.3 Cancellation</h3>
-          <p>You may cancel your subscription at any time through your account settings. Cancellations take effect at the end of the current billing period. No refunds are provided for partial subscription periods.</p>
+                <h3>4.3 Cancellation</h3>
+                <p>You may cancel your subscription at any time through your account settings. Cancellations take effect at the end of the current billing period. No refunds are provided for partial subscription periods.</p>
 
-          <h3>4.4 Payment Processing</h3>
-          <p>All payments are processed securely by Stripe, Inc. We do not store your complete credit card information. By providing payment information, you represent that you are authorized to use the payment method provided.</p>
-        </section>
+                <h3>4.4 Payment Processing</h3>
+                <p>All payments are processed securely by Stripe, Inc. We do not store your complete credit card information. By providing payment information, you represent that you are authorized to use the payment method provided.</p>
+            </section>
 
-        <section>
-          <h2>5. User Conduct</h2>
-          <p>You agree not to use the Service to:</p>
-          <ul>
-            <li>Violate any applicable laws or regulations</li>
-            <li>Infringe upon the rights of others</li>
-            <li>Upload or transmit viruses or malicious code</li>
-            <li>Spam, phish, or engage in other fraudulent activities</li>
-            <li>Attempt to gain unauthorized access to the Service</li>
-            <li>Collect or harvest personal data of other users</li>
-            <li>Impersonate any person or entity</li>
-          </ul>
-        </section>
+            <section>
+                <h2>5. User Conduct</h2>
+                <p>You agree not to use the Service to:</p>
+                <ul>
+                    <li>Violate any applicable laws or regulations</li>
+                    <li>Infringe upon the rights of others</li>
+                    <li>Upload or transmit viruses or malicious code</li>
+                    <li>Spam, phish, or engage in other fraudulent activities</li>
+                    <li>Attempt to gain unauthorized access to the Service</li>
+                    <li>Collect or harvest personal data of other users</li>
+                    <li>Impersonate any person or entity</li>
+                </ul>
+            </section>
 
-        <section>
-          <h2>6. Content and Intellectual Property</h2>
-          <p>The Service and its original content, features, and functionality are owned by DateMaker and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.</p>
-          
-          <h3>6.1 User Content</h3>
-          <p>You retain ownership of content you submit to the Service (photos, preferences, etc.). By submitting content, you grant us a worldwide, non-exclusive, royalty-free license to use, reproduce, and display such content solely for the purpose of operating and improving the Service.</p>
-        </section>
+            <section>
+                <h2>6. Content and Intellectual Property</h2>
+                <p>The Service and its original content, features, and functionality are owned by DateMaker and are protected by international copyright, trademark, patent, trade secret, and other intellectual property laws.</p>
+                
+                <h3>6.1 User Content</h3>
+                <p>You retain ownership of content you submit to the Service (photos, preferences, etc.). By submitting content, you grant us a worldwide, non-exclusive, royalty-free license to use, reproduce, and display such content solely for the purpose of operating and improving the Service.</p>
+            </section>
 
-        <section>
-          <h2>7. Third-Party Services</h2>
-          <p>The Service integrates with third-party services including Google Maps, Ticketmaster, and Stripe. Your use of these services is subject to their respective terms of service and privacy policies. We are not responsible for the availability, accuracy, or content of third-party services.</p>
-        </section>
+            <section>
+                <h2>7. Third-Party Services</h2>
+                <p>The Service integrates with third-party services including Google Maps, Ticketmaster, and Stripe. Your use of these services is subject to their respective terms of service and privacy policies. We are not responsible for the availability, accuracy, or content of third-party services.</p>
+            </section>
 
-        <section>
-          <h2>8. Disclaimers and Limitation of Liability</h2>
-          
-          <h3>8.1 Service Provided "As Is"</h3>
-          <div class="legal-notice">
-            <p>THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.</p>
-          </div>
+            <section>
+                <h2>8. Disclaimers and Limitation of Liability</h2>
+                
+                <h3>8.1 Service Provided "As Is"</h3>
+                <p>THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.</p>
 
-          <h3>8.2 Limitation of Liability</h3>
-          <div class="legal-notice">
-            <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, DATEMAKER SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES, WHETHER INCURRED DIRECTLY OR INDIRECTLY, OR ANY LOSS OF DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES.</p>
-          </div>
-        </section>
+                <h3>8.2 Limitation of Liability</h3>
+                <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, DATEMAKER SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES, WHETHER INCURRED DIRECTLY OR INDIRECTLY, OR ANY LOSS OF DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES.</p>
+            </section>
 
-        <section>
-          <h2>9. Indemnification</h2>
-          <p>You agree to indemnify, defend, and hold harmless DateMaker and its officers, directors, employees, and agents from any claims, liabilities, damages, losses, and expenses arising from your use of the Service or violation of these Terms.</p>
-        </section>
+            <section>
+                <h2>9. Indemnification</h2>
+                <p>You agree to indemnify, defend, and hold harmless DateMaker and its officers, directors, employees, and agents from any claims, liabilities, damages, losses, and expenses arising from your use of the Service or violation of these Terms.</p>
+            </section>
 
-        <section>
-          <h2>10. Termination</h2>
-          <p>We reserve the right to suspend or terminate your account and access to the Service at our sole discretion, without notice, for conduct that we believe violates these Terms or is harmful to other users, us, or third parties, or for any other reason.</p>
-        </section>
+            <section>
+                <h2>10. Termination</h2>
+                <p>We reserve the right to suspend or terminate your account and access to the Service at our sole discretion, without notice, for conduct that we believe violates these Terms or is harmful to other users, us, or third parties, or for any other reason.</p>
+            </section>
 
-        <section>
-          <h2>11. Changes to Terms</h2>
-          <p>We reserve the right to modify these Terms at any time. We will notify users of material changes via email or through the Service. Your continued use of the Service after changes constitutes acceptance of the modified Terms.</p>
-        </section>
+            <section>
+                <h2>11. Changes to Terms</h2>
+                <p>We reserve the right to modify these Terms at any time. We will notify users of material changes via email or through the Service. Your continued use of the Service after changes constitutes acceptance of the modified Terms.</p>
+            </section>
 
-        <section>
-          <h2>12. Governing Law and Dispute Resolution</h2>
-          <p>These Terms shall be governed by and construed in accordance with the laws of Australia, without regard to conflict of law principles. Any disputes arising from these Terms or the Service shall be resolved through the courts of Australia, or through mediation if agreed upon by both parties.</p>
-        </section>
+            <section>
+                <h2>12. Governing Law and Dispute Resolution</h2>
+                <p>These Terms shall be governed by and construed in accordance with the laws of Australia. Any disputes arising from these Terms or the Service shall be subject to the exclusive jurisdiction of the courts of Australia.</p>
+            </section>
 
-        <section>
-          <h2>13. Contact Information</h2>
-          <p>If you have questions about these Terms, please contact us at:</p>
-          <div class="contact-box">
-            <p><strong>Email:</strong> <a href="mailto:thedatemakerapp@outlook.com">thedatemakerapp@outlook.com</a></p>
-          </div>
-        </section>
+            <section>
+                <h2>13. Contact Information</h2>
+                <p>If you have questions about these Terms, please contact us at:</p>
+                <p class="contact-info">
+                    Email: thedatemakerapp@outlook.com
+                </p>
+            </section>
 
-        <section>
-          <h2>14. Severability</h2>
-          <p>If any provision of these Terms is found to be unenforceable or invalid, that provision will be limited or eliminated to the minimum extent necessary so that these Terms will otherwise remain in full force and effect.</p>
-        </section>
+            <section>
+                <h2>14. Severability</h2>
+                <p>If any provision of these Terms is found to be unenforceable or invalid, that provision will be limited or eliminated to the minimum extent necessary so that these Terms will otherwise remain in full force and effect.</p>
+            </section>
 
-        <a href="https://thedatemaker.app" class="back-link">← Back to DateMaker</a>
-      </div>
+            <a href="https://thedatemakerapp.com" class="back-button">← Back to DateMaker</a>
+        </div>
     </div>
-  </div>
 </body>
 </html>

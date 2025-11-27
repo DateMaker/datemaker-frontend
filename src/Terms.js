@@ -63,7 +63,7 @@ export default function TermsModal({ onClose }) {
         </div>
 
         <div style={{ padding: '2rem 3rem 3rem 3rem', lineHeight: '1.8', color: '#374151' }}>
-          <p style={{ color: '#6b7280', marginBottom: '2rem' }}>Last Updated: November 11, 2025</p>
+          <p style={{ color: '#6b7280', marginBottom: '2rem' }}>Last Updated: November 27, 2025</p>
 
           <section style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>1. Acceptance of Terms</h2>
@@ -72,7 +72,7 @@ export default function TermsModal({ onClose }) {
 
           <section style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>2. Description of Service</h2>
-            <p>DateMaker is a dating itinerary planning platform that helps users discover and plan date activities. The Service includes both free and premium subscription tiers with different feature access levels.</p>
+            <p>DateMaker is a date itinerary planning platform that helps users discover and plan date activities. The Service includes both free and premium subscription tiers with different feature access levels.</p>
           </section>
 
           <section style={{ marginBottom: '2rem' }}>
@@ -157,15 +157,14 @@ export default function TermsModal({ onClose }) {
 
           <section style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>12. Governing Law and Dispute Resolution</h2>
-            <p>These Terms shall be governed by and construed in accordance with the laws of the United States, without regard to conflict of law principles. Any disputes arising from these Terms or the Service shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association.</p>
+            <p>These Terms shall be governed by and construed in accordance with the laws of Australia. Any disputes arising from these Terms or the Service shall be subject to the exclusive jurisdiction of the courts of Australia.</p>
           </section>
 
           <section style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>13. Contact Information</h2>
             <p>If you have questions about these Terms, please contact us at:</p>
             <p style={{ marginTop: '1rem', fontWeight: '600' }}>
-              Email: support@datemaker.app<br />
-              Address: [Your Business Address]
+              Email: thedatemakerapp@outlook.com
             </p>
           </section>
 

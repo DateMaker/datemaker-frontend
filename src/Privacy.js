@@ -63,7 +63,7 @@ export default function PrivacyModal({ onClose }) {
         </div>
 
         <div style={{ padding: '2rem 3rem 3rem 3rem', lineHeight: '1.8', color: '#374151' }}>
-          <p style={{ color: '#6b7280', marginBottom: '2rem' }}>Last Updated: November 11, 2025</p>
+          <p style={{ color: '#6b7280', marginBottom: '2rem' }}>Last Updated: November 27, 2025</p>
 
           <section style={{ marginBottom: '2rem' }}>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>1. Introduction</h2>
@@ -156,6 +156,9 @@ export default function PrivacyModal({ onClose }) {
 
             <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginTop: '1rem', marginBottom: '0.5rem' }}>6.3 European Privacy Rights (GDPR)</h3>
             <p>EU/EEA residents have rights under GDPR including access, rectification, erasure, restriction of processing, data portability, objection to processing, and withdrawal of consent.</p>
+
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginTop: '1rem', marginBottom: '0.5rem' }}>6.4 Australian Privacy Rights</h3>
+            <p>Australian residents have rights under the Privacy Act 1988 (Cth) and the Australian Privacy Principles (APPs), including the right to access and correct personal information, and to make complaints to the Office of the Australian Information Commissioner (OAIC).</p>
           </section>
 
           <section style={{ marginBottom: '2rem' }}>
@@ -164,16 +167,25 @@ export default function PrivacyModal({ onClose }) {
           </section>
 
           <section style={{ marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>8. Age Policy</h2>
-            <p>Our Service is not intended for users under 13 years of age. We do not knowingly collect personal information from children under 13.</p>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>8. International Data Transfers</h2>
+            <p>Your information may be transferred to and processed in countries other than your own, including the United States and Australia. We ensure appropriate safeguards are in place to protect your information in compliance with applicable data protection laws.</p>
+          </section>
+
+          <section style={{ marginBottom: '2rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>9. Age Policy</h2>
+            <p>Our Service is not intended for users under 13 years of age. We do not knowingly collect personal information from children under 13. If we become aware that we have collected personal information from a child under 13, we will take steps to delete that information.</p>
+          </section>
+
+          <section style={{ marginBottom: '2rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>10. Changes to This Policy</h2>
+            <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date. You are advised to review this Privacy Policy periodically for any changes.</p>
           </section>
 
           <section>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>9. Contact Us</h2>
-            <p>If you have questions about this Privacy Policy, please contact us at:</p>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>11. Contact Us</h2>
+            <p>If you have questions about this Privacy Policy or our privacy practices, please contact us at:</p>
             <p style={{ marginTop: '1rem', fontWeight: '600' }}>
-              Email: privacy@datemaker.app<br />
-              Address: [Your Business Address]
+              Email: thedatemakerapp@outlook.com
             </p>
           </section>
         </div>
