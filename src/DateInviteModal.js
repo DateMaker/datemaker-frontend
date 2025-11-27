@@ -303,26 +303,27 @@ const DateInviteModal = ({
           position: 'relative'
         }}>
           {/* Close button */}
-          <button
-            onClick={onClose}
-            style={{
-              position: 'absolute',
-              top: 'calc(1rem + env(safe-area-inset-top))',
-              right: '1rem',
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              borderRadius: '50%',
-              width: '40px',
-              height: '40px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-          >
-            <X size={22} style={{ color: 'white' }} />
-          </button>
+<button
+  onClick={onClose}
+  style={{
+    position: 'absolute',
+    top: 'calc(1rem + env(safe-area-inset-top))',
+    right: '1rem',
+    background: 'white',
+    border: 'none',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+  }}
+>
+  <X size={22} style={{ color: '#a855f7' }} />
+</button>
 
           {/* Invite badge */}
           <div style={{
