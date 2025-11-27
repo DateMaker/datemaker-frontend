@@ -156,44 +156,49 @@ useLayoutEffect(() => {
 
 // 🔗 Handle deep links from Stripe checkout
 useEffect(() => {
-  const handleDeepLink = App.addListener('appUrlOpen', async (event) => {
-    console.log('🔗 Deep link received:', event.url);
-    
-    if (event.url.includes('checkout-success')) {
-      console.log('✅ Checkout successful!');
+  let listenerHandle = null;
+
+  const setupListener = async () => {
+    listenerHandle = await App.addListener('appUrlOpen', async (event) => {
+      console.log('🔗 Deep link received:', event.url);
       
-      // Close the subscription modal immediately
-      setShowSubscriptionModal(false);
-      
-      // Wait a moment for webhook to process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Refresh subscription status
-      if (user) {
-        try {
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            setSubscriptionStatus(data.subscriptionStatus || 'free');
-            console.log('✅ Subscription status:', data.subscriptionStatus);
-            
-            if (data.subscriptionStatus === 'trial' || data.subscriptionStatus === 'premium') {
-              alert('🎉 Welcome to DateMaker Premium! Your 7-day free trial has started.');
+      if (event.url.includes('checkout-success')) {
+        console.log('✅ Checkout successful!');
+        
+        setShowSubscriptionModal(false);
+        
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        if (user) {
+          try {
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+              const data = userDoc.data();
+              setSubscriptionStatus(data.subscriptionStatus || 'free');
+              console.log('✅ Subscription status:', data.subscriptionStatus);
+              
+              if (data.subscriptionStatus === 'trial' || data.subscriptionStatus === 'premium') {
+                alert('🎉 Welcome to DateMaker Premium! Your 7-day free trial has started.');
+              }
             }
+          } catch (error) {
+            console.error('Error refreshing subscription:', error);
           }
-        } catch (error) {
-          console.error('Error refreshing subscription:', error);
         }
+      } else if (event.url.includes('checkout-cancelled')) {
+        console.log('❌ Checkout was cancelled');
+        setShowSubscriptionModal(false);
       }
-    } else if (event.url.includes('checkout-cancelled')) {
-      console.log('❌ Checkout was cancelled');
-      setShowSubscriptionModal(false);
-    }
-  });
+    });
+  };
+
+  setupListener();
 
   return () => {
-    handleDeepLink.remove();
+    if (listenerHandle) {
+      listenerHandle.remove();
+    }
   };
 }, [user]);
   
@@ -1229,15 +1234,23 @@ useEffect(() => {
   };
 
   // Listen for app returning from background
-  const listener = App.addListener('appStateChange', ({ isActive }) => {
-    if (isActive) {
-      console.log('📱 App resumed - checking subscription...');
-      checkSubscriptionOnResume();
-    }
-  });
+  let listenerHandle = null;
+
+  const setupListener = async () => {
+    listenerHandle = await App.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) {
+        console.log('📱 App resumed - checking subscription...');
+        checkSubscriptionOnResume();
+      }
+    });
+  };
+
+  setupListener();
 
   return () => {
-    listener.remove();
+    if (listenerHandle) {
+      listenerHandle.remove();
+    }
   };
 }, [user, subscriptionStatus]);
 

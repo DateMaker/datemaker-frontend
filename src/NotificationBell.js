@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bell, X, Calendar, Heart, MessageCircle, UserPlus, Gift, Trophy, Flame, Check, Users, Sparkles } from 'lucide-react';
 import { db } from './firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, limit } from 'firebase/firestore';
+import DateInviteModal from './DateInviteModal';
 
 // 🔔 NOTIFICATION TYPES & STYLING
 const NOTIFICATION_CONFIG = {
@@ -94,6 +95,10 @@ const NotificationBell = ({ user, onNavigate }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [animateBell, setAnimateBell] = useState(false);
+  
+  // 🆕 State for date invite modal
+  const [showDateInviteModal, setShowDateInviteModal] = useState(false);
+  const [selectedInviteNotification, setSelectedInviteNotification] = useState(null);
 
   // Listen to notifications in real-time
   useEffect(() => {
@@ -182,12 +187,21 @@ const NotificationBell = ({ user, onNavigate }) => {
 
   const handleNotificationClick = (notification) => {
     markAsRead(notification.id);
+    
+    // 🆕 Special handling for date invites - show modal instead of navigating
+    if (notification.type === 'date_invite') {
+      console.log('📅 Opening date invite modal for:', notification.dateTitle);
+      setSelectedInviteNotification(notification);
+      setShowDateInviteModal(true);
+      setShowDropdown(false);
+      return;
+    }
+    
     setShowDropdown(false);
     
     // Navigate based on notification type
     if (onNavigate) {
       switch (notification.type) {
-        case 'date_invite':
         case 'date_liked':
         case 'date_comment':
           onNavigate('feed', notification.dateId);
@@ -214,6 +228,37 @@ const NotificationBell = ({ user, onNavigate }) => {
     }
   };
 
+  // 🆕 Handle accepting the date invite
+  const handleAcceptInvite = (dateData) => {
+    console.log('✅ Date invite accepted:', dateData?.dateData?.title);
+    setShowDateInviteModal(false);
+    setSelectedInviteNotification(null);
+    
+    // Navigate to feed to see the date
+    if (onNavigate) {
+      onNavigate('feed', dateData?.id);
+    }
+  };
+
+  // 🆕 Handle declining the date invite
+  const handleDeclineInvite = () => {
+    console.log('❌ Date invite declined');
+    setShowDateInviteModal(false);
+    setSelectedInviteNotification(null);
+  };
+
+  // 🆕 Handle opening chat from invite modal
+  const handleOpenChatFromInvite = (dateData) => {
+    console.log('💬 Opening chat for date:', dateData?.dateData?.title);
+    setShowDateInviteModal(false);
+    setSelectedInviteNotification(null);
+    
+    // Navigate to messages
+    if (onNavigate) {
+      onNavigate('messages');
+    }
+  };
+
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -232,429 +277,446 @@ const NotificationBell = ({ user, onNavigate }) => {
   };
 
   return (
-    <div style={{ position: 'relative' }}>
-      {/* Bell Button */}
-      <button
-        onClick={() => setShowDropdown(!showDropdown)}
-        style={{
-          background: 'rgba(255, 255, 255, 0.2)',
-          border: '2px solid rgba(255, 255, 255, 0.3)',
-          borderRadius: '14px',
-          padding: '0.75rem',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
-          transition: 'all 0.2s',
-          animation: animateBell ? 'bellShake 0.5s ease-in-out' : 'none'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-          e.currentTarget.style.transform = 'scale(1.05)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-          e.currentTarget.style.transform = 'scale(1)';
-        }}
-      >
-        <Bell size={24} style={{ color: 'white' }} />
-        
-        {/* Unread Badge */}
-        {unreadCount > 0 && (
-          <span style={{
-            position: 'absolute',
-            top: '-8px',
-            right: '-8px',
-            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-            color: 'white',
-            borderRadius: '50%',
-            minWidth: '24px',
-            height: '24px',
+    <>
+      <div style={{ position: 'relative' }}>
+        {/* Bell Button */}
+        <button
+          onClick={() => setShowDropdown(!showDropdown)}
+          style={{
+            background: 'rgba(255, 255, 255, 0.2)',
+            border: '2px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '14px',
+            padding: '0.75rem',
+            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '0.75rem',
-            fontWeight: '900',
-            border: '2px solid white',
-            boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)',
-            animation: 'pulse 2s infinite'
-          }}>
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </button>
-
-      {/* Dropdown */}
-      {showDropdown && (
-        <>
-          {/* Backdrop */}
-          <div
-            onClick={() => setShowDropdown(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.5)',
-              zIndex: 9998,
-              animation: 'fadeIn 0.2s ease-out'
-            }}
-          />
+            position: 'relative',
+            transition: 'all 0.2s',
+            animation: animateBell ? 'bellShake 0.5s ease-in-out' : 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          <Bell size={24} style={{ color: 'white' }} />
           
-          {/* Notification Panel */}
-          <div style={{
-            position: 'fixed',
-            top: 'calc(80px + env(safe-area-inset-top))',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: 'calc(100% - 2rem)',
-            maxWidth: '380px',
-            background: 'white',
-            borderRadius: '24px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            border: '3px solid #a855f7',
-            zIndex: 9999,
-            overflow: 'hidden',
-            maxHeight: '70vh',
-            display: 'flex',
-            flexDirection: 'column',
-            animation: 'slideDown 0.3s ease-out'
-          }}>
-            {/* Header */}
-            <div style={{
-              padding: '1rem 1.25rem',
-              background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+          {/* Unread Badge */}
+          {unreadCount > 0 && (
+            <span style={{
+              position: 'absolute',
+              top: '-8px',
+              right: '-8px',
+              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+              color: 'white',
+              borderRadius: '50%',
+              minWidth: '24px',
+              height: '24px',
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.75rem',
+              fontWeight: '900',
+              border: '2px solid white',
+              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)',
+              animation: 'pulse 2s infinite'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Sparkles size={20} style={{ color: 'white' }} />
-                <h3 style={{
-                  margin: 0,
-                  fontSize: '1.125rem',
-                  fontWeight: '900',
-                  color: 'white'
-                }}>
-                  Notifications
-                </h3>
-                {unreadCount > 0 && (
-                  <span style={{
-                    background: 'rgba(255,255,255,0.3)',
-                    color: 'white',
-                    padding: '0.2rem 0.6rem',
-                    borderRadius: '12px',
-                    fontSize: '0.75rem',
-                    fontWeight: '800'
-                  }}>
-                    {unreadCount} new
-                  </span>
-                )}
-              </div>
-              
-              <button
-                onClick={() => setShowDropdown(false)}
-                style={{
-                  background: 'white',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '32px',
-                  height: '32px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                }}
-              >
-                <span style={{ color: '#a855f7', fontSize: '18px', fontWeight: '900', lineHeight: 1 }}>✕</span>
-              </button>
-            </div>
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </button>
 
-            {/* Action Bar */}
-            {notifications.length > 0 && (
+        {/* Dropdown */}
+        {showDropdown && (
+          <>
+            {/* Backdrop */}
+            <div
+              onClick={() => setShowDropdown(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0,0,0,0.5)',
+                zIndex: 9998,
+                animation: 'fadeIn 0.2s ease-out'
+              }}
+            />
+            
+            {/* Notification Panel */}
+            <div style={{
+              position: 'fixed',
+              top: 'calc(80px + env(safe-area-inset-top))',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 'calc(100% - 2rem)',
+              maxWidth: '380px',
+              background: 'white',
+              borderRadius: '24px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+              border: '3px solid #a855f7',
+              zIndex: 9999,
+              overflow: 'hidden',
+              maxHeight: '70vh',
+              display: 'flex',
+              flexDirection: 'column',
+              animation: 'slideDown 0.3s ease-out'
+            }}>
+              {/* Header */}
               <div style={{
-                padding: '0.5rem 1rem',
-                borderBottom: '2px solid #f3e8ff',
+                padding: '1rem 1.25rem',
+                background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
                 display: 'flex',
                 justifyContent: 'space-between',
-                background: '#faf5ff'
+                alignItems: 'center'
               }}>
-                <button
-                  onClick={markAllAsRead}
-                  disabled={unreadCount === 0}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: unreadCount > 0 ? '#a855f7' : '#d1d5db',
-                    fontWeight: '700',
-                    fontSize: '0.8125rem',
-                    cursor: unreadCount > 0 ? 'pointer' : 'not-allowed',
-                    padding: '0.4rem',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <Check size={14} />
-                  Mark all read
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Sparkles size={20} style={{ color: 'white' }} />
+                  <h3 style={{
+                    margin: 0,
+                    fontSize: '1.125rem',
+                    fontWeight: '900',
+                    color: 'white'
+                  }}>
+                    Notifications
+                  </h3>
+                  {unreadCount > 0 && (
+                    <span style={{
+                      background: 'rgba(255,255,255,0.3)',
+                      color: 'white',
+                      padding: '0.2rem 0.6rem',
+                      borderRadius: '12px',
+                      fontSize: '0.75rem',
+                      fontWeight: '800'
+                    }}>
+                      {unreadCount} new
+                    </span>
+                  )}
+                </div>
                 
                 <button
-                  onClick={clearAllNotifications}
+                  onClick={() => setShowDropdown(false)}
                   style={{
-                    background: 'none',
+                    background: 'white',
                     border: 'none',
-                    color: '#ef4444',
-                    fontWeight: '700',
-                    fontSize: '0.8125rem',
-                    cursor: 'pointer',
-                    padding: '0.4rem',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <X size={14} />
-                  Clear all
-                </button>
-              </div>
-            )}
-
-            {/* Notifications List */}
-            <div style={{
-              flex: 1,
-              overflowY: 'auto',
-              maxHeight: '500px'
-            }}>
-              {notifications.length === 0 ? (
-                <div style={{
-                  padding: '4rem 2rem',
-                  textAlign: 'center',
-                  color: '#9ca3af'
-                }}>
-                  <div style={{
-                    width: '80px',
-                    height: '80px',
                     borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)',
+                    width: '32px',
+                    height: '32px',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    margin: '0 auto 1.5rem'
-                  }}>
-                    <Bell size={40} style={{ color: '#a855f7', opacity: 0.5 }} />
-                  </div>
-                  <p style={{ margin: '0 0 0.5rem', fontWeight: '800', fontSize: '1.125rem', color: '#374151' }}>
-                    All caught up! 🎉
-                  </p>
-                  <p style={{ margin: 0, fontSize: '0.9375rem' }}>
-                    No new notifications
-                  </p>
-                </div>
-              ) : (
-                notifications.map((notification, index) => {
-                  const config = getNotificationConfig(notification.type);
-                  const IconComponent = config.icon;
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                  }}
+                >
+                  <span style={{ color: '#a855f7', fontSize: '18px', fontWeight: '900', lineHeight: 1 }}>✕</span>
+                </button>
+              </div>
+
+              {/* Action Bar */}
+              {notifications.length > 0 && (
+                <div style={{
+                  padding: '0.5rem 1rem',
+                  borderBottom: '2px solid #f3e8ff',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  background: '#faf5ff'
+                }}>
+                  <button
+                    onClick={markAllAsRead}
+                    disabled={unreadCount === 0}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: unreadCount > 0 ? '#a855f7' : '#d1d5db',
+                      fontWeight: '700',
+                      fontSize: '0.8125rem',
+                      cursor: unreadCount > 0 ? 'pointer' : 'not-allowed',
+                      padding: '0.4rem',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <Check size={14} />
+                    Mark all read
+                  </button>
                   
-                  return (
-                    <div
-                      key={notification.id}
-                      onClick={() => handleNotificationClick(notification)}
-                      style={{
-                        padding: '1.25rem 1.5rem',
-                        borderBottom: index < notifications.length - 1 ? '1px solid #f3e8ff' : 'none',
-                        display: 'flex',
-                        gap: '1rem',
-                        cursor: 'pointer',
-                        background: notification.read 
-                          ? 'white' 
-                          : 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)',
-                        transition: 'all 0.2s',
-                        position: 'relative'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#faf5ff';
-                        e.currentTarget.style.transform = 'translateX(4px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = notification.read 
-                          ? 'white' 
-                          : 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)';
-                        e.currentTarget.style.transform = 'translateX(0)';
-                      }}
-                    >
-                      {/* Icon with emoji */}
-                      <div style={{
-                        width: '52px',
-                        height: '52px',
-                        borderRadius: '16px',
-                        background: config.bgGradient,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        position: 'relative',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                      }}>
-                        <IconComponent size={24} style={{ color: config.color }} />
-                        <span style={{
-                          position: 'absolute',
-                          bottom: '-4px',
-                          right: '-4px',
-                          fontSize: '1rem'
-                        }}>
-                          {notification.emoji || config.emoji}
-                        </span>
-                      </div>
+                  <button
+                    onClick={clearAllNotifications}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#ef4444',
+                      fontWeight: '700',
+                      fontSize: '0.8125rem',
+                      cursor: 'pointer',
+                      padding: '0.4rem',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <X size={14} />
+                    Clear all
+                  </button>
+                </div>
+              )}
 
-                      {/* Content */}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{
-                          margin: '0 0 0.375rem',
-                          fontSize: '0.9375rem',
-                          fontWeight: notification.read ? '600' : '800',
-                          color: '#1f2937',
-                          lineHeight: '1.5',
-                          paddingRight: '2rem'
-                        }}>
-                          {notification.message}
-                        </p>
-                        
-                        {/* Preview text for messages */}
-                        {notification.preview && (
-                          <p style={{
-                            margin: '0 0 0.375rem',
-                            fontSize: '0.875rem',
-                            color: '#6b7280',
-                            fontStyle: 'italic',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            "{notification.preview}"
-                          </p>
-                        )}
-                        
-                        {/* Date/time for date invites */}
-                        {notification.scheduledDate && (
-                          <div style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.375rem',
-                            background: 'rgba(251, 146, 60, 0.1)',
-                            padding: '0.375rem 0.75rem',
-                            borderRadius: '8px',
-                            marginBottom: '0.375rem'
-                          }}>
-                            <Calendar size={14} style={{ color: '#fb923c' }} />
-                            <span style={{
-                              fontSize: '0.8125rem',
-                              color: '#ea580c',
-                              fontWeight: '700'
-                            }}>
-                              {new Date(notification.scheduledDate).toLocaleDateString('en-US', {
-                                weekday: 'short',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                              {notification.scheduledTime && ` • ${notification.scheduledTime}`}
-                            </span>
-                          </div>
-                        )}
-                        
-                        <p style={{
-                          margin: 0,
-                          fontSize: '0.75rem',
-                          color: '#9ca3af',
-                          fontWeight: '600'
-                        }}>
-                          {formatTime(notification.createdAt)}
-                        </p>
-                      </div>
-
-                      {/* Unread indicator */}
-                      {!notification.read && (
-                        <div style={{
-                          width: '12px',
-                          height: '12px',
-                          borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-                          flexShrink: 0,
-                          alignSelf: 'center',
-                          boxShadow: '0 0 8px rgba(168, 85, 247, 0.5)'
-                        }} />
-                      )}
-
-                      {/* Delete button */}
-                      <button
-                        onClick={(e) => deleteNotification(notification.id, e)}
+              {/* Notifications List */}
+              <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                maxHeight: '500px'
+              }}>
+                {notifications.length === 0 ? (
+                  <div style={{
+                    padding: '4rem 2rem',
+                    textAlign: 'center',
+                    color: '#9ca3af'
+                  }}>
+                    <div style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 1.5rem'
+                    }}>
+                      <Bell size={40} style={{ color: '#a855f7', opacity: 0.5 }} />
+                    </div>
+                    <p style={{ margin: '0 0 0.5rem', fontWeight: '800', fontSize: '1.125rem', color: '#374151' }}>
+                      All caught up! 🎉
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.9375rem' }}>
+                      No new notifications
+                    </p>
+                  </div>
+                ) : (
+                  notifications.map((notification, index) => {
+                    const config = getNotificationConfig(notification.type);
+                    const IconComponent = config.icon;
+                    
+                    return (
+                      <div
+                        key={notification.id}
+                        onClick={() => handleNotificationClick(notification)}
                         style={{
-                          position: 'absolute',
-                          top: '0.75rem',
-                          right: '0.75rem',
-                          background: 'transparent',
-                          border: 'none',
+                          padding: '1.25rem 1.5rem',
+                          borderBottom: index < notifications.length - 1 ? '1px solid #f3e8ff' : 'none',
+                          display: 'flex',
+                          gap: '1rem',
                           cursor: 'pointer',
-                          padding: '0.375rem',
-                          borderRadius: '8px',
-                          opacity: 0,
-                          transition: 'all 0.2s'
+                          background: notification.read 
+                            ? 'white' 
+                            : 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)',
+                          transition: 'all 0.2s',
+                          position: 'relative'
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.opacity = '1';
-                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                          e.currentTarget.style.background = '#faf5ff';
+                          e.currentTarget.style.transform = 'translateX(4px)';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.opacity = '0';
-                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.background = notification.read 
+                            ? 'white' 
+                            : 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)';
+                          e.currentTarget.style.transform = 'translateX(0)';
                         }}
                       >
-                        <X size={18} style={{ color: '#ef4444' }} />
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </>
-      )}
+                        {/* Icon with emoji */}
+                        <div style={{
+                          width: '52px',
+                          height: '52px',
+                          borderRadius: '16px',
+                          background: config.bgGradient,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          position: 'relative',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }}>
+                          <IconComponent size={24} style={{ color: config.color }} />
+                          <span style={{
+                            position: 'absolute',
+                            bottom: '-4px',
+                            right: '-4px',
+                            fontSize: '1rem'
+                          }}>
+                            {notification.emoji || config.emoji}
+                          </span>
+                        </div>
 
-      {/* Animations */}
-      <style>{`
-        @keyframes bellShake {
-          0%, 100% { transform: rotate(0deg); }
-          25% { transform: rotate(-15deg); }
-          50% { transform: rotate(15deg); }
-          75% { transform: rotate(-10deg); }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.1); }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
-        @keyframes slideDown {
-          from { 
-            opacity: 0; 
-            transform: translateY(-10px); 
+                        {/* Content */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{
+                            margin: '0 0 0.375rem',
+                            fontSize: '0.9375rem',
+                            fontWeight: notification.read ? '600' : '800',
+                            color: '#1f2937',
+                            lineHeight: '1.5',
+                            paddingRight: '2rem'
+                          }}>
+                            {notification.message}
+                          </p>
+                          
+                          {/* Preview text for messages */}
+                          {notification.preview && (
+                            <p style={{
+                              margin: '0 0 0.375rem',
+                              fontSize: '0.875rem',
+                              color: '#6b7280',
+                              fontStyle: 'italic',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              "{notification.preview}"
+                            </p>
+                          )}
+                          
+                          {/* Date/time for date invites */}
+                          {notification.scheduledDate && (
+                            <div style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.375rem',
+                              background: 'rgba(251, 146, 60, 0.1)',
+                              padding: '0.375rem 0.75rem',
+                              borderRadius: '8px',
+                              marginBottom: '0.375rem'
+                            }}>
+                              <Calendar size={14} style={{ color: '#fb923c' }} />
+                              <span style={{
+                                fontSize: '0.8125rem',
+                                color: '#ea580c',
+                                fontWeight: '700'
+                              }}>
+                                {new Date(notification.scheduledDate).toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                                {notification.scheduledTime && ` • ${notification.scheduledTime}`}
+                              </span>
+                            </div>
+                          )}
+                          
+                          <p style={{
+                            margin: 0,
+                            fontSize: '0.75rem',
+                            color: '#9ca3af',
+                            fontWeight: '600'
+                          }}>
+                            {formatTime(notification.createdAt)}
+                          </p>
+                        </div>
+
+                        {/* Unread indicator */}
+                        {!notification.read && (
+                          <div style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+                            flexShrink: 0,
+                            alignSelf: 'center',
+                            boxShadow: '0 0 8px rgba(168, 85, 247, 0.5)'
+                          }} />
+                        )}
+
+                        {/* Delete button */}
+                        <button
+                          onClick={(e) => deleteNotification(notification.id, e)}
+                          style={{
+                            position: 'absolute',
+                            top: '0.75rem',
+                            right: '0.75rem',
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '0.375rem',
+                            borderRadius: '8px',
+                            opacity: 0,
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.opacity = '1';
+                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.opacity = '0';
+                            e.currentTarget.style.background = 'transparent';
+                          }}
+                        >
+                          <X size={18} style={{ color: '#ef4444' }} />
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Animations */}
+        <style>{`
+          @keyframes bellShake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg); }
+            50% { transform: rotate(15deg); }
+            75% { transform: rotate(-10deg); }
           }
-          to { 
-            opacity: 1; 
-            transform: translateY(0); 
+          
+          @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
           }
-        }
-      `}</style>
-    </div>
+          
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          
+          @keyframes slideDown {
+            from { 
+              opacity: 0; 
+              transform: translateX(-50%) translateY(-10px); 
+            }
+            to { 
+              opacity: 1; 
+              transform: translateX(-50%) translateY(0); 
+            }
+          }
+        `}</style>
+      </div>
+
+      {/* 🆕 Date Invite Modal */}
+      {showDateInviteModal && selectedInviteNotification && (
+        <DateInviteModal
+          notification={selectedInviteNotification}
+          user={user}
+          onClose={() => {
+            setShowDateInviteModal(false);
+            setSelectedInviteNotification(null);
+          }}
+          onAccept={handleAcceptInvite}
+          onDecline={handleDeclineInvite}
+          onOpenChat={handleOpenChatFromInvite}
+        />
+      )}
+    </>
   );
 };
 
