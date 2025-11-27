@@ -1111,32 +1111,52 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
             {/* 🔔 Notification Bell */}
             <NotificationBell 
               user={user} 
-              onNavigate={(section, itemId) => {
-                switch (section) {
-                  case 'feed':
-                    setActiveTab('feed');
-                    if (itemId) {
-                      const dateToView = feed.find(d => d.id === itemId);
-                      if (dateToView) setViewingDate(dateToView);
-                    }
-                    break;
-                  case 'messages':
-                    setActiveTab('messages');
-                    if (itemId) {
-                      const conv = conversations.find(c => c.id === itemId);
-                      if (conv) setSelectedConversation(conv);
-                    }
-                    break;
-                  case 'requests':
-                    setActiveTab('requests');
-                    break;
-                  case 'friends':
-                    setActiveTab('friends');
-                    break;
-                  default:
-                    break;
-                }
-              }}
+              onNavigate={async (section, itemId) => {
+  switch (section) {
+    case 'feed':
+      setActiveTab('feed');
+      if (itemId) {
+        // First try to find in existing feed
+        let dateToView = feed.find(d => d.id === itemId);
+        
+        // If not found in feed, fetch directly from Firestore
+        if (!dateToView) {
+          try {
+            console.log('📥 Date not in feed, fetching from Firestore:', itemId);
+            const dateDoc = await getDoc(doc(db, 'sharedDates', itemId));
+            if (dateDoc.exists()) {
+              dateToView = { id: dateDoc.id, ...dateDoc.data() };
+              console.log('✅ Fetched date:', dateToView.dateData?.title);
+            }
+          } catch (error) {
+            console.error('❌ Error fetching shared date:', error);
+          }
+        }
+        
+        if (dateToView) {
+          setViewingDate(dateToView);
+        } else {
+          console.warn('⚠️ Could not find date with ID:', itemId);
+        }
+      }
+      break;
+    case 'messages':
+      setActiveTab('messages');
+      if (itemId) {
+        const conv = conversations.find(c => c.id === itemId);
+        if (conv) setSelectedConversation(conv);
+      }
+      break;
+    case 'requests':
+      setActiveTab('requests');
+      break;
+    case 'friends':
+      setActiveTab('friends');
+      break;
+    default:
+      break;
+  }
+}}
             />
           </div>
         </div>

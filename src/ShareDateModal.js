@@ -5,7 +5,7 @@ import { db } from './firebase';
 import SuccessModal from './SuccessModal';
 
 const ShareDateModal = ({ user, dateData, onClose }) => {
-  const [dateTitle, setDateTitle] = useState(''); // 🔥 NEW: Date name/title field
+  const [dateTitle, setDateTitle] = useState('');
   const [caption, setCaption] = useState('');
   const [successMessage, setSuccessMessage] = useState(null);
   const [isPublic, setIsPublic] = useState(true);
@@ -26,7 +26,7 @@ const ShareDateModal = ({ user, dateData, onClose }) => {
     setSelectedDate(tomorrow.toISOString().split('T')[0]);
   }, []);
 
-  // 🔥 NEW: Auto-fill date title from dateData if available
+  // Auto-fill date title from dateData if available
   useEffect(() => {
     if (dateData?.title) {
       setDateTitle(dateData.title);
@@ -35,19 +35,17 @@ const ShareDateModal = ({ user, dateData, onClose }) => {
 
   // Load friends
   useEffect(() => {
-  const loadFriends = async () => {
+    const loadFriends = async () => {
       try {
         const friendsList = [];
         const seenIds = new Set();
         
-        // Query 1: Requests I sent that were accepted
         const sentQuery = query(
           collection(db, 'friendRequests'),
           where('fromUserId', '==', user.uid),
           where('status', '==', 'accepted')
         );
         
-        // Query 2: Requests I received that were accepted
         const receivedQuery = query(
           collection(db, 'friendRequests'),
           where('toUserId', '==', user.uid),
@@ -59,7 +57,6 @@ const ShareDateModal = ({ user, dateData, onClose }) => {
           getDocs(receivedQuery)
         ]);
         
-        // Process sent requests (friend is the recipient)
         sentSnapshot.docs.forEach(doc => {
           const data = doc.data();
           if (!seenIds.has(data.toUserId)) {
@@ -72,7 +69,6 @@ const ShareDateModal = ({ user, dateData, onClose }) => {
           }
         });
         
-        // Process received requests (friend is the sender)
         receivedSnapshot.docs.forEach(doc => {
           const data = doc.data();
           if (!seenIds.has(data.fromUserId)) {
@@ -141,26 +137,24 @@ const ShareDateModal = ({ user, dateData, onClose }) => {
   };
 
   const handleShare = async () => {
-    // 🔥 UPDATED: Check for both title and caption
     if (!dateTitle.trim()) {
-  setSuccessMessage('Please give your date a name!');
-  return;
-}
+      setSuccessMessage('Please give your date a name!');
+      return;
+    }
 
     if (!caption.trim()) {
-  setSuccessMessage('Please write something about this date!');
-  return;
-}
+      setSuccessMessage('Please write something about this date!');
+      return;
+    }
 
     if (!selectedDate) {
-  setSuccessMessage('Please select a date!');
-  return;
-}
+      setSuccessMessage('Please select a date!');
+      return;
+    }
 
     setLoading(true);
 
     try {
-      // 🔧 FIXED: Extract stops with ALL venue data from the place object
       const stops = dateData.stops || dateData.itinerary?.stops || [];
       
       console.log('📤 SHARING DATE (RAW):', {
@@ -174,18 +168,14 @@ const ShareDateModal = ({ user, dateData, onClose }) => {
       const updatedDateData = {
         title: dateTitle,
         stops: stops.map(stop => {
-          // Extract place data from the nested place object
           const place = stop.place || stop;
           
-          // Handle Google Places photo URLs
           let imageUrl = '';
           if (place.photos && place.photos.length > 0) {
             const photo = place.photos[0];
-            // Try multiple methods to get the photo URL
             if (typeof photo.getUrl === 'function') {
               imageUrl = photo.getUrl({ maxWidth: 800, maxHeight: 600 });
             } else if (photo.photo_reference) {
-              // Use Google Places Photo API
               imageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=AIzaSyCKCweUu3EEWa8VfNZJ3I0druTc6u5gJKc`;
             } else if (typeof photo === 'string') {
               imageUrl = photo;
@@ -194,31 +184,21 @@ const ShareDateModal = ({ user, dateData, onClose }) => {
             }
           }
           
-          // Fallback to other image sources
           if (!imageUrl) {
             imageUrl = place.image || place.photo || place.icon || stop.image || '';
           }
           
           return {
-            // Basic info
             title: stop.title || stop.name || place.name || 'Untitled Stop',
             name: stop.name || stop.title || place.name,
             category: stop.category || stop.icon || '',
             description: stop.description || place.description || '',
             time: stop.time || '',
             duration: stop.duration || '',
-            
-            // 📸 CRITICAL: Include venue images with proper URL
             image: imageUrl,
-            
-            // ⭐ CRITICAL: Include ratings from place object
             rating: place.rating || stop.rating || null,
-            
-            // 📍 CRITICAL: Include location data from place object
             vicinity: place.vicinity || place.formatted_address || place.address || stop.vicinity || '',
             venueName: place.name || stop.venueName || stop.name || '',
-            
-            // 🗺️ CRITICAL: Include coordinates for maps from place object
             geometry: place.geometry ? {
               location: {
                 lat: typeof place.geometry.location.lat === 'function' 
@@ -229,8 +209,6 @@ const ShareDateModal = ({ user, dateData, onClose }) => {
                   : (place.geometry.location.lng || place.geometry.location.longitude || 0)
               }
             } : null,
-            
-            // 🎯 CRITICAL: Include challenges
             challenges: stop.challenges || []
           };
         })
@@ -249,81 +227,75 @@ const ShareDateModal = ({ user, dateData, onClose }) => {
         }))
       });
 
-      // Create shared date document
-const sharedDateDoc = await addDoc(collection(db, 'sharedDates'), {
-  userId: user.uid,
-  userEmail: user.email,
-  dateData: updatedDateData,
-  caption: caption,
-  scheduledDate: selectedDate,
-  scheduledTime: selectedTime,
-  isPublic: isPublic,
-  invitedFriends: selectedFriends,
-  participants: [user.uid],
-  likes: [],
-  comments: [],
-  createdAt: serverTimestamp()
-});
-
-setSharedDateId(sharedDateDoc.id);
-
-// 🔥 NEW: Track dates shared for achievements
-try {
-  const userDocRef = doc(db, 'users', user.uid);
-  const userDoc = await getDoc(userDocRef);
-  const currentDatesShared = userDoc.data()?.gameStats?.datesShared || 0;
-  const currentPhotosShared = userDoc.data()?.gameStats?.photosShared || 0;
-
-  await updateDoc(userDocRef, {
-    'gameStats.datesShared': currentDatesShared + 1,
-    'gameStats.photosShared': currentPhotosShared + 1 // Keep both for compatibility
-  });
-
-  console.log('📸 Dates shared incremented:', currentDatesShared + 1);
-} catch (error) {
-  console.error('Error tracking share:', error);
-}
-
-// 🔔 NEW: Send notifications to invited friends
-if (selectedFriends.length > 0) {
-  console.log('📬 Sending notifications to', selectedFriends.length, 'friends');
-  
-  for (const friendId of selectedFriends) {
-    try {
-      await addDoc(collection(db, 'notifications'), {
-        type: 'date_invite',
-        userId: friendId,  // recipient
-        fromUserId: user.uid,
-        fromUserEmail: user.email,
-        dateId: sharedDateDoc.id,
-        dateTitle: dateTitle,
-        message: `${user.email.split('@')[0]} invited you to "${dateTitle}"`,
+      const sharedDateDoc = await addDoc(collection(db, 'sharedDates'), {
+        userId: user.uid,
+        userEmail: user.email,
+        dateData: updatedDateData,
+        caption: caption,
         scheduledDate: selectedDate,
         scheduledTime: selectedTime,
-        createdAt: serverTimestamp(),
-        read: false
+        isPublic: isPublic,
+        invitedFriends: selectedFriends,
+        participants: [user.uid],
+        likes: [],
+        comments: [],
+        createdAt: serverTimestamp()
       });
-      console.log('✅ Notification sent to:', friendId);
-    } catch (error) {
-      console.error('❌ Error sending notification to', friendId, error);
-    }
-  }
-}
 
-// If friends invited, show chat
-if (selectedFriends.length > 0) {
-  // Send notifications to invited friends (you can implement this)
-  setShowChat(true);
-  setSuccessMessage(`✨ "${dateTitle}" shared! ${selectedFriends.length} friend${selectedFriends.length > 1 ? 's' : ''} invited!`);
-} else {
-  setSuccessMessage(`✨ "${dateTitle}" shared with the community!`);
-  setTimeout(() => onClose(), 2000); // Auto-close after 2 seconds
-}
-} catch (error) {
-  console.error('Error sharing date:', error);
-  alert('Failed to share date. Please try again.');
-}
-     finally {
+      setSharedDateId(sharedDateDoc.id);
+
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        const currentDatesShared = userDoc.data()?.gameStats?.datesShared || 0;
+        const currentPhotosShared = userDoc.data()?.gameStats?.photosShared || 0;
+
+        await updateDoc(userDocRef, {
+          'gameStats.datesShared': currentDatesShared + 1,
+          'gameStats.photosShared': currentPhotosShared + 1
+        });
+
+        console.log('📸 Dates shared incremented:', currentDatesShared + 1);
+      } catch (error) {
+        console.error('Error tracking share:', error);
+      }
+
+      if (selectedFriends.length > 0) {
+        console.log('📬 Sending notifications to', selectedFriends.length, 'friends');
+        
+        for (const friendId of selectedFriends) {
+          try {
+            await addDoc(collection(db, 'notifications'), {
+              type: 'date_invite',
+              userId: friendId,
+              fromUserId: user.uid,
+              fromUserEmail: user.email,
+              dateId: sharedDateDoc.id,
+              dateTitle: dateTitle,
+              message: `${user.email.split('@')[0]} invited you to "${dateTitle}"`,
+              scheduledDate: selectedDate,
+              scheduledTime: selectedTime,
+              createdAt: serverTimestamp(),
+              read: false
+            });
+            console.log('✅ Notification sent to:', friendId);
+          } catch (error) {
+            console.error('❌ Error sending notification to', friendId, error);
+          }
+        }
+      }
+
+      if (selectedFriends.length > 0) {
+        setShowChat(true);
+        setSuccessMessage(`✨ "${dateTitle}" shared! ${selectedFriends.length} friend${selectedFriends.length > 1 ? 's' : ''} invited!`);
+      } else {
+        setSuccessMessage(`✨ "${dateTitle}" shared with the community!`);
+        setTimeout(() => onClose(), 2000);
+      }
+    } catch (error) {
+      console.error('Error sharing date:', error);
+      alert('Failed to share date. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -354,12 +326,12 @@ if (selectedFriends.length > 0) {
           border: '2px solid #fb923c'
         }}>
           {/* Chat Header */}
-<div style={{
-  position: 'relative',
-      background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
-  padding: '1.5rem',
-  paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
-  borderRadius: '24px 24px 0 0',
+          <div style={{
+            position: 'relative',
+            background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
+            padding: '1.5rem',
+            paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
+            borderRadius: '24px 24px 0 0',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center'
@@ -376,29 +348,29 @@ if (selectedFriends.length > 0) {
               </div>
             </div>
             <button onClick={onClose} style={{
-  position: 'absolute',
-  top: '1.5rem',
-  right: '1.5rem',
-  background: 'rgba(255,255,255,0.3)',
-  border: 'none',
-  color: 'white',
-  width: '40px',
-  height: '40px',
-  borderRadius: '50%',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'all 0.2s',
-  zIndex: 100,
-  fontSize: '1.5rem',
-  fontWeight: 'bold'
-}}
-onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.5)'}
-onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
->
-  ✕
-</button>
+              position: 'absolute',
+              top: 'calc(1.5rem + env(safe-area-inset-top))',
+              right: '1.5rem',
+              background: 'rgba(255,255,255,0.3)',
+              border: 'none',
+              color: 'white',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s',
+              zIndex: 100,
+              fontSize: '1.5rem',
+              fontWeight: 'bold'
+            }}
+            onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.5)'}
+            onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
+            >
+              ✕
+            </button>
           </div>
 
           {/* Messages */}
@@ -588,38 +560,37 @@ onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
         animation: 'slideUp 0.3s ease-out'
       }}>
         {/* Header */}
-<div style={{
-  position: 'relative',
-      background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
-  padding: '2rem',
-  paddingTop: 'calc(2rem + env(safe-area-inset-top))',
-  borderRadius: '24px 24px 0 0',
-  position: 'relative'
-}}>
+        <div style={{
+          position: 'relative',
+          background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
+          padding: '2rem',
+          paddingTop: 'calc(2rem + env(safe-area-inset-top))',
+          borderRadius: '24px 24px 0 0'
+        }}>
           <button onClick={onClose} style={{
-  position: 'absolute',
-  top: '1.5rem',
-  right: '1.5rem',
-  background: 'rgba(255,255,255,0.3)',
-  border: 'none',
-  color: 'white',
-  width: '40px',
-  height: '40px',
-  borderRadius: '50%',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'all 0.2s',
-  zIndex: 100,
-  fontSize: '1.5rem',
-  fontWeight: 'bold'
-}}
-onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.5)'}
-onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
->
-  ✕
-</button>
+            position: 'absolute',
+            top: 'calc(1.5rem + env(safe-area-inset-top))',
+            right: '1.5rem',
+            background: 'rgba(255,255,255,0.3)',
+            border: 'none',
+            color: 'white',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+            zIndex: 100,
+            fontSize: '1.5rem',
+            fontWeight: 'bold'
+          }}
+          onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.5)'}
+          onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
+          >
+            ✕
+          </button>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
             <div style={{
@@ -646,7 +617,7 @@ onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
 
         {/* Form Content */}
         <div style={{ padding: '2rem' }}>
-          {/* 🔥 NEW: Date Name/Title Input */}
+          {/* Date Name/Title Input */}
           <div style={{ marginBottom: '2rem' }}>
             <label style={{ display: 'block', fontWeight: '700', color: '#1f2937', marginBottom: '1rem', fontSize: '1rem' }}>
               📝 Give your date a name *
@@ -665,7 +636,8 @@ onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
                 outline: 'none',
                 fontFamily: 'inherit',
                 transition: 'all 0.2s',
-                fontWeight: '600'
+                fontWeight: '600',
+                boxSizing: 'border-box'
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = '#fb923c';
@@ -704,7 +676,8 @@ onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
                     fontSize: '1rem',
                     outline: 'none',
                     transition: 'all 0.2s',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    boxSizing: 'border-box'
                   }}
                   onFocus={(e) => e.target.style.borderColor = '#fb923c'}
                   onBlur={(e) => e.target.style.borderColor = '#fed7aa'}
@@ -727,7 +700,8 @@ onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
                     fontSize: '1rem',
                     outline: 'none',
                     transition: 'all 0.2s',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    boxSizing: 'border-box'
                   }}
                   onFocus={(e) => e.target.style.borderColor = '#fb923c'}
                   onBlur={(e) => e.target.style.borderColor = '#fed7aa'}
@@ -850,8 +824,7 @@ onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
                       width: '44px',
                       height: '44px',
                       borderRadius: '50%',
-                      position: 'relative',
-      background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
+                      background: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -911,7 +884,8 @@ onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
                 outline: 'none',
                 resize: 'vertical',
                 fontFamily: 'inherit',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
+                boxSizing: 'border-box'
               }}
               onFocus={(e) => e.target.style.borderColor = '#fb923c'}
               onBlur={(e) => e.target.style.borderColor = '#fed7aa'}
@@ -1006,7 +980,7 @@ onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
         </div>
       </div>
 
-{/* Success Modal */}
+      {/* Success Modal */}
       {successMessage && (
         <SuccessModal
           message={successMessage}
