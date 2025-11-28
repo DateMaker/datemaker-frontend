@@ -4,6 +4,8 @@ import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import DateMaker from './DateMaker';
 import StatsPage from './StatsPage';
 import AchievementsPage from './AchievementsPage';
+import Subscribe from './Subscribe';
+import PaymentSuccess from './PaymentSuccess';
 import './index.css';
 
 import { SplashScreen } from '@capacitor/splash-screen';
@@ -12,17 +14,14 @@ import { SplashScreen } from '@capacitor/splash-screen';
 SplashScreen.hide().catch(err => console.log('Splash screen already hidden'));
 
 // ✅ ScrollToTop component - resets scroll on every route change
-// Scrolls #root element since that's the scroll container (not window)
 const ScrollToTop = () => {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    // Scroll the #root element since that's your scroll container per index.css
     const root = document.getElementById('root');
     if (root) {
       root.scrollTo(0, 0);
     }
-    // Also try window just in case
     window.scrollTo(0, 0);
   }, [pathname]);
 
@@ -39,6 +38,8 @@ root.render(
         <Route path="/" element={<DateMaker />} />
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/achievements" element={<AchievementsPage />} />
+        <Route path="/subscribe" element={<Subscribe />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
       </Routes>
     </HashRouter>
   </React.StrictMode>
