@@ -29,6 +29,22 @@ export default function Login({ onSwitchToSignup }) {
     }
   }, [cooldownTime]);
 
+  // Pre-fill email and check for subscribe intent from iOS app
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const emailParam = params.get('email');
+    const subscribeIntent = params.get('subscribe');
+    
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+    
+    // Store subscribe intent for after login
+    if (subscribeIntent === 'true') {
+      sessionStorage.setItem('openSubscribeAfterLogin', 'true');
+    }
+  }, []);
+
   // Handle Forgot Password
   const handleForgotPassword = async () => {
     setResetError('');

@@ -224,6 +224,15 @@ useEffect(() => {
   });
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
+// Auto-open subscription modal if coming from iOS app
+useEffect(() => {
+  const shouldOpenSubscribe = sessionStorage.getItem('openSubscribeAfterLogin');
+  if (shouldOpenSubscribe === 'true' && user && subscriptionStatus === 'free') {
+    sessionStorage.removeItem('openSubscribeAfterLogin');
+    setShowSubscriptionModal(true);
+  }
+}, [user, subscriptionStatus]);
+
   const API_URL = process.env.REACT_APP_API_URL || 'http://192.168.68.103:3001'
   
   const getAuthToken = useCallback(async () => {
