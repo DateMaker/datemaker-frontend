@@ -31,6 +31,7 @@ import PrivacyModal from './Privacy';
 import { App } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
+import InviteFriendsModal from './InviteFriendsModal';
 export default function DateMaker() {
   const navigate = useNavigate(); 
   
@@ -55,6 +56,7 @@ const [showTerms, setShowTerms] = useState(false);
 const [showPrivacy, setShowPrivacy] = useState(false);
   const [userData, setUserData] = useState(null);
   const resultsTopRef = useRef(null);
+const [showInviteFriends, setShowInviteFriends] = useState(false);
 
   // Date generation states
   const [location, setLocation] = useState('');
@@ -3563,11 +3565,11 @@ if (showResults && itinerary) {
               savedDatesCount={Math.max(0, savedDates.length - lastViewedSavedCount)}
               notificationCount={notificationCounts.total}
               surpriseCount={surpriseCount}
-              onNavigate={(destination) => {
-                if (destination === 'spin') setShowSpinningWheel(true);
-                if (destination === 'invite') alert('Friend invites coming soon!');
-                if (destination === 'stats') navigate('/stats');
-                if (destination === 'achievements') navigate('/achievements');
+              
+                onNavigate={(destination) => {
+  if (destination === 'spin') setShowSpinningWheel(true);
+  if (destination === 'invite') setShowInviteFriends(true);
+  if (destination === 'stats') navigate('/stats');
                 if (destination === 'social') {
                   if (subscriptionStatus === 'free') {
                     alert('Social is a premium feature!');
@@ -3968,6 +3970,12 @@ if (showResults && itinerary) {
         />
       )}
 
+      {showInviteFriends && (
+        <InviteFriendsModal
+          user={user}
+          onClose={() => setShowInviteFriends(false)}
+        />
+      )}
 
       {/* 💳 Subscription Manager Modal */}
 {showSubscriptionManager && (
