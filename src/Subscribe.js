@@ -1,6 +1,6 @@
 // Subscribe.js - Web payment page for thedatemakerapp.com/subscribe
 import React, { useState, useEffect } from 'react';
-import { auth } from '../firebase';
+import { auth } from './firebase';
 import { 
   signInWithEmailAndPassword, 
   onAuthStateChanged,
