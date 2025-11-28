@@ -17,6 +17,7 @@ import {
 export default function Social({ user, onBack, feedNotificationCount = 0 }) {
   const [activeTab, setActiveTab] = useState('feed');
   const [searchQuery, setSearchQuery] = useState('');
+  const searchTimeoutRef = useRef(null);
   const [searchResults, setSearchResults] = useState([]);
   const [friends, setFriends] = useState([]);
   const [friendRequests, setFriendRequests] = useState([]);
@@ -2007,7 +2008,7 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                                     border: '2px solid #e9d5ff'
                                   }}>
                                     <img
-                                      src={`https://maps.googleapis.com/maps/api/staticmap?center=${stop.geometry.location.lat},${stop.geometry.location.lng}&zoom=15&size=600x200&markers=color:red%7C${stop.geometry.location.lat},${stop.geometry.location.lng}&key=AIzaSyCKCweUu3EEWa8VfNZJ3I0druTc6u5gJKc`}
+                                      src={`https://maps.googleapis.com/maps/api/staticmap?center=${stop.geometry.location.lat},${stop.geometry.location.lng}&zoom=15&size=600x200&markers=color:red%7C${stop.geometry.location.lat},${stop.geometry.location.lng}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`}
                                       alt="Map"
                                       style={{
                                         width: '100%',
@@ -2184,7 +2185,18 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
               <input
                 type="email"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  // Debounce: auto-search after 300ms of no typing
+                  if (searchTimeoutRef.current) {
+                    clearTimeout(searchTimeoutRef.current);
+                  }
+                  if (e.target.value.trim().length >= 2) {
+                    searchTimeoutRef.current = setTimeout(() => {
+                      handleSearch();
+                    }, 300);
+                  }
+                }}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') handleSearch();
                 }}

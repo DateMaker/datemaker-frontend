@@ -176,7 +176,7 @@ const ShareDateModal = ({ user, dateData, onClose }) => {
             if (typeof photo.getUrl === 'function') {
               imageUrl = photo.getUrl({ maxWidth: 800, maxHeight: 600 });
             } else if (photo.photo_reference) {
-              imageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=AIzaSyCKCweUu3EEWa8VfNZJ3I0druTc6u5gJKc`;
+             imageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`;
             } else if (typeof photo === 'string') {
               imageUrl = photo;
             } else if (photo.url) {

@@ -56,6 +56,7 @@ const [showTerms, setShowTerms] = useState(false);
 const [showPrivacy, setShowPrivacy] = useState(false);
   const [userData, setUserData] = useState(null);
   const resultsTopRef = useRef(null);
+  const abortControllerRef = useRef(null);
 const [showInviteFriends, setShowInviteFriends] = useState(false);
 
   // Date generation states
@@ -69,10 +70,12 @@ const [showInviteFriends, setShowInviteFriends] = useState(false);
  const [searchLoading, setSearchLoading] = useState(false);
 const [error, setError] = useState('');
 const [showResults, setShowResults] = useState(false);
-const [isGenerating, setIsGenerating] = useState(false);        // ← ADD THIS
-const [initialLoading, setInitialLoading] = useState(true);     // ← ADD THIS
+const [isGenerating, setIsGenerating] = useState(false);        
+const [initialLoading, setInitialLoading] = useState(true);    
   const [savedDates, setSavedDates] = useState([]);
   const [showSavedDates, setShowSavedDates] = useState(false);
+  const [savingDate, setSavingDate] = useState(false);
+  const [savingItinerary, setSavingItinerary] = useState(false);
   const [includeEvents, setIncludeEvents] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
   const [dateRange, setDateRange] = useState('anytime');
@@ -159,45 +162,54 @@ useLayoutEffect(() => {
 // 🔗 Handle deep links from Stripe checkout
 useEffect(() => {
   let listenerHandle = null;
+  let isMounted = true;
 
   const setupListener = async () => {
-    listenerHandle = await App.addListener('appUrlOpen', async (event) => {
-      console.log('🔗 Deep link received:', event.url);
-      
-      if (event.url.includes('checkout-success')) {
-        console.log('✅ Checkout successful!');
+    try {
+      listenerHandle = await App.addListener('appUrlOpen', async (event) => {
+        if (!isMounted) return; // Prevent state updates after unmount
         
-        setShowSubscriptionModal(false);
+        console.log('🔗 Deep link received:', event.url);
         
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        if (user) {
-          try {
-            const userDocRef = doc(db, 'users', user.uid);
-            const userDoc = await getDoc(userDocRef);
-            if (userDoc.exists()) {
-              const data = userDoc.data();
-              setSubscriptionStatus(data.subscriptionStatus || 'free');
-              console.log('✅ Subscription status:', data.subscriptionStatus);
-              
-              if (data.subscriptionStatus === 'trial' || data.subscriptionStatus === 'premium') {
-                alert('🎉 Welcome to DateMaker Premium! Your 7-day free trial has started.');
+        if (event.url.includes('checkout-success')) {
+          console.log('✅ Checkout successful!');
+          
+          if (!isMounted) return;
+          setShowSubscriptionModal(false);
+          
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          if (user && isMounted) {
+            try {
+              const userDocRef = doc(db, 'users', user.uid);
+              const userDoc = await getDoc(userDocRef);
+              if (userDoc.exists() && isMounted) {
+                const data = userDoc.data();
+                setSubscriptionStatus(data.subscriptionStatus || 'free');
+                console.log('✅ Subscription status:', data.subscriptionStatus);
+                
+                if (data.subscriptionStatus === 'trial' || data.subscriptionStatus === 'premium') {
+                  alert('🎉 Welcome to DateMaker Premium! Your 7-day free trial has started.');
+                }
               }
+            } catch (error) {
+              console.error('Error refreshing subscription:', error);
             }
-          } catch (error) {
-            console.error('Error refreshing subscription:', error);
           }
+        } else if (event.url.includes('checkout-cancelled')) {
+          console.log('❌ Checkout was cancelled');
+          if (isMounted) setShowSubscriptionModal(false);
         }
-      } else if (event.url.includes('checkout-cancelled')) {
-        console.log('❌ Checkout was cancelled');
-        setShowSubscriptionModal(false);
-      }
-    });
+      });
+    } catch (error) {
+      console.log('App listener setup (expected on web):', error.message);
+    }
   };
 
   setupListener();
 
   return () => {
+    isMounted = false;
     if (listenerHandle) {
       listenerHandle.remove();
     }
@@ -963,13 +975,6 @@ const getWeekNumber = (date) => {
   return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 };
 
-
-  // Load saved language preference on mount
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem('datemaker_language') || 'en';
-    setLanguage(savedLanguage);
-  }, []);
-
   // Save language preference when changed
   const handleLanguageChange = (newLang) => {
     setLanguage(newLang);
@@ -1214,14 +1219,17 @@ useEffect(() => {
 
 // 🔧 Re-check subscription when app returns from background (Stripe fix)
 useEffect(() => {
+  let listenerHandle = null;
+  let isMounted = true;
+
   const checkSubscriptionOnResume = async () => {
-    if (!user) return;
+    if (!user || !isMounted) return;
     
     try {
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
       
-      if (userDoc.exists()) {
+      if (userDoc.exists() && isMounted) {
         const data = userDoc.data();
         const newStatus = data.subscriptionStatus || 'free';
         
@@ -1235,21 +1243,23 @@ useEffect(() => {
     }
   };
 
-  // Listen for app returning from background
-  let listenerHandle = null;
-
   const setupListener = async () => {
-    listenerHandle = await App.addListener('appStateChange', ({ isActive }) => {
-      if (isActive) {
-        console.log('📱 App resumed - checking subscription...');
-        checkSubscriptionOnResume();
-      }
-    });
+    try {
+      listenerHandle = await App.addListener('appStateChange', ({ isActive }) => {
+        if (isActive && isMounted) {
+          console.log('📱 App resumed - checking subscription...');
+          checkSubscriptionOnResume();
+        }
+      });
+    } catch (error) {
+      console.log('AppStateChange listener setup (expected on web):', error.message);
+    }
   };
 
   setupListener();
 
   return () => {
+    isMounted = false;
     if (listenerHandle) {
       listenerHandle.remove();
     }
@@ -1628,6 +1638,10 @@ const handleOpenSaved = async () => {
     return;
   }
   
+  // Prevent double-clicks
+  if (savingDate) return;
+  setSavingDate(true);
+  
   try {
     const dateToSave = {
 
@@ -1660,6 +1674,8 @@ const handleOpenSaved = async () => {
       alert(t('dateSaved'));
     } catch (err) {
       console.error('Save error:', err);
+    } finally {
+      setSavingDate(false);
     }
   };
   
@@ -1670,8 +1686,13 @@ const handleOpenSaved = async () => {
     return;
   }
   
+  // Prevent double-clicks
+  if (savingItinerary) return;
+  setSavingItinerary(true);
+  
   try {
     if (!itinerary || !itinerary.stops || itinerary.stops.length === 0) {
+        setSavingItinerary(false);
         return;
       }
       
@@ -1692,6 +1713,8 @@ const handleOpenSaved = async () => {
       alert(t('itinerarySaved'));
     } catch (err) {
       console.error('Save itinerary error:', err);
+    } finally {
+      setSavingItinerary(false);
     }
   };
   
@@ -1792,6 +1815,12 @@ const handleOpenSaved = async () => {
   };
   
  const handleGenerateDate = async (isRefresh = false) => {
+  // Cancel any in-flight request
+  if (abortControllerRef.current) {
+    abortControllerRef.current.abort();
+  }
+  abortControllerRef.current = new AbortController();
+  
   // Clear previous errors
   setError('');
   setSearchLoading(true);
@@ -1852,11 +1881,11 @@ const handleOpenSaved = async () => {
       console.log('  API_URL:', API_URL);
       
       try {
-        console.log('  Fetching geocode...');
         const geocodeResponse = await fetch(geocodeUrl, {
           headers: {
             'Authorization': `Bearer ${token}`
-          }
+          },
+          signal: abortControllerRef.current.signal
         });
         
         console.log('  Geocode status:', geocodeResponse.status);
@@ -1942,11 +1971,11 @@ const handleOpenSaved = async () => {
     console.log('  Places URL:', placesUrl);
     
     try {
-      console.log('  Fetching places...');
       const placesResponse = await fetch(placesUrl, {
         headers: {
           'Authorization': `Bearer ${token}`
-        }
+        },
+        signal: abortControllerRef.current.signal
       });
       
       console.log('  Places status:', placesResponse.status);
@@ -2021,6 +2050,13 @@ setTimeout(() => {
     }
     
   } catch (err) {
+    // If request was cancelled, don't show error
+    if (err.name === 'AbortError') {
+      console.log('Request cancelled by user');
+      setSearchLoading(false);
+      return;
+    }
+    
     console.error('═══════════════════════════════════════');
     console.error('❌ GENERATION FAILED');
     console.error('Error type:', typeof err);

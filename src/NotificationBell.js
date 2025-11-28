@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X, Calendar, Heart, MessageCircle, UserPlus, Gift, Trophy, Flame, Check, Users, Sparkles } from 'lucide-react';
 import { db } from './firebase';
-import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, limit, writeBatch } from 'firebase/firestore';
 import DateInviteModal from './DateInviteModal';
 
 // 🔔 NOTIFICATION TYPES & STYLING
@@ -176,10 +176,15 @@ const NotificationBell = ({ user, onNavigate }) => {
   };
 
   const clearAllNotifications = async () => {
+    if (notifications.length === 0) return;
+    
     try {
-      for (const notif of notifications) {
-        await deleteDoc(doc(db, 'notifications', notif.id));
-      }
+      const batch = writeBatch(db);
+      notifications.forEach(notif => {
+        batch.delete(doc(db, 'notifications', notif.id));
+      });
+      await batch.commit();
+      console.log('✅ Cleared all notifications in single batch');
     } catch (error) {
       console.error('Error clearing notifications:', error);
     }

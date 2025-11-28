@@ -4,16 +4,27 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { Capacitor } from '@capacitor/core';
 
-// 🔐 Firebase configuration - with fallbacks
+// 🔐 Firebase configuration - from environment variables only
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyA_z8HNFWQFC3BU1WlSd8ikhM5JVywLfhs",
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "datemaker-62679.firebaseapp.com",
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "datemaker-62679",
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "datemaker-62679.firebasestorage.app",
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "931513579449",
-  appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:931513579449:web:55c2a7915fad4a7771e868",
-  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID || "G-LJVXV4GP8W"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
+
+// Validate config in development
+if (process.env.NODE_ENV === 'development') {
+  const missing = Object.entries(firebaseConfig)
+    .filter(([key, value]) => !value)
+    .map(([key]) => key);
+  if (missing.length > 0) {
+    console.error('❌ Missing Firebase config:', missing.join(', '));
+    console.error('Please check your .env file has all REACT_APP_FIREBASE_* variables');
+  }
+}
 
 const app = initializeApp(firebaseConfig);
 
