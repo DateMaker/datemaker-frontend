@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { X, Check, Zap, Crown, Calendar, Users, Camera, Gift, TrendingUp, Shield, Star } from 'lucide-react';
 import { createCheckoutSession } from './Stripe';
+import { Capacitor } from '@capacitor/core';
 
 export default function SubscriptionModal({ user, onClose }) {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('annual');
+  const isNative = Capacitor.isNativePlatform();
 
   const handleSubscribe = async (plan) => {
     setLoading(true);
     try {
-      // Stripe.js already gets user from Firebase auth - just pass the plan
       await createCheckoutSession(plan);
     } catch (error) {
       console.error('Subscription error:', error);
@@ -251,7 +252,7 @@ export default function SubscriptionModal({ user, onClose }) {
                   transition: 'all 0.3s ease'
                 }}
               >
-                {loading ? 'Processing...' : 'Start Free Trial →'}
+                {loading ? 'Processing...' : (isNative ? 'Continue →' : 'Start Free Trial →')}
               </button>
             </div>
 
@@ -294,7 +295,7 @@ export default function SubscriptionModal({ user, onClose }) {
                   padding: '0.5rem',
                   borderRadius: '10px'
                 }}>
-                  <Crown size={20} style={{ color: selectedPlan === 'annual' ? 'white' : 'white' }} />
+                  <Crown size={20} style={{ color: 'white' }} />
                 </div>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0 }}>Annual</h3>
               </div>
@@ -370,25 +371,25 @@ export default function SubscriptionModal({ user, onClose }) {
                   transition: 'all 0.3s ease'
                 }}
               >
-                {loading ? 'Processing...' : 'Get Annual - Best Value →'}
+                {loading ? 'Processing...' : (isNative ? 'Continue →' : 'Get Annual - Best Value →')}
               </button>
             </div>
           </div>
 
           {/* Trust Badges */}
-<div style={{
-  marginTop: '3rem',
-  textAlign: 'center',
-  color: '#6b7280',
-  fontSize: '0.875rem'
-}}>
-  <p style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '600', color: '#111827' }}>
-    ✅ 7-Day Free Trial • 🔒 Secure Payment via Stripe • 🔄 Cancel Anytime
-  </p>
-  <p style={{ margin: 0 }}>
-    Join now T&Cs apply
-  </p>
-</div>
+          <div style={{
+            marginTop: '3rem',
+            textAlign: 'center',
+            color: '#6b7280',
+            fontSize: '0.875rem'
+          }}>
+            <p style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '600', color: '#111827' }}>
+              ✅ 7-Day Free Trial • 🔒 Secure Payment • 🔄 Cancel Anytime
+            </p>
+            <p style={{ margin: 0 }}>
+              Join now T&Cs apply
+            </p>
+          </div>
         </div>
       </div>
     </div>
