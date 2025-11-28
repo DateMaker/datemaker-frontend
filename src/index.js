@@ -4,7 +4,6 @@ import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import DateMaker from './DateMaker';
 import StatsPage from './StatsPage';
 import AchievementsPage from './AchievementsPage';
-import Subscribe from './Subscribe';
 import PaymentSuccess from './PaymentSuccess';
 import './index.css';
 
@@ -38,7 +37,6 @@ root.render(
         <Route path="/" element={<DateMaker />} />
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/achievements" element={<AchievementsPage />} />
-        <Route path="/subscribe" element={<Subscribe />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
       </Routes>
     </HashRouter>
