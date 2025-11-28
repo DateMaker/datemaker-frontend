@@ -1,6 +1,7 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { auth } from './firebase';
 import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 
 // Load Stripe (using your publishable key from .env)
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
@@ -17,14 +18,22 @@ export const createCheckoutSession = async (plan) => {
       throw new Error('User not authenticated');
     }
 
-    // Get Firebase ID token for authentication
+    // Detect if running on iOS native app
+    const isNative = Capacitor.isNativePlatform();
+    console.log('📱 Platform detected:', isNative ? 'native' : 'web');
+
+    // iOS: Open website in Safari to avoid Apple fees
+    if (isNative) {
+      await Browser.open({ 
+        url: 'https://www.thedatemakerapp.com',
+        windowName: '_system'
+      });
+      return;
+    }
+
+    // Web: Use normal Stripe checkout flow
     const token = await user.getIdToken();
 
-    // Detect if running on iOS native app
-    const platform = Capacitor.isNativePlatform() ? 'ios' : 'web';
-    console.log('📱 Platform detected:', platform);
-
-    // Call your backend to create checkout session
     const response = await fetch(`${API_URL}/api/create-checkout-session`, {
       method: 'POST',
       headers: {
@@ -35,7 +44,7 @@ export const createCheckoutSession = async (plan) => {
         userId: user.uid,      
         plan: plan,
         email: user.email,
-        platform: platform
+        platform: 'web'
       })
     });
 
@@ -45,8 +54,6 @@ export const createCheckoutSession = async (plan) => {
     }
 
     const { url } = await response.json();
-
-    // Redirect to Stripe Checkout
     window.location.href = url;
 
   } catch (error) {
