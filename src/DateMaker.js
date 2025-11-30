@@ -167,40 +167,50 @@ useEffect(() => {
   const setupListener = async () => {
     try {
       listenerHandle = await App.addListener('appUrlOpen', async (event) => {
-        if (!isMounted) return; // Prevent state updates after unmount
+  if (!isMounted) return;
+  
+  console.log('🔗 Deep link received:', event.url);
+  
+  // Handle payment success deep link
+  if (event.url.includes('payment-success') || event.url.includes('checkout-success')) {
+    console.log('✅ Payment successful - updating subscription!');
+    
+    if (!isMounted) return;
+    setShowSubscriptionModal(false);
+    
+    // Wait for webhook to process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    if (user && isMounted) {
+      try {
+        // Force refresh subscription from Firebase
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
         
-        console.log('🔗 Deep link received:', event.url);
-        
-        if (event.url.includes('checkout-success')) {
-          console.log('✅ Checkout successful!');
+        if (userDoc.exists() && isMounted) {
+          const data = userDoc.data();
+          const newStatus = data.subscriptionStatus || 'free';
           
-          if (!isMounted) return;
-          setShowSubscriptionModal(false);
+          console.log('✅ New subscription status:', newStatus);
+          setSubscriptionStatus(newStatus);
+          setUserData(data);
           
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          if (user && isMounted) {
-            try {
-              const userDocRef = doc(db, 'users', user.uid);
-              const userDoc = await getDoc(userDocRef);
-              if (userDoc.exists() && isMounted) {
-                const data = userDoc.data();
-                setSubscriptionStatus(data.subscriptionStatus || 'free');
-                console.log('✅ Subscription status:', data.subscriptionStatus);
-                
-                if (data.subscriptionStatus === 'trial' || data.subscriptionStatus === 'premium') {
-                  alert('🎉 Welcome to DateMaker Premium! Your 7-day free trial has started.');
-                }
-              }
-            } catch (error) {
-              console.error('Error refreshing subscription:', error);
-            }
+          if (newStatus === 'trial' || newStatus === 'premium') {
+            // Show success alert
+            setTimeout(() => {
+              alert('🎉 Welcome to DateMaker Premium! Your 7-day free trial has started.');
+            }, 500);
           }
-        } else if (event.url.includes('checkout-cancelled')) {
-          console.log('❌ Checkout was cancelled');
-          if (isMounted) setShowSubscriptionModal(false);
         }
-      });
+      } catch (error) {
+        console.error('Error refreshing subscription:', error);
+      }
+    }
+  } else if (event.url.includes('checkout-cancelled')) {
+    console.log('❌ Checkout was cancelled');
+    if (isMounted) setShowSubscriptionModal(false);
+  }
+});
     } catch (error) {
       console.log('App listener setup (expected on web):', error.message);
     }

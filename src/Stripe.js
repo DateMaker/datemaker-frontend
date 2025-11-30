@@ -22,15 +22,16 @@ export const createCheckoutSession = async (plan) => {
     const isNative = Capacitor.isNativePlatform();
     console.log('📱 Platform detected:', isNative ? 'native' : 'web');
 
-    // iOS/Android: Open website in Safari/Chrome to avoid Apple/Google fees
     if (isNative) {
-      const email = user.email || '';
-      await Browser.open({ 
-        url: `https://www.thedatemakerapp.com?email=${encodeURIComponent(email)}&subscribe=true`,
-        windowName: '_system'
-      });
-      return;
-    }
+  const email = user.email || '';
+  const targetUrl = `https://www.thedatemakerapp.com?email=${encodeURIComponent(email)}&subscribe=true`;
+  console.log('🌐 Opening URL:', targetUrl);
+  await Browser.open({ 
+    url: targetUrl,
+    windowName: '_system'
+  });
+  return;
+}
 
     // Web: Use normal Stripe checkout flow
     const token = await user.getIdToken();

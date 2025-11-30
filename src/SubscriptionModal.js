@@ -1,17 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Check, Zap, Crown, Calendar, Users, Camera, Gift, TrendingUp, Shield, Star } from 'lucide-react';
 import { createCheckoutSession } from './Stripe';
 import { Capacitor } from '@capacitor/core';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from './firebase';
 
 export default function SubscriptionModal({ user, onClose }) {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('annual');
   const isNative = Capacitor.isNativePlatform();
 
+  // Fallback: Check subscription status if user returns manually after 30 seconds
+  useEffect(() => {
+    let timeout;
+    let interval;
+    
+    if (loading && user) {
+      // Start checking after 5 seconds, every 5 seconds
+      timeout = setTimeout(() => {
+        interval = setInterval(async () => {
+          try {
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userDocRef);
+            
+            if (userDoc.exists()) {
+              const status = userDoc.data().subscriptionStatus;
+              if (status === 'trial' || status === 'premium') {
+                console.log('✅ Subscription detected via polling!');
+                clearInterval(interval);
+                onClose();
+                alert('🎉 Welcome to DateMaker Premium! Your 7-day free trial has started.');
+              }
+            }
+          } catch (error) {
+            console.error('Error checking subscription:', error);
+          }
+        }, 5000); // Check every 5 seconds
+      }, 5000); // Start after 5 seconds
+      
+      // Stop checking after 2 minutes
+      setTimeout(() => {
+        if (interval) clearInterval(interval);
+        setLoading(false);
+      }, 120000);
+    }
+    
+    return () => {
+      if (timeout) clearTimeout(timeout);
+      if (interval) clearInterval(interval);
+    };
+  }, [loading, user, onClose]);
+
   const handleSubscribe = async (plan) => {
     setLoading(true);
     try {
       await createCheckoutSession(plan);
+      // Note: Don't setLoading(false) here - let the polling/deep link handle it
     } catch (error) {
       console.error('Subscription error:', error);
       alert('Failed to start checkout. Please try again.');

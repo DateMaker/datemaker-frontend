@@ -8,9 +8,9 @@ const config: CapacitorConfig = {
     androidScheme: 'https'
   },
   ios: {
-    // Removed contentInset: 'always' - this was forcing safe area gaps
-    // Let CSS handle safe areas instead for full control
-    backgroundColor: '#ffffff'  // White instead of purple - cleaner
+    backgroundColor: '#ffffff',
+    // Add URL scheme for deep links
+    scheme: 'datemaker'
   },
   plugins: {
     SplashScreen: {
@@ -25,7 +25,7 @@ const config: CapacitorConfig = {
       style: 'LIGHT',
       backgroundColor: '#667eea'
     }
-  }
+  },
 };
 
 export default config;

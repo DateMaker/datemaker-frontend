@@ -24,21 +24,45 @@ const PaymentSuccess = () => {
       
       // Try to redirect back to app via deep link
       setTimeout(() => {
-        // Primary: Custom URL scheme
-        window.location.href = `datemaker://payment-success?status=success&user_id=${userIdParam}`;
-        
-        // Fallback: If deep link doesn't work after 1.5s, show manual button
-        setTimeout(() => {
-          setStatus('manual');
-        }, 1500);
+        tryOpenApp(userIdParam);
       }, 500);
     }, 2000);
 
     return () => clearTimeout(timer);
   }, []);
 
+  const tryOpenApp = (userIdParam) => {
+    const deepLink = `datemaker://payment-success?status=success&user_id=${userIdParam}`;
+    
+    // Create a hidden iframe to try the deep link (works better on iOS)
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = deepLink;
+    document.body.appendChild(iframe);
+    
+    // Also try direct location change
+    setTimeout(() => {
+      window.location.href = deepLink;
+    }, 100);
+    
+    // Fallback: If deep link doesn't work after 2s, show manual button
+    setTimeout(() => {
+      setStatus('manual');
+      // Clean up iframe
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+    }, 2000);
+  };
+
   const handleOpenApp = () => {
-    window.location.href = `datemaker://payment-success?status=success&user_id=${userId}`;
+    const deepLink = `datemaker://payment-success?status=success&user_id=${userId}`;
+    window.location.href = deepLink;
+    
+    // If still here after 1 second, the deep link didn't work
+    setTimeout(() => {
+      alert('If the app did not open, please open DateMaker manually. Your subscription is active!');
+    }, 1000);
   };
 
   return (
@@ -145,7 +169,7 @@ const PaymentSuccess = () => {
               Open DateMaker App
             </button>
             <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>
-              If the app doesn't open, please open DateMaker manually.
+              If the button doesn't work, just open the DateMaker app manually - your subscription is already active!
             </p>
           </div>
         )}
