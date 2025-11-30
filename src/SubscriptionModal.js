@@ -10,55 +10,60 @@ export default function SubscriptionModal({ user, onClose }) {
   const [selectedPlan, setSelectedPlan] = useState('annual');
   const isNative = Capacitor.isNativePlatform();
 
-  // Fallback: Check subscription status if user returns manually after 30 seconds
+  // Poll Firebase for subscription changes when loading (after checkout starts)
   useEffect(() => {
-    let timeout;
     let interval;
+    let maxTimeout;
     
     if (loading && user) {
-      // Start checking after 5 seconds, every 5 seconds
-      timeout = setTimeout(() => {
+      // Start polling after 3 seconds (give Stripe time to process)
+      const startPolling = setTimeout(() => {
         interval = setInterval(async () => {
           try {
+            console.log('🔄 Polling for subscription status...');
             const userDocRef = doc(db, 'users', user.uid);
             const userDoc = await getDoc(userDocRef);
             
             if (userDoc.exists()) {
               const status = userDoc.data().subscriptionStatus;
+              console.log('📊 Current status:', status);
+              
               if (status === 'trial' || status === 'premium') {
-                console.log('✅ Subscription detected via polling!');
+                console.log('✅ Subscription detected! Closing modal...');
                 clearInterval(interval);
+                clearTimeout(maxTimeout);
+                setLoading(false);
                 onClose();
-                alert('🎉 Welcome to DateMaker Premium! Your 7-day free trial has started.');
               }
             }
           } catch (error) {
             console.error('Error checking subscription:', error);
           }
-        }, 5000); // Check every 5 seconds
-      }, 5000); // Start after 5 seconds
+        }, 3000); // Check every 3 seconds
+      }, 3000);
       
-      // Stop checking after 2 minutes
-      setTimeout(() => {
+      // Stop polling after 2 minutes
+      maxTimeout = setTimeout(() => {
+        console.log('⏰ Polling timeout reached');
         if (interval) clearInterval(interval);
         setLoading(false);
       }, 120000);
+      
+      return () => {
+        clearTimeout(startPolling);
+        if (interval) clearInterval(interval);
+        if (maxTimeout) clearTimeout(maxTimeout);
+      };
     }
-    
-    return () => {
-      if (timeout) clearTimeout(timeout);
-      if (interval) clearInterval(interval);
-    };
   }, [loading, user, onClose]);
 
   const handleSubscribe = async (plan) => {
     setLoading(true);
     try {
       await createCheckoutSession(plan);
-      // Note: Don't setLoading(false) here - let the polling/deep link handle it
+      // Don't setLoading(false) here - polling will handle it
     } catch (error) {
       console.error('Subscription error:', error);
-      alert('Failed to start checkout. Please try again.');
       setLoading(false);
     }
   };
@@ -91,11 +96,12 @@ export default function SubscriptionModal({ user, onClose }) {
         {/* Close Button */}
         <button
           onClick={onClose}
+          disabled={loading}
           style={{
             position: 'absolute',
             top: '1.5rem',
             right: '1.5rem',
-            background: '#f3f4f6',
+            background: loading ? '#e5e7eb' : '#f3f4f6',
             border: 'none',
             borderRadius: '50%',
             width: '40px',
@@ -103,7 +109,7 @@ export default function SubscriptionModal({ user, onClose }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: 'pointer',
+            cursor: loading ? 'not-allowed' : 'pointer',
             zIndex: 10
           }}
         >
@@ -219,9 +225,10 @@ export default function SubscriptionModal({ user, onClose }) {
               padding: '2rem',
               position: 'relative',
               transition: 'all 0.3s ease',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              opacity: loading ? 0.7 : 1
             }}
-            onClick={() => setSelectedPlan('monthly')}
+            onClick={() => !loading && setSelectedPlan('monthly')}
             >
               <div style={{
                 display: 'flex',
@@ -285,7 +292,7 @@ export default function SubscriptionModal({ user, onClose }) {
                 disabled={loading}
                 style={{
                   width: '100%',
-                  background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                  background: loading ? '#9ca3af' : 'linear-gradient(135deg, #667eea, #764ba2)',
                   color: 'white',
                   padding: '1rem',
                   borderRadius: '12px',
@@ -296,7 +303,7 @@ export default function SubscriptionModal({ user, onClose }) {
                   transition: 'all 0.3s ease'
                 }}
               >
-                {loading ? 'Processing...' : (isNative ? 'Continue →' : 'Start Free Trial →')}
+                {loading ? 'Processing...' : 'Start Free Trial →'}
               </button>
             </div>
 
@@ -309,9 +316,10 @@ export default function SubscriptionModal({ user, onClose }) {
               position: 'relative',
               transition: 'all 0.3s ease',
               cursor: 'pointer',
-              color: selectedPlan === 'annual' ? 'white' : '#111827'
+              color: selectedPlan === 'annual' ? 'white' : '#111827',
+              opacity: loading ? 0.7 : 1
             }}
-            onClick={() => setSelectedPlan('annual')}
+            onClick={() => !loading && setSelectedPlan('annual')}
             >
               <div style={{
                 position: 'absolute',
@@ -404,8 +412,8 @@ export default function SubscriptionModal({ user, onClose }) {
                 disabled={loading}
                 style={{
                   width: '100%',
-                  background: selectedPlan === 'annual' ? 'white' : 'linear-gradient(135deg, #10b981, #059669)',
-                  color: selectedPlan === 'annual' ? '#059669' : 'white',
+                  background: loading ? '#9ca3af' : (selectedPlan === 'annual' ? 'white' : 'linear-gradient(135deg, #10b981, #059669)'),
+                  color: loading ? 'white' : (selectedPlan === 'annual' ? '#059669' : 'white'),
                   padding: '1rem',
                   borderRadius: '12px',
                   border: 'none',
@@ -415,7 +423,7 @@ export default function SubscriptionModal({ user, onClose }) {
                   transition: 'all 0.3s ease'
                 }}
               >
-                {loading ? 'Processing...' : (isNative ? 'Continue →' : 'Get Annual - Best Value →')}
+                {loading ? 'Processing...' : 'Get Annual - Best Value →'}
               </button>
             </div>
           </div>

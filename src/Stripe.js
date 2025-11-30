@@ -3,38 +3,52 @@ import { auth } from './firebase';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 
-// Load Stripe (using your publishable key from .env)
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
-
-// Backend API URL
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
-// Create checkout session
 export const createCheckoutSession = async (plan) => {
   try {
-    // Get current user
     const user = auth.currentUser;
     if (!user) {
       throw new Error('User not authenticated');
     }
 
-    // Detect if running on iOS native app
     const isNative = Capacitor.isNativePlatform();
     console.log('📱 Platform detected:', isNative ? 'native' : 'web');
 
-    if (isNative) {
-  const email = user.email || '';
-  const targetUrl = `https://www.thedatemakerapp.com?email=${encodeURIComponent(email)}&subscribe=true`;
-  console.log('🌐 Opening URL:', targetUrl);
-  await Browser.open({ 
-    url: targetUrl,
-    windowName: '_system'
-  });
-  return;
-}
-
-    // Web: Use normal Stripe checkout flow
     const token = await user.getIdToken();
+
+    if (isNative) {
+      console.log('📱 iOS: Creating web checkout session...');
+      
+      const response = await fetch(`${API_URL}/api/create-web-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          plan: plan,
+          email: user.email
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create checkout session');
+      }
+
+      const { url } = await response.json();
+      console.log('🌐 Opening Stripe checkout:', url);
+      
+      await Browser.open({ 
+        url: url,
+        windowName: '_blank'
+      });
+      
+      return;
+    }
 
     const response = await fetch(`${API_URL}/api/create-checkout-session`, {
       method: 'POST',
@@ -60,28 +74,19 @@ export const createCheckoutSession = async (plan) => {
 
   } catch (error) {
     console.error('Stripe checkout error:', error);
-    alert(`Payment error: ${error.message}`);
+    throw error;
   }
 };
 
-// Get subscription status
 export const getSubscriptionStatus = async () => {
   try {
     const user = auth.currentUser;
     if (!user) return null;
-
     const token = await user.getIdToken();
-
     const response = await fetch(`${API_URL}/api/subscription-status`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to get subscription status');
-    }
-
+    if (!response.ok) throw new Error('Failed to get subscription status');
     return await response.json();
   } catch (error) {
     console.error('Error getting subscription status:', error);
@@ -89,28 +94,19 @@ export const getSubscriptionStatus = async () => {
   }
 };
 
-// Cancel subscription
 export const cancelSubscription = async () => {
   try {
     const user = auth.currentUser;
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
+    if (!user) throw new Error('User not authenticated');
     const token = await user.getIdToken();
-
     const response = await fetch(`${API_URL}/api/cancel-subscription`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
-
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Failed to cancel subscription');
     }
-
     return await response.json();
   } catch (error) {
     console.error('Cancel subscription error:', error);
