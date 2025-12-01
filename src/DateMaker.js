@@ -3625,7 +3625,8 @@ if (showResults && itinerary) {
   if (destination === 'spin') setShowSpinningWheel(true);
   if (destination === 'invite') setShowInviteFriends(true);
   if (destination === 'stats') navigate('/stats');
-                if (destination === 'social') {
+  if (destination === 'achievements') navigate('/achievements');  // ← ADD THIS
+  if (destination === 'social') {
                   if (subscriptionStatus === 'free') {
                     alert('Social is a premium feature!');
                     setShowSubscriptionModal(true);
