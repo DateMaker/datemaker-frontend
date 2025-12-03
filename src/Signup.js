@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Mail, Lock, User } from 'lucide-react';
+import { Heart, Mail, Lock, User, FileText } from 'lucide-react';
 import { createUserWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -9,6 +9,7 @@ export default function Signup({ onSwitchToLogin, onShowSuccess }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -39,37 +40,38 @@ export default function Signup({ onSwitchToLogin, onShowSuccess }) {
       return;
     }
 
+    // NEW: Terms acceptance validation
+    if (!acceptedTerms) {
+      setError('You must accept the Terms of Service and Community Guidelines to create an account');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Create the user account
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // ✅ FIX: Store email in LOWERCASE for searchability
-      // Also store searchable name field (lowercase)
       const normalizedEmail = email.trim().toLowerCase();
       const normalizedName = name.trim();
       
-      // Create user document in Firestore
+      // NEW: Store terms acceptance timestamp
       await setDoc(doc(db, 'users', user.uid), {
         name: normalizedName,
-        nameLower: normalizedName.toLowerCase(), // ✅ NEW: For case-insensitive name search
-        email: normalizedEmail, // ✅ FIX: Always lowercase
+        nameLower: normalizedName.toLowerCase(),
+        email: normalizedEmail,
         subscriptionStatus: 'free',
         createdAt: new Date().toISOString(),
         uid: user.uid,
-        emailVerified: false
+        emailVerified: false,
+        termsAcceptedAt: new Date().toISOString(), // NEW
+        termsVersion: '1.0' // NEW
       });
 
-      // Send verification email
       await sendEmailVerification(user);
-
-      // Sign them out until they verify
       await signOut(auth);
 
       console.log('User created successfully - verification email sent');
-      
       setSuccess(true);
 
     } catch (err) {
@@ -366,6 +368,59 @@ export default function Signup({ onSwitchToLogin, onShowSuccess }) {
               onFocus={(e) => e.target.style.border = '2px solid #ec4899'}
               onBlur={(e) => e.target.style.border = '2px solid #fbcfe8'}
             />
+          </div>
+
+          {/* NEW: Terms and Community Guidelines Checkbox */}
+          <div style={{
+            background: '#fdf4ff',
+            border: '2px solid #f0abfc',
+            borderRadius: '12px',
+            padding: '1rem'
+          }}>
+            <label style={{ 
+              display: 'flex', 
+              alignItems: 'flex-start', 
+              gap: '0.75rem',
+              cursor: 'pointer'
+            }}>
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  marginTop: '2px',
+                  accentColor: '#ec4899',
+                  cursor: 'pointer'
+                }}
+              />
+              <span style={{ 
+                fontSize: '0.875rem', 
+                color: '#374151',
+                lineHeight: '1.5'
+              }}>
+                I agree to the{' '}
+                <a 
+                  href="https://www.thedatemakerapp.com/terms.html" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ color: '#ec4899', fontWeight: '600' }}
+                >
+                  Terms of Service
+                </a>
+                {' '}and{' '}
+                <a 
+                  href="https://www.thedatemakerapp.com/privacy.html" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ color: '#ec4899', fontWeight: '600' }}
+                >
+                  Privacy Policy
+                </a>
+                . I understand that objectionable content or abusive behavior will result in account termination.
+              </span>
+            </label>
           </div>
 
           {error && (

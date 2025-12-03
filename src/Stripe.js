@@ -40,16 +40,33 @@ export const createCheckoutSession = async (plan) => {
       }
 
       const { url } = await response.json();
+      
+      if (!url) {
+        throw new Error('No checkout URL received from server');
+      }
+      
       console.log('🌐 Opening Stripe checkout:', url);
       
-      await Browser.open({ 
-        url: url,
-        windowName: '_blank'
-      });
+      // FIX: Remove windowName parameter and add proper error handling
+      try {
+        await Browser.open({ 
+          url: url,
+          presentationStyle: 'fullscreen' // Better for iPad
+        });
+        console.log('✅ Browser opened successfully');
+      } catch (browserError) {
+        console.error('❌ Browser.open failed:', browserError);
+        // Fallback: try window.open as last resort
+        const opened = window.open(url, '_blank');
+        if (!opened) {
+          throw new Error('Could not open payment page. Please check your popup blocker settings.');
+        }
+      }
       
       return;
     }
 
+    // Web flow
     const response = await fetch(`${API_URL}/api/create-checkout-session`, {
       method: 'POST',
       headers: {
@@ -74,6 +91,8 @@ export const createCheckoutSession = async (plan) => {
 
   } catch (error) {
     console.error('Stripe checkout error:', error);
+    // Show user-friendly error
+    alert(`Payment error: ${error.message || 'Unable to start checkout. Please try again.'}`);
     throw error;
   }
 };

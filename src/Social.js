@@ -1,7 +1,8 @@
 // 🎨 COMPLETELY REDESIGNED Social.js - Vibrant, Colorful, & Fully Functional!
+// 🛡️ WITH APPLE UGC SAFETY FEATURES - Report, Block, Filter
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, UserPlus, MessageCircle, Users, Heart, MapPin, Calendar, Send, X, Check, Clock, Share2, Trash2, UserMinus, Sparkles, TrendingUp, Plus, ArrowLeft, MessageSquare, Star, WifiOff } from 'lucide-react';
+import { Search, UserPlus, MessageCircle, Users, Heart, MapPin, Calendar, Send, X, Check, Clock, Share2, Trash2, UserMinus, Sparkles, TrendingUp, Plus, ArrowLeft, MessageSquare, Star, WifiOff, Flag, ShieldOff, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { db } from './firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, arrayUnion, arrayRemove, serverTimestamp, onSnapshot, orderBy, getDoc, deleteDoc, setDoc, writeBatch, limit, Timestamp } from 'firebase/firestore';
 import SuccessModal from './SuccessModal';
@@ -32,47 +33,69 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
   const [typingUsers, setTypingUsers] = useState({});
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [showCreateGroupChat, setShowCreateGroupChat] = useState(false);
-  const [unreadMessages, setUnreadMessages] = useState({}); // { conversationId: count }
-  const [viewingDate, setViewingDate] = useState(null); // For viewing full date
-  const [optimisticMessages, setOptimisticMessages] = useState([]); // For instant message display
-  const [participantProfiles, setParticipantProfiles] = useState({}); // Store user profiles for avatars
-  const [isOnline, setIsOnline] = useState(navigator.onLine); // ✅ FIX #4: Offline detection
+  const [unreadMessages, setUnreadMessages] = useState({});
+  const [viewingDate, setViewingDate] = useState(null);
+  const [optimisticMessages, setOptimisticMessages] = useState([]);
+  const [participantProfiles, setParticipantProfiles] = useState({});
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [successMessage, setSuccessMessage] = useState(null);
+
+  // 🛡️ UGC SAFETY STATE - Apple App Store Requirement
+  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportTarget, setReportTarget] = useState(null);
+  const [showBlockedUsersModal, setShowBlockedUsersModal] = useState(false);
+  const [blockedUsersList, setBlockedUsersList] = useState([]);
 
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const messageTimeoutsRef = useRef(new Map());
 
- useEffect(() => {
+  useEffect(() => {
     return () => {
       console.log('🧹 Cleaning up Social component - canceling all timeouts');
-      
-      // Cancel typing timeout
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      
-      // Cancel all message timeouts
       messageTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
       messageTimeoutsRef.current.clear();
     };
   }, []);
 
-// 📱 Set status bar color for iOS
-useEffect(() => {
-  setStatusBarColor(STATUS_BAR_COLORS.social);
-  
-  return () => {
-    setStatusBarColor(STATUS_BAR_COLORS.home);
-  };
-}, []);
+  // 📱 Set status bar color for iOS
+  useEffect(() => {
+    setStatusBarColor(STATUS_BAR_COLORS.social);
+    return () => {
+      setStatusBarColor(STATUS_BAR_COLORS.home);
+    };
+  }, []);
+
+  // 🛡️ UGC SAFETY: Load blocked users from Firebase
+  useEffect(() => {
+    if (!user) return;
+    
+    const blockedRef = collection(db, 'blockedUsers');
+    const q = query(blockedRef, where('blockedBy', '==', user.uid));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const blocked = snapshot.docs.map(doc => doc.data().blockedUserId);
+      const blockedList = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setBlockedUsers(blocked);
+      setBlockedUsersList(blockedList);
+      console.log('🛡️ Blocked users loaded:', blocked.length);
+    });
+    
+    return () => unsubscribe();
+  }, [user]);
 
   // 🔔 Clear notifications when viewing specific tabs
   useEffect(() => {
     const clearTabNotification = async (tabName) => {
       try {
         if (tabName === 'requests' && friendRequests.length > 0) {
-          // Mark friend requests as seen
           const batch = writeBatch(db);
           friendRequests.forEach(request => {
             const requestRef = doc(db, 'friendRequests', request.id);
@@ -83,7 +106,6 @@ useEffect(() => {
         }
         
         if (tabName === 'messages' && selectedConversation) {
-          // Mark messages as read for the selected conversation
           const userDocRef = doc(db, 'users', user.uid);
           await updateDoc(userDocRef, {
             [`lastReadMessages.${selectedConversation.id}`]: serverTimestamp()
@@ -92,7 +114,6 @@ useEffect(() => {
         }
         
         if (tabName === 'feed') {
-          // Mark feed as viewed
           const userDocRef = doc(db, 'users', user.uid);
           await updateDoc(userDocRef, {
             lastFeedVisit: serverTimestamp()
@@ -104,85 +125,38 @@ useEffect(() => {
       }
     };
 
-    // Clear notification when user switches to a tab
     if (activeTab === 'requests' || activeTab === 'messages' || activeTab === 'feed') {
       clearTabNotification(activeTab);
     }
   }, [activeTab, selectedConversation, friendRequests, user.uid]);
 
+  // Scroll to bottom when messages first load
+  const [hasScrolledInitially, setHasScrolledInitially] = useState(false);
 
-
-  // 🔔 NEW: Track unread message counts for each conversation
-  // TEMPORARILY DISABLED TO AVOID INDEX ERRORS
-  /*
   useEffect(() => {
-    if (conversations.length === 0) return;
-
-    const unsubscribes = conversations.map(conv => {
-      // Simplified query - just get all messages for this conversation
-      const messagesQuery = query(
-  collection(db, 'messages'),
-  where('conversationId', '==', selectedConversation.id),
-  orderBy('createdAt', 'asc')  // Changed from 'desc' to 'asc' for chronological order
-);
-
-      return onSnapshot(messagesQuery, async (snapshot) => {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        const lastRead = userDoc.data()?.lastReadMessages?.[conv.id];
-
-        let unreadCount = 0;
-        snapshot.docs.forEach(doc => {
-          const msgData = doc.data();
-          // Filter out messages from current user and count unread messages
-          if (msgData.userId !== user.uid && msgData.userEmail !== user.email) {
-            if (!lastRead || msgData.createdAt?.toMillis() > lastRead?.toMillis()) {
-              unreadCount++;
-            }
-          }
-        });
-
-        setUnreadMessages(prev => ({
-          ...prev,
-          [conv.id]: unreadCount
-        }));
-      });
-    });
-
-    return () => unsubscribes.forEach(unsub => unsub());
-  }, [conversations, user.uid, user.email]);
-  */
-
- 
-
-// Scroll to bottom when messages first load
-const [hasScrolledInitially, setHasScrolledInitially] = useState(false);
-
-useEffect(() => {
-  if (selectedConversation && messages.length > 0 && !hasScrolledInitially) {
-    // Initial scroll when conversation opens
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-      setHasScrolledInitially(true);
-    }, 100);
-  }
-}, [messages, selectedConversation, hasScrolledInitially]);
-
-// Reset scroll flag when switching conversations
-useEffect(() => {
-  setHasScrolledInitially(false);
-}, [selectedConversation?.id]);
-
-// Load user profile
-useEffect(() => {
-  const loadUserProfile = async () => {
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    if (userDoc.exists()) {
-      setUserProfile(userDoc.data());
+    if (selectedConversation && messages.length > 0 && !hasScrolledInitially) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        setHasScrolledInitially(true);
+      }, 100);
     }
-  };
-  loadUserProfile();
-}, [user.uid]);
+  }, [messages, selectedConversation, hasScrolledInitially]);
+
+  useEffect(() => {
+    setHasScrolledInitially(false);
+  }, [selectedConversation?.id]);
+
+  // Load user profile
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        setUserProfile(userDoc.data());
+      }
+    };
+    loadUserProfile();
+  }, [user.uid]);
+
   // Set user online status
   useEffect(() => {
     const setOnlineStatus = async () => {
@@ -245,7 +219,6 @@ useEffect(() => {
       }));
       setFriendRequests(requests);
       
-      // Count unseen requests for badge
       const unseenCount = requests.filter(r => !r.seen).length;
       console.log(`📬 Friend requests: ${requests.length} total, ${unseenCount} unseen`);
     });
@@ -273,94 +246,93 @@ useEffect(() => {
   }, [user.uid]);
 
   useEffect(() => {
-  // ✅ FIX #5: Clear profiles when no conversation selected
-  if (!selectedConversation) {
-    setParticipantProfiles({}); // Clear old profiles
-    return;
-  }
-  
-  const loadParticipantProfiles = async () => {
-    const profiles = {};
-    const participantIds = selectedConversation.isGroup 
-      ? selectedConversation.participants 
-      : selectedConversation.participants.filter(id => id !== user.uid);
+    if (!selectedConversation) {
+      setParticipantProfiles({});
+      return;
+    }
+    
+    const loadParticipantProfiles = async () => {
+      const profiles = {};
+      const participantIds = selectedConversation.isGroup 
+        ? selectedConversation.participants 
+        : selectedConversation.participants.filter(id => id !== user.uid);
 
-    for (const userId of participantIds) {
-      if (!profiles[userId] && userId !== user.uid) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', userId));
-          if (userDoc.exists()) {
-            profiles[userId] = userDoc.data();
+      for (const userId of participantIds) {
+        if (!profiles[userId] && userId !== user.uid) {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+              profiles[userId] = userDoc.data();
+            }
+          } catch (error) {
+            console.error('Error loading profile for', userId, error);
           }
-        } catch (error) {
-          console.error('Error loading profile for', userId, error);
         }
       }
-    }
 
-    setParticipantProfiles(profiles);
-  };
+      setParticipantProfiles(profiles);
+    };
 
-  loadParticipantProfiles();
-}, [selectedConversation, user.uid]);
+    loadParticipantProfiles();
+  }, [selectedConversation, user.uid]);
 
- useEffect(() => {
-  console.log('🔥 Setting up real-time friends listener...');
-  
-  // Query 1: Requests I sent that were accepted
-  const sentQuery = query(
-    collection(db, 'friendRequests'),
-    where('fromUserId', '==', user.uid),
-    where('status', '==', 'accepted')
-  );
-  
-  // Query 2: Requests I received that were accepted
-  const receivedQuery = query(
-    collection(db, 'friendRequests'),
-    where('toUserId', '==', user.uid),
-    where('status', '==', 'accepted')
-  );
-  
-  const friendsMap = new Map();
-  
-  const updateFriendsList = () => {
-    const friendsList = Array.from(friendsMap.values());
-    setFriends(friendsList);
-    console.log(`✅ Friends updated in real-time: ${friendsList.length} friends`);
-  };
-  
-  // Listen to both queries
-  const unsubscribe1 = onSnapshot(sentQuery, (snapshot) => {
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      friendsMap.set(data.toUserId, {
-        id: data.toUserId,
-        email: data.toUserEmail,
-        name: data.toUserEmail.split('@')[0]
+  // 🔥 Load friends with real-time updates + blocked user filtering
+  useEffect(() => {
+    console.log('🔥 Setting up real-time friends listener...');
+    
+    const sentQuery = query(
+      collection(db, 'friendRequests'),
+      where('fromUserId', '==', user.uid),
+      where('status', '==', 'accepted')
+    );
+    
+    const receivedQuery = query(
+      collection(db, 'friendRequests'),
+      where('toUserId', '==', user.uid),
+      where('status', '==', 'accepted')
+    );
+    
+    const friendsMap = new Map();
+    
+    const updateFriendsList = () => {
+      // 🛡️ Filter out blocked users from friends list
+      const friendsList = Array.from(friendsMap.values())
+        .filter(friend => !blockedUsers.includes(friend.id));
+      setFriends(friendsList);
+      console.log(`✅ Friends updated in real-time: ${friendsList.length} friends`);
+    };
+    
+    const unsubscribe1 = onSnapshot(sentQuery, (snapshot) => {
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        friendsMap.set(data.toUserId, {
+          id: data.toUserId,
+          email: data.toUserEmail,
+          name: data.toUserEmail.split('@')[0]
+        });
       });
+      updateFriendsList();
     });
-    updateFriendsList();
-  });
-  
-  const unsubscribe2 = onSnapshot(receivedQuery, (snapshot) => {
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      friendsMap.set(data.fromUserId, {
-        id: data.fromUserId,
-        email: data.fromUserEmail,
-        name: data.fromUserEmail.split('@')[0]
+    
+    const unsubscribe2 = onSnapshot(receivedQuery, (snapshot) => {
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        friendsMap.set(data.fromUserId, {
+          id: data.fromUserId,
+          email: data.fromUserEmail,
+          name: data.fromUserEmail.split('@')[0]
+        });
       });
+      updateFriendsList();
     });
-    updateFriendsList();
-  });
 
-  return () => {
-    unsubscribe1();
-    unsubscribe2();
-  };
-}, [user.uid]);
+    return () => {
+      unsubscribe1();
+      unsubscribe2();
+    };
+  }, [user.uid, blockedUsers]);
 
-  // 🔥 Load feed with REAL-TIME updates
+  // 🔥 Load feed with REAL-TIME updates + blocked user filtering
   useEffect(() => {
     if (!user) return;
 
@@ -381,6 +353,12 @@ useEffect(() => {
           ...doc.data()
         }))
         .filter(date => {
+          // 🛡️ UGC SAFETY: Filter out posts from blocked users
+          if (blockedUsers.includes(date.userId)) {
+            console.log(`🛡️ Filtered out post from blocked user: ${date.userId}`);
+            return false;
+          }
+          
           const isPublic = date.isPublic === true;
           const isCreator = date.userId === user.uid;
           const isInvited = date.invitedFriends?.includes(user.uid);
@@ -404,9 +382,9 @@ useEffect(() => {
       console.log('🔌 Cleaning up feed listener');
       unsubscribe();
     };
-  }, [user]);
+  }, [user, blockedUsers]);
 
-  // 🔥 Load conversations - OPTIMIZED (No N+1 queries)
+  // 🔥 Load conversations - OPTIMIZED + blocked user filtering
   useEffect(() => {
     const conversationsQuery = query(
       collection(db, 'conversations'),
@@ -414,30 +392,33 @@ useEffect(() => {
     );
 
     const unsubscribe = onSnapshot(conversationsQuery, (snapshot) => {
-      // Track unread counts
       const unreadCounts = {};
       
-      // NO MORE Promise.all or additional queries!
-      // All data comes from conversation document
       const convos = snapshot.docs.map((docSnapshot) => {
         const data = docSnapshot.data();
         
-        // Extract unread count for current user
+        // 🛡️ UGC SAFETY: Filter out conversations with blocked users (DMs only)
+        if (!data.isGroup) {
+          const otherParticipants = data.participants?.filter(p => p !== user.uid) || [];
+          const hasBlockedUser = otherParticipants.some(p => blockedUsers.includes(p));
+          if (hasBlockedUser) {
+            console.log('🛡️ Filtered out conversation with blocked user');
+            return null;
+          }
+        }
+        
         const unreadCount = data.unreadCount?.[user.uid] || 0;
         if (unreadCount > 0) {
           unreadCounts[docSnapshot.id] = unreadCount;
         }
         
-        // lastMessage is ALREADY in conversation document!
-        // No need to query messages collection
         return {
           id: docSnapshot.id,
           ...data,
           unreadCount
         };
-      });
+      }).filter(Boolean);
 
-      // Sort by lastMessageTime (already in conversation doc)
       convos.sort((a, b) => {
         const timeA = a.lastMessageTime?.toMillis?.() || 0;
         const timeB = b.lastMessageTime?.toMillis?.() || 0;
@@ -451,12 +432,11 @@ useEffect(() => {
     });
 
     return () => unsubscribe();
-  }, [user.uid]);
+  }, [user.uid, blockedUsers]);
 
   // 🔔 Mark messages as read when viewing a conversation
   const markMessagesAsRead = useCallback(async (conversationId) => {
     try {
-      // Clear unread count for current user in the conversation document
       const conversationRef = doc(db, 'conversations', conversationId);
       await updateDoc(conversationRef, {
         [`unreadCount.${user.uid}`]: 0
@@ -468,7 +448,7 @@ useEffect(() => {
     }
   }, [user.uid]);
 
-  // 🔥 Load messages for selected conversation - NO INDEX REQUIRED
+  // 🔥 Load messages for selected conversation + blocked user filtering
   useEffect(() => {
     if (!selectedConversation) {
       setMessages([]);
@@ -478,7 +458,6 @@ useEffect(() => {
 
     console.log('🔵 Loading messages for conversation:', selectedConversation.id);
 
-    // Query WITHOUT orderBy to avoid index requirement
     const messagesQuery = query(
       collection(db, 'messages'),
       where('conversationId', '==', selectedConversation.id)
@@ -493,6 +472,12 @@ useEffect(() => {
         const data = doc.data();
         const createdAt = data.createdAt?.toDate();
         
+        // 🛡️ UGC SAFETY: Filter messages from blocked users
+        if (blockedUsers.includes(data.userId)) {
+          console.log('🛡️ Filtered out message from blocked user');
+          return;
+        }
+        
         if (createdAt) {
           if (createdAt < threeDaysAgo) {
             oldMessages.push(doc.ref);
@@ -505,7 +490,6 @@ useEffect(() => {
         }
       });
       
-      // Delete old messages in background
       if (oldMessages.length > 0) {
         console.log('🗑️ Deleting', oldMessages.length, 'old messages (3+ days)');
         const batch = writeBatch(db);
@@ -513,7 +497,6 @@ useEffect(() => {
         batch.commit().catch(err => console.error('Error deleting old messages:', err));
       }
       
-      // Sort recent messages
       const sortedMessages = recentMessages.sort((a, b) => {
         const timeA = a.createdAt?.toMillis?.() || 0;
         const timeB = b.createdAt?.toMillis?.() || 0;
@@ -523,7 +506,6 @@ useEffect(() => {
       console.log('✅ Loaded', sortedMessages.length, 'messages (deleted', oldMessages.length, 'old)');
       setMessages(sortedMessages);
 
-      // Remove optimistic messages that now exist in Firebase
       setOptimisticMessages(prev => 
         prev.filter(optMsg => 
           !sortedMessages.some(msg => 
@@ -534,7 +516,6 @@ useEffect(() => {
         )
       );
 
-      // 🔔 Mark messages as read
       if (sortedMessages.length > 0) {
         markMessagesAsRead(selectedConversation.id);
       }
@@ -546,7 +527,7 @@ useEffect(() => {
       console.log('🔌 Unsubscribing from messages');
       unsubscribe();
     };
-  }, [selectedConversation?.id, user.uid]);
+  }, [selectedConversation?.id, user.uid, blockedUsers, markMessagesAsRead]);
 
   // Track typing indicator
   useEffect(() => {
@@ -561,7 +542,8 @@ useEffect(() => {
       const typing = {};
       snapshot.docs.forEach(doc => {
         const data = doc.data();
-        if (data.userId !== user.uid && data.isTyping) {
+        // 🛡️ Don't show typing from blocked users
+        if (data.userId !== user.uid && data.isTyping && !blockedUsers.includes(data.userId)) {
           typing[data.userId] = data.userEmail?.split('@')[0] || 'Someone';
         }
       });
@@ -569,18 +551,124 @@ useEffect(() => {
     });
 
     return () => unsubscribe();
-  }, [selectedConversation, user.uid, user.email]);
+  }, [selectedConversation, user.uid, user.email, blockedUsers]);
 
-  // ✅ FIXED: Search users - CASE INSENSITIVE
+  // 🛡️ UGC SAFETY: Report content handler
+  const handleReportContent = (type, targetId, targetData) => {
+    setReportTarget({ type, id: targetId, data: targetData });
+    setShowReportModal(true);
+  };
+
+  // 🛡️ UGC SAFETY: Submit report to Firebase
+  const submitReport = async (reason) => {
+    if (!reportTarget) return;
+    
+    try {
+      await addDoc(collection(db, 'reportedContent'), {
+        type: reportTarget.type,
+        targetId: reportTarget.id,
+        targetData: {
+          userId: reportTarget.data.userId,
+          userEmail: reportTarget.data.userEmail,
+          content: reportTarget.type === 'post' 
+            ? (reportTarget.data.caption || reportTarget.data.notes || 'No content')
+            : reportTarget.type === 'message'
+            ? reportTarget.data.text
+            : null
+        },
+        reason: reason,
+        reportedBy: user.uid,
+        reportedByEmail: user.email,
+        reportedAt: serverTimestamp(),
+        status: 'pending'
+      });
+      
+      setShowReportModal(false);
+      setReportTarget(null);
+      setSuccessMessage('Report submitted. We review all reports within 24 hours.');
+      console.log('🚩 Report submitted successfully');
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      alert('Failed to submit report. Please try again.');
+    }
+  };
+
+  // 🛡️ UGC SAFETY: Block user
+  const handleBlockUser = async (targetUserId, targetUserEmail) => {
+    if (!window.confirm(`Block ${targetUserEmail?.split('@')[0] || 'this user'}?\n\nYou won't see their posts or messages, and they won't be able to contact you.`)) {
+      return;
+    }
+    
+    try {
+      // Add to blockedUsers collection
+      await addDoc(collection(db, 'blockedUsers'), {
+        blockedBy: user.uid,
+        blockedByEmail: user.email,
+        blockedUserId: targetUserId,
+        blockedUserEmail: targetUserEmail,
+        blockedAt: serverTimestamp()
+      });
+      
+      // Remove friend relationship if exists
+      const friendRequestsQuery = query(
+        collection(db, 'friendRequests'),
+        where('status', '==', 'accepted')
+      );
+      
+      const snapshot = await getDocs(friendRequestsQuery);
+      const batch = writeBatch(db);
+      
+      snapshot.docs.forEach(docSnapshot => {
+        const data = docSnapshot.data();
+        if ((data.fromUserId === user.uid && data.toUserId === targetUserId) ||
+            (data.toUserId === user.uid && data.fromUserId === targetUserId)) {
+          batch.delete(doc(db, 'friendRequests', docSnapshot.id));
+        }
+      });
+      
+      await batch.commit();
+      
+      // Close conversation if viewing blocked user
+      if (selectedConversation) {
+        const otherParticipants = selectedConversation.participants?.filter(p => p !== user.uid) || [];
+        if (otherParticipants.includes(targetUserId)) {
+          setSelectedConversation(null);
+        }
+      }
+      
+      // Close date detail if viewing blocked user's post
+      if (viewingDate && viewingDate.userId === targetUserId) {
+        setViewingDate(null);
+      }
+      
+      setSuccessMessage(`Blocked ${targetUserEmail?.split('@')[0] || 'user'}. You will no longer see their content.`);
+      console.log('🚫 User blocked successfully:', targetUserId);
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      alert('Failed to block user. Please try again.');
+    }
+  };
+
+  // 🛡️ UGC SAFETY: Unblock user
+  const handleUnblockUser = async (blockRecord) => {
+    try {
+      await deleteDoc(doc(db, 'blockedUsers', blockRecord.id));
+      setSuccessMessage(`Unblocked ${blockRecord.blockedUserEmail?.split('@')[0] || 'user'}.`);
+      console.log('✅ User unblocked:', blockRecord.blockedUserId);
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      alert('Failed to unblock user. Please try again.');
+    }
+  };
+
+  // ✅ FIXED: Search users - CASE INSENSITIVE + filter blocked
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     
     setLoading(true);
     try {
-      // ✅ Always search lowercase (emails are now stored lowercase after migration)
       const searchTerm = searchQuery.toLowerCase().trim();
       
-      // Query for email prefix match
       const emailQuery = query(
         collection(db, 'users'),
         where('email', '>=', searchTerm),
@@ -591,9 +679,8 @@ useEffect(() => {
       const emailSnapshot = await getDocs(emailQuery);
       const emailResults = emailSnapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(u => u.id !== user.uid);
+        .filter(u => u.id !== user.uid && !blockedUsers.includes(u.id));
       
-      // ✅ NEW: Also search by nameLower field for name search
       let nameResults = [];
       try {
         const nameQuery = query(
@@ -606,13 +693,11 @@ useEffect(() => {
         const nameSnapshot = await getDocs(nameQuery);
         nameResults = nameSnapshot.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(u => u.id !== user.uid);
+          .filter(u => u.id !== user.uid && !blockedUsers.includes(u.id));
       } catch (nameError) {
-        // nameLower field might not exist on all users yet - that's ok
         console.log('Name search skipped (nameLower field may not exist)');
       }
       
-      // ✅ Combine and deduplicate results
       const combinedMap = new Map();
       [...emailResults, ...nameResults].forEach(user => {
         combinedMap.set(user.id, user);
@@ -620,8 +705,6 @@ useEffect(() => {
       const results = Array.from(combinedMap.values());
       
       setSearchResults(results);
-      
-      // No modal needed - empty results show inline message
       
       console.log(`🔍 Search results: ${results.length} users found (case-insensitive)`);
       
@@ -654,7 +737,6 @@ useEffect(() => {
         createdAt: serverTimestamp()
       });
 
-      // 🔔 Send notification to the recipient
       await sendFriendRequestNotification(user, toUser.id);
       console.log('🔔 Friend request notification sent to:', toUser.email);
 
@@ -683,7 +765,6 @@ useEffect(() => {
           createdAt: serverTimestamp()
         });
 
-        // 🔔 Send notification to the person who sent the request
         await sendFriendAcceptedNotification(user, request.fromUserId);
         console.log('🔔 Friend accepted notification sent to:', request.fromUserEmail);
       }
@@ -692,26 +773,25 @@ useEffect(() => {
     }
   };
 
+  // Reject friend request
+  const handleRejectFriendRequest = async (requestId) => {
+    try {
+      await deleteDoc(doc(db, 'friendRequests', requestId));
+    } catch (error) {
+      console.error('Error rejecting friend request:', error);
+    }
+  };
 
-// Reject friend request
-const handleRejectFriendRequest = async (requestId) => {
-  try {
-    await deleteDoc(doc(db, 'friendRequests', requestId));
-  } catch (error) {
-    console.error('Error rejecting friend request:', error);
-  }
-};
-
-// Cancel sent friend request
-const handleCancelFriendRequest = async (requestId) => {
-  try {
-    await deleteDoc(doc(db, 'friendRequests', requestId));
-    setSuccessMessage('Friend request cancelled');
-  } catch (error) {
-    console.error('Error cancelling friend request:', error);
-    setSuccessMessage('Failed to cancel request');
-  }
-};
+  // Cancel sent friend request
+  const handleCancelFriendRequest = async (requestId) => {
+    try {
+      await deleteDoc(doc(db, 'friendRequests', requestId));
+      setSuccessMessage('Friend request cancelled');
+    } catch (error) {
+      console.error('Error cancelling friend request:', error);
+      setSuccessMessage('Failed to cancel request');
+    }
+  };
 
   // Remove friend
   const handleRemoveFriend = async (friendId) => {
@@ -820,7 +900,7 @@ const handleCancelFriendRequest = async (requestId) => {
     return timeA - timeB;
   });
 
-  // Track typing indicator - OPTIMIZED ⚡💰
+  // Track typing indicator - OPTIMIZED
   const handleTyping = async (isTyping) => {
     if (!selectedConversation) return;
 
@@ -828,20 +908,18 @@ const handleCancelFriendRequest = async (requestId) => {
       const typingRef = doc(db, 'typing', `${selectedConversation.id}_${user.uid}`);
       
       if (isTyping) {
-        // ✅ Use merge to update existing doc instead of full overwrite
         await setDoc(typingRef, {
           conversationId: selectedConversation.id,
           userId: user.uid,
           userEmail: user.email,
           isTyping: true,
           timestamp: serverTimestamp()
-        }, { merge: true }); // ✅ KEY OPTIMIZATION: merge instead of overwrite
+        }, { merge: true });
 
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current);
         }
 
-        // ✅ Increased timeout from 3s to 5s (feels more natural + fewer writes)
         typingTimeoutRef.current = setTimeout(() => {
           handleTyping(false);
         }, 5000);
@@ -854,121 +932,112 @@ const handleCancelFriendRequest = async (requestId) => {
   };
 
   const handleSendMessage = async () => {
-  if (!messageInput.trim() || !selectedConversation) return;
+    if (!messageInput.trim() || !selectedConversation) return;
 
-  // ✅ FIX #1: Message length validation
-  if (messageInput.length > 1000) {
-    alert('Message too long! Maximum 1000 characters.');
-    return;
-  }
+    if (messageInput.length > 1000) {
+      alert('Message too long! Maximum 1000 characters.');
+      return;
+    }
 
-  const messageText = messageInput.trim();
-  const tempId = `temp_${Date.now()}_${Math.random()}`;
-    
-  // Create optimistic message
-  const optimisticMessage = {
-    id: tempId,
-    text: messageText,
-    userId: user.uid,
-    userEmail: user.email,
-    conversationId: selectedConversation.id,
-    createdAt: Date.now(),
-    isOptimistic: true
-  };
-
-  // Add to optimistic messages immediately
-  setOptimisticMessages(prev => [...prev, optimisticMessage]);
-  setMessageInput('');
-  handleTyping(false);
-
-  console.log('📤 Sending message:', messageText);
-
-  try {
-    // Use current timestamp for immediate visibility
-    const timestamp = Timestamp.fromDate(new Date());
-    
-    // Add message to Firebase
-    await addDoc(collection(db, 'messages'), {
-      conversationId: selectedConversation.id,
+    const messageText = messageInput.trim();
+    const tempId = `temp_${Date.now()}_${Math.random()}`;
+      
+    const optimisticMessage = {
+      id: tempId,
+      text: messageText,
       userId: user.uid,
       userEmail: user.email,
-      text: messageText,
-      createdAt: timestamp
-    });
+      conversationId: selectedConversation.id,
+      createdAt: Date.now(),
+      isOptimistic: true
+    };
 
-    console.log('✅ Message sent! Cloud Function will update conversation.');
+    setOptimisticMessages(prev => [...prev, optimisticMessage]);
+    setMessageInput('');
+    handleTyping(false);
 
-    // 🔔 Send notification to other participants (not yourself)
-    const otherParticipants = selectedConversation.participants?.filter(p => p !== user.uid) || [];
-    for (const recipientId of otherParticipants) {
-      await sendMessageNotification(user, recipientId, {
+    console.log('📤 Sending message:', messageText);
+
+    try {
+      const timestamp = Timestamp.fromDate(new Date());
+      
+      await addDoc(collection(db, 'messages'), {
         conversationId: selectedConversation.id,
-        text: messageText
+        userId: user.uid,
+        userEmail: user.email,
+        text: messageText,
+        createdAt: timestamp
       });
-    }
-    if (otherParticipants.length > 0) {
-      console.log('🔔 Message notifications sent to:', otherParticipants.length, 'recipients');
-    }
-    
-  } catch (error) {
-    console.error('❌ Error sending message:', error);
-    // Remove optimistic message on error
-    setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempId));
-    alert('Failed to send message. Please try again.');
-  }
-};
 
-const handleLikeDate = async (dateId, currentLikes = []) => {
-  try {
-    const dateRef = doc(db, 'sharedDates', dateId);
-    const hasLiked = currentLikes.includes(user.uid);
-    
-    // Get the date from feed to find owner
-    const dateData = feed.find(d => d.id === dateId);
-    
-    // Optimistic update - update UI immediately
-    setFeed(prevFeed => prevFeed.map(date => {
-      if (date.id === dateId) {
-        const newLikes = hasLiked
-          ? currentLikes.filter(uid => uid !== user.uid)
-          : [...currentLikes, user.uid];
-        return { ...date, likes: newLikes };
+      console.log('✅ Message sent! Cloud Function will update conversation.');
+
+      const otherParticipants = selectedConversation.participants?.filter(p => p !== user.uid) || [];
+      for (const recipientId of otherParticipants) {
+        // 🛡️ Don't send notifications to blocked users
+        if (!blockedUsers.includes(recipientId)) {
+          await sendMessageNotification(user, recipientId, {
+            conversationId: selectedConversation.id,
+            text: messageText
+          });
+        }
       }
-      return date;
-    }));
-    
-    // Update Firebase silently
-    if (hasLiked) {
-      await updateDoc(dateRef, {
-        likes: arrayRemove(user.uid)
-      });
-    } else {
-      await updateDoc(dateRef, {
-        likes: arrayUnion(user.uid)
-      });
+      if (otherParticipants.length > 0) {
+        console.log('🔔 Message notifications sent to:', otherParticipants.length, 'recipients');
+      }
+      
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
+      setOptimisticMessages(prev => prev.filter(msg => msg.id !== tempId));
+      alert('Failed to send message. Please try again.');
+    }
+  };
 
-      // 🔔 Send notification when LIKING (not unliking), and not your own date
-      if (dateData && dateData.userId !== user.uid) {
-        await sendDateLikedNotification(user, dateData.userId, {
-          dateId: dateId,
-          title: dateData.title || 'a date'
+  const handleLikeDate = async (dateId, currentLikes = []) => {
+    try {
+      const dateRef = doc(db, 'sharedDates', dateId);
+      const hasLiked = currentLikes.includes(user.uid);
+      
+      const dateData = feed.find(d => d.id === dateId);
+      
+      setFeed(prevFeed => prevFeed.map(date => {
+        if (date.id === dateId) {
+          const newLikes = hasLiked
+            ? currentLikes.filter(uid => uid !== user.uid)
+            : [...currentLikes, user.uid];
+          return { ...date, likes: newLikes };
+        }
+        return date;
+      }));
+      
+      if (hasLiked) {
+        await updateDoc(dateRef, {
+          likes: arrayRemove(user.uid)
         });
-        console.log('🔔 Like notification sent to:', dateData.userId);
+      } else {
+        await updateDoc(dateRef, {
+          likes: arrayUnion(user.uid)
+        });
+
+        if (dateData && dateData.userId !== user.uid) {
+          await sendDateLikedNotification(user, dateData.userId, {
+            dateId: dateId,
+            title: dateData.title || 'a date'
+          });
+          console.log('🔔 Like notification sent to:', dateData.userId);
+        }
       }
+      
+    } catch (error) {
+      console.error('❌ Error toggling like:', error);
+      setFeed(prevFeed => prevFeed.map(date => {
+        if (date.id === dateId) {
+          return { ...date, likes: currentLikes };
+        }
+        return date;
+      }));
     }
-    
-  } catch (error) {
-    console.error('❌ Error toggling like:', error);
-    // Silently rollback on error
-    setFeed(prevFeed => prevFeed.map(date => {
-      if (date.id === dateId) {
-        return { ...date, likes: currentLikes };
-      }
-      return date;
-    }));
-  }
-};
-// Like/Unlike date in detail view
+  };
+
   const handleLikeDateDetail = async (dateId, currentLikes = []) => {
     try {
       const dateRef = doc(db, 'sharedDates', dateId);
@@ -976,7 +1045,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
       
       console.log('👍 Detail view like clicked:', { dateId, hasLiked });
       
-      // Update viewingDate state immediately (optimistic UI)
       setViewingDate(prev => {
         if (!prev || prev.id !== dateId) return prev;
         const newLikes = hasLiked
@@ -985,7 +1053,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
         return { ...prev, likes: newLikes };
       });
       
-      // Also update feed in background
       setFeed(prevFeed => prevFeed.map(date => {
         if (date.id === dateId) {
           const newLikes = hasLiked
@@ -996,7 +1063,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
         return date;
       }));
       
-      // Update Firebase
       if (hasLiked) {
         await updateDoc(dateRef, {
           likes: arrayRemove(user.uid)
@@ -1012,7 +1078,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
     } catch (error) {
       console.error('❌ Error toggling like in detail view:', error);
       
-      // Rollback on error
       setViewingDate(prev => {
         if (!prev || prev.id !== dateId) return prev;
         return { ...prev, likes: currentLikes };
@@ -1021,7 +1086,7 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
       alert('Failed to like. Please try again.');
     }
   };
-  // Delete shared date
+
   const handleDeleteSharedDate = async (dateId) => {
     if (!window.confirm('Delete this shared date?')) return;
     
@@ -1032,10 +1097,9 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
     }
   };
 
-  // 🔔 NEW: Calculate total unread messages
   const totalUnreadMessages = Object.values(unreadMessages).reduce((sum, count) => sum + count, 0);
 
- return (
+  return (
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 25%, #fcd34d 50%, #fbbf24 75%, #f59e0b 100%)',
@@ -1043,7 +1107,7 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
       paddingTop: 'calc(2rem + env(safe-area-inset-top))'
     }}>
       
-      {/* ✅ OFFLINE INDICATOR - ADD THIS ENTIRE BLOCK */}
+      {/* ✅ OFFLINE INDICATOR */}
       {!isOnline && (
         <div style={{
           position: 'fixed',
@@ -1075,7 +1139,7 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
         boxShadow: '0 10px 30px rgba(168, 85, 247, 0.3)',
         border: '3px solid rgba(255, 255, 255, 0.3)'
       }}>
-        {/* Top row - Back button and Bell */}
+        {/* Top row - Back button, Bell, and Blocked Users button */}
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
@@ -1113,53 +1177,96 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
             <NotificationBell 
               user={user} 
               onNavigate={async (section, itemId) => {
-  switch (section) {
-    case 'feed':
-      setActiveTab('feed');
-      if (itemId) {
-        // First try to find in existing feed
-        let dateToView = feed.find(d => d.id === itemId);
-        
-        // If not found in feed, fetch directly from Firestore
-        if (!dateToView) {
-          try {
-            console.log('📥 Date not in feed, fetching from Firestore:', itemId);
-            const dateDoc = await getDoc(doc(db, 'sharedDates', itemId));
-            if (dateDoc.exists()) {
-              dateToView = { id: dateDoc.id, ...dateDoc.data() };
-              console.log('✅ Fetched date:', dateToView.dateData?.title);
-            }
-          } catch (error) {
-            console.error('❌ Error fetching shared date:', error);
-          }
-        }
-        
-        if (dateToView) {
-          setViewingDate(dateToView);
-        } else {
-          console.warn('⚠️ Could not find date with ID:', itemId);
-        }
-      }
-      break;
-    case 'messages':
-      setActiveTab('messages');
-      if (itemId) {
-        const conv = conversations.find(c => c.id === itemId);
-        if (conv) setSelectedConversation(conv);
-      }
-      break;
-    case 'requests':
-      setActiveTab('requests');
-      break;
-    case 'friends':
-      setActiveTab('friends');
-      break;
-    default:
-      break;
-  }
-}}
+                switch (section) {
+                  case 'feed':
+                    setActiveTab('feed');
+                    if (itemId) {
+                      let dateToView = feed.find(d => d.id === itemId);
+                      
+                      if (!dateToView) {
+                        try {
+                          console.log('📥 Date not in feed, fetching from Firestore:', itemId);
+                          const dateDoc = await getDoc(doc(db, 'sharedDates', itemId));
+                          if (dateDoc.exists()) {
+                            dateToView = { id: dateDoc.id, ...dateDoc.data() };
+                            console.log('✅ Fetched date:', dateToView.dateData?.title);
+                          }
+                        } catch (error) {
+                          console.error('❌ Error fetching shared date:', error);
+                        }
+                      }
+                      
+                      if (dateToView) {
+                        setViewingDate(dateToView);
+                      } else {
+                        console.warn('⚠️ Could not find date with ID:', itemId);
+                      }
+                    }
+                    break;
+                  case 'messages':
+                    setActiveTab('messages');
+                    if (itemId) {
+                      const conv = conversations.find(c => c.id === itemId);
+                      if (conv) setSelectedConversation(conv);
+                    }
+                    break;
+                  case 'requests':
+                    setActiveTab('requests');
+                    break;
+                  case 'friends':
+                    setActiveTab('friends');
+                    break;
+                  default:
+                    break;
+                }
+              }}
             />
           </div>
+
+          {/* 🛡️ Blocked Users Button */}
+          <button
+            onClick={() => setShowBlockedUsersModal(true)}
+            style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '14px',
+              padding: '0.75rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              color: 'white',
+              fontWeight: '700',
+              fontSize: '0.875rem',
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <ShieldCheck size={20} />
+            {blockedUsers.length > 0 && (
+              <span style={{
+                background: 'rgba(239, 68, 68, 0.9)',
+                borderRadius: '50%',
+                width: '20px',
+                height: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.7rem',
+                fontWeight: '900'
+              }}>
+                {blockedUsers.length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Title - Centered */}
@@ -1187,97 +1294,94 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
         </div>
 
         {/* Navigation Tabs */}
-<div style={{
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)',
-  gap: '0.75rem',
-  marginBottom: '1.5rem'
-}}>
-  {[
-    { id: 'feed', icon: Sparkles, label: 'Feed', count: feedNotificationCount },
-    { id: 'search', icon: Search, label: 'Search', count: 0 },
-    { id: 'friends', icon: Users, label: 'Friends', count: 0 },
-    { id: 'requests', icon: UserPlus, label: 'Requests', count: friendRequests.filter(r => !r.seen).length },
-    { id: 'messages', icon: MessageCircle, label: 'Messages', count: totalUnreadMessages }
-  ].map(tab => (
-    <button
-      key={tab.id}
-      onClick={() => setActiveTab(tab.id)}
-      style={{
-        padding: '1rem',
-        borderRadius: '16px',
-        border: activeTab === tab.id 
-          ? '3px solid white' 
-          : '3px solid transparent',
-        background: activeTab === tab.id
-          ? 'white'
-          : 'rgba(255, 255, 255, 0.15)',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.5rem',
-        transition: 'all 0.2s',
-        fontWeight: '800',
-        fontSize: '0.95rem',
-        color: activeTab === tab.id ? '#8b5cf6' : 'white',
-        backdropFilter: 'blur(10px)',
-        position: 'relative'
-      }}
-      onMouseEnter={(e) => {
-        if (activeTab !== tab.id) {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
-          e.currentTarget.style.transform = 'scale(1.02)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (activeTab !== tab.id) {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-          e.currentTarget.style.transform = 'scale(1)';
-        }
-      }}
-    >
-      <tab.icon size={22} />
-      <span>{tab.label}</span>
-      {/* 🔔 Notification badges */}
-      {tab.count > 0 && (
-        <span style={{
-          position: 'absolute',
-          top: '-6px',
-          right: '-6px',
-          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-          color: 'white',
-          borderRadius: '50%',
-          width: '22px',
-          height: '22px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '0.7rem',
-          fontWeight: '900',
-          border: '2px solid white',
-          boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)'
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '0.75rem',
+          marginBottom: '1.5rem'
         }}>
-          {tab.count > 99 ? '9+' : tab.count}
-        </span>
-      )}
-    </button>
-  ))}
-</div>
-
-       
+          {[
+            { id: 'feed', icon: Sparkles, label: 'Feed', count: feedNotificationCount },
+            { id: 'search', icon: Search, label: 'Search', count: 0 },
+            { id: 'friends', icon: Users, label: 'Friends', count: 0 },
+            { id: 'requests', icon: UserPlus, label: 'Requests', count: friendRequests.filter(r => !r.seen).length },
+            { id: 'messages', icon: MessageCircle, label: 'Messages', count: totalUnreadMessages }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: '1rem',
+                borderRadius: '16px',
+                border: activeTab === tab.id 
+                  ? '3px solid white' 
+                  : '3px solid transparent',
+                background: activeTab === tab.id
+                  ? 'white'
+                  : 'rgba(255, 255, 255, 0.15)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.2s',
+                fontWeight: '800',
+                fontSize: '0.95rem',
+                color: activeTab === tab.id ? '#8b5cf6' : 'white',
+                backdropFilter: 'blur(10px)',
+                position: 'relative'
+              }}
+              onMouseEnter={(e) => {
+                if (activeTab !== tab.id) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)';
+                  e.currentTarget.style.transform = 'scale(1.02)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== tab.id) {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }
+              }}
+            >
+              <tab.icon size={22} />
+              <span>{tab.label}</span>
+              {tab.count > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-6px',
+                  right: '-6px',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '22px',
+                  height: '22px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.7rem',
+                  fontWeight: '900',
+                  border: '2px solid white',
+                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)'
+                }}>
+                  {tab.count > 99 ? '9+' : tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Content Area */}
-<div style={{
-  background: 'white',
-  borderRadius: '24px',
-  padding: '2rem',
-  boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-  border: '3px solid rgba(168, 85, 247, 0.2)',
-  minHeight: '400px',
-  marginBottom: '2rem'
-}}>
+      <div style={{
+        background: 'white',
+        borderRadius: '24px',
+        padding: '2rem',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+        border: '3px solid rgba(168, 85, 247, 0.2)',
+        minHeight: '400px',
+        marginBottom: '2rem'
+      }}>
         {/* Feed Tab */}
         {activeTab === 'feed' && !viewingDate && (
           <div>
@@ -1399,31 +1503,95 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                         </div>
                       </div>
 
-                      {date.userId === user.uid && (
-                        <button
-                          onClick={() => handleDeleteSharedDate(date.id)}
-                          style={{
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            border: '2px solid rgba(239, 68, 68, 0.3)',
-                            borderRadius: '12px',
-                            padding: '0.625rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.background = 'rgba(239, 68, 68, 0.2)';
-                            e.target.style.transform = 'scale(1.05)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.background = 'rgba(239, 68, 68, 0.1)';
-                            e.target.style.transform = 'scale(1)';
-                          }}
-                        >
-                          <Trash2 size={18} style={{ color: '#ef4444' }} />
-                        </button>
-                      )}
+                      {/* Action Buttons */}
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {/* Delete button for own posts */}
+                        {date.userId === user.uid && (
+                          <button
+                            onClick={() => handleDeleteSharedDate(date.id)}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              border: '2px solid rgba(239, 68, 68, 0.3)',
+                              borderRadius: '12px',
+                              padding: '0.625rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.background = 'rgba(239, 68, 68, 0.2)';
+                              e.target.style.transform = 'scale(1.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.background = 'rgba(239, 68, 68, 0.1)';
+                              e.target.style.transform = 'scale(1)';
+                            }}
+                          >
+                            <Trash2 size={18} style={{ color: '#ef4444' }} />
+                          </button>
+                        )}
+
+                        {/* 🛡️ UGC SAFETY: Report & Block buttons for OTHER users' posts */}
+                        {date.userId !== user.uid && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReportContent('post', date.id, date);
+                              }}
+                              style={{
+                                background: 'rgba(251, 191, 36, 0.15)',
+                                border: '2px solid rgba(251, 191, 36, 0.3)',
+                                borderRadius: '12px',
+                                padding: '0.625rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(251, 191, 36, 0.25)';
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(251, 191, 36, 0.15)';
+                                e.currentTarget.style.transform = 'scale(1)';
+                              }}
+                              title="Report post"
+                            >
+                              <Flag size={18} style={{ color: '#d97706' }} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleBlockUser(date.userId, date.userEmail);
+                              }}
+                              style={{
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                border: '2px solid rgba(239, 68, 68, 0.3)',
+                                borderRadius: '12px',
+                                padding: '0.625rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                                e.currentTarget.style.transform = 'scale(1)';
+                              }}
+                              title="Block user"
+                            >
+                              <ShieldOff size={18} style={{ color: '#ef4444' }} />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
 
                     {/* Date Name */}
@@ -1584,8 +1752,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
         )}
 
         {/* Date Detail View */}
-        {/* View Date Detail */}
-     {/* View Date Detail */}
         {activeTab === 'feed' && viewingDate && (
           <div>
             {/* Back Button */}
@@ -1631,44 +1797,84 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '1rem',
+                justifyContent: 'space-between',
                 marginBottom: '1.5rem',
                 paddingBottom: '1.5rem',
                 borderBottom: '2px solid #f3e8ff'
               }}>
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: '900',
-                  fontSize: '1.5rem',
-                  boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
-                }}>
-                  {viewingDate.userEmail?.[0]?.toUpperCase() || '?'}
-                </div>
-                <div>
-                  <h2 style={{
-                    fontSize: '1.75rem',
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
                     fontWeight: '900',
-                    color: '#1f2937',
-                    margin: 0
+                    fontSize: '1.5rem',
+                    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
                   }}>
-                    {viewingDate.dateData?.title || viewingDate.name || 'Date Night'}
-                  </h2>
-                  <p style={{
-                    margin: 0,
-                    fontSize: '1rem',
-                    color: '#6b7280',
-                    fontWeight: '600'
-                  }}>
-                    by {viewingDate.userEmail?.split('@')[0] || 'Unknown'}
-                  </p>
+                    {viewingDate.userEmail?.[0]?.toUpperCase() || '?'}
+                  </div>
+                  <div>
+                    <h2 style={{
+                      fontSize: '1.75rem',
+                      fontWeight: '900',
+                      color: '#1f2937',
+                      margin: 0
+                    }}>
+                      {viewingDate.dateData?.title || viewingDate.name || 'Date Night'}
+                    </h2>
+                    <p style={{
+                      margin: 0,
+                      fontSize: '1rem',
+                      color: '#6b7280',
+                      fontWeight: '600'
+                    }}>
+                      by {viewingDate.userEmail?.split('@')[0] || 'Unknown'}
+                    </p>
+                  </div>
                 </div>
+
+                {/* 🛡️ UGC SAFETY: Report/Block in detail view */}
+                {viewingDate.userId !== user.uid && (
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      onClick={() => handleReportContent('post', viewingDate.id, viewingDate)}
+                      style={{
+                        background: 'rgba(251, 191, 36, 0.15)',
+                        border: '2px solid rgba(251, 191, 36, 0.3)',
+                        borderRadius: '12px',
+                        padding: '0.75rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                      title="Report post"
+                    >
+                      <Flag size={20} style={{ color: '#d97706' }} />
+                    </button>
+                    <button
+                      onClick={() => handleBlockUser(viewingDate.userId, viewingDate.userEmail)}
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '2px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: '12px',
+                        padding: '0.75rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                      title="Block user"
+                    >
+                      <ShieldOff size={20} style={{ color: '#ef4444' }} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Caption */}
@@ -1770,7 +1976,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
               {/* Itinerary/Activities */}
               <div>
                 {(() => {
-                  // Get stops from various possible locations in data structure
                   const stops = viewingDate.dateData?.stops || 
                                viewingDate.dateData?.itinerary?.stops || 
                                viewingDate.stops ||
@@ -1891,7 +2096,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
 
                               {/* Stop Content */}
                               <div style={{ padding: '1.5rem' }}>
-                                {/* Stop Title */}
                                 <h4 style={{
                                   fontSize: '1.5rem',
                                   fontWeight: '900',
@@ -1901,7 +2105,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                                   {stop.title || stop.name || 'Untitled Stop'}
                                 </h4>
 
-                                {/* Description */}
                                 {stop.description && (
                                   <p style={{
                                     fontSize: '1rem',
@@ -1913,7 +2116,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                                   </p>
                                 )}
 
-                                {/* Image */}
                                 {stop.image && (
                                   <div style={{
                                     width: '100%',
@@ -1935,7 +2137,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                                         e.target.style.display = 'none';
                                       }}
                                     />
-                                    {/* Rating Badge on Image */}
                                     {stop.rating && (
                                       <div style={{
                                         position: 'absolute',
@@ -1962,7 +2163,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                                   </div>
                                 )}
 
-                                {/* Venue Name (if different from title) */}
                                 {stop.venueName && stop.venueName !== stop.title && (
                                   <h5 style={{
                                     fontSize: '1.25rem',
@@ -1974,7 +2174,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                                   </h5>
                                 )}
 
-                                {/* Location */}
                                 {stop.vicinity && (
                                   <div style={{
                                     display: 'flex',
@@ -1997,7 +2196,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                                   </div>
                                 )}
 
-                                {/* Map (if coordinates available) */}
                                 {stop.geometry?.location && (
                                   <div style={{
                                     width: '100%',
@@ -2019,7 +2217,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                                   </div>
                                 )}
 
-                                {/* Challenges Section */}
                                 {stop.challenges && stop.challenges.length > 0 && (
                                   <div style={{
                                     background: 'linear-gradient(135deg, #fff5f5 0%, #fef2f2 100%)',
@@ -2113,7 +2310,7 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                 justifyContent: 'center'
               }}>
                 <button
-  onClick={() => handleLikeDateDetail(viewingDate.id, viewingDate.likes || [])}
+                  onClick={() => handleLikeDateDetail(viewingDate.id, viewingDate.likes || [])}
                   style={{
                     padding: '1.125rem 2rem',
                     borderRadius: '16px',
@@ -2157,16 +2354,15 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
           </div>
         )}
 
+        {/* Search Tab */}
         {activeTab === 'search' && (
-  <div style={{
-    padding: '0 0.5rem'
-  }}>
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '1rem',
-      marginBottom: '2rem'
-    }}>
+          <div style={{ padding: '0 0.5rem' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              marginBottom: '2rem'
+            }}>
               <Search size={32} style={{ color: '#a855f7' }} />
               <h2 style={{
                 fontSize: '2rem',
@@ -2187,7 +2383,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  // Debounce: auto-search after 300ms of no typing
                   if (searchTimeoutRef.current) {
                     clearTimeout(searchTimeoutRef.current);
                   }
@@ -2220,50 +2415,45 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                 }}
               />
               <button
-  onClick={handleSearch}
-  disabled={loading}
-  style={{
-    padding: '0.875rem 1.25rem',
-    borderRadius: '18px',
-    border: 'none',
-    background: loading
-      ? '#d1d5db'
-      : 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-    color: 'white',
-    fontWeight: '800',
-    fontSize: '0.875rem',
-    cursor: loading ? 'not-allowed' : 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    transition: 'all 0.2s',
-    boxShadow: loading
-      ? 'none'
-      : '0 6px 20px rgba(168, 85, 247, 0.3)',
-    minWidth: 'fit-content',
-    whiteSpace: 'nowrap'
-  }}
-  onMouseEnter={(e) => {
-    if (!loading) {
-      e.target.style.transform = 'scale(1.03)';
-      e.target.style.boxShadow = '0 8px 24px rgba(168, 85, 247, 0.4)';
-    }
-  }}
-  onMouseLeave={(e) => {
-    e.target.style.transform = 'scale(1)';
-    e.target.style.boxShadow = loading
-      ? 'none'
-      : '0 6px 20px rgba(168, 85, 247, 0.3)';
-  }}
->
-  <Search size={18} />
-  <span style={{ display: window.innerWidth > 640 ? 'inline' : 'none' }}>
-    {loading ? 'Searching...' : 'Search'}
-  </span>
-</button>
+                onClick={handleSearch}
+                disabled={loading}
+                style={{
+                  padding: '0.875rem 1.25rem',
+                  borderRadius: '18px',
+                  border: 'none',
+                  background: loading
+                    ? '#d1d5db'
+                    : 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+                  color: 'white',
+                  fontWeight: '800',
+                  fontSize: '0.875rem',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s',
+                  boxShadow: loading ? 'none' : '0 6px 20px rgba(168, 85, 247, 0.3)',
+                  minWidth: 'fit-content',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.target.style.transform = 'scale(1.03)';
+                    e.target.style.boxShadow = '0 8px 24px rgba(168, 85, 247, 0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = loading ? 'none' : '0 6px 20px rgba(168, 85, 247, 0.3)';
+                }}
+              >
+                <Search size={18} />
+                <span style={{ display: window.innerWidth > 640 ? 'inline' : 'none' }}>
+                  {loading ? 'Searching...' : 'Search'}
+                </span>
+              </button>
             </div>
 
-            {/* No results message - inline instead of modal */}
             {searchResults.length === 0 && searchQuery.trim() && !loading && (
               <div style={{
                 textAlign: 'center',
@@ -2280,133 +2470,128 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
               </div>
             )}
 
-         {searchResults.length > 0 && (
-  <div style={{ 
-    display: 'flex',
-    flexDirection: 'column',  // ✅ Vertical layout
-    gap: '1rem',
-    padding: '0'  // ✅ No side padding
-  }}>
-    {searchResults.map(result => (
-      <div
-        key={result.id}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',  // ✅ Stack vertically
-          gap: '0.75rem',
-          background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
-          padding: '1.25rem',  // ✅ More padding
-          borderRadius: '16px',
-          border: '2px solid #e9d5ff',
-          boxShadow: '0 2px 8px rgba(168, 85, 247, 0.1)'
-        }}
-      >
-        {/* User info row */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '1rem',
-          width: '100%'  // ✅ Full width
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: '900',
-            fontSize: '1.25rem',
-            flexShrink: 0,
-            boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
-          }}>
-            {result.email[0].toUpperCase()}
-          </div>
-          <div style={{ 
-            flex: 1, 
-            minWidth: 0  // ✅ Allows text truncation
-          }}>
-            <p style={{
-              margin: '0 0 0.25rem',
-              fontWeight: '800',
-              fontSize: '1.125rem',
-              color: '#1f2937',
-              overflow: 'hidden',  // ✅ Handle long text
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}>
-              {result.name || result.email.split('@')[0]}
-            </p>
-            <p style={{
-              margin: 0,
-              fontSize: '0.875rem',
-              color: '#6b7280',
-              fontWeight: '600',
-              overflow: 'hidden',  // ✅ Handle long text
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}>
-              {result.email}
-            </p>
-          </div>
-        </div>
+            {searchResults.length > 0 && (
+              <div style={{ 
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                padding: '0'
+              }}>
+                {searchResults.map(result => (
+                  <div
+                    key={result.id}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.75rem',
+                      background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+                      padding: '1.25rem',
+                      borderRadius: '16px',
+                      border: '2px solid #e9d5ff',
+                      boxShadow: '0 2px 8px rgba(168, 85, 247, 0.1)'
+                    }}
+                  >
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '1rem',
+                      width: '100%'
+                    }}>
+                      <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: '900',
+                        fontSize: '1.25rem',
+                        flexShrink: 0,
+                        boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
+                      }}>
+                        {result.email[0].toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{
+                          margin: '0 0 0.25rem',
+                          fontWeight: '800',
+                          fontSize: '1.125rem',
+                          color: '#1f2937',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {result.name || result.email.split('@')[0]}
+                        </p>
+                        <p style={{
+                          margin: 0,
+                          fontSize: '0.875rem',
+                          color: '#6b7280',
+                          fontWeight: '600',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {result.email}
+                        </p>
+                      </div>
+                    </div>
 
-       {/* Add Friend button - full width on mobile */}
-<button
-  onClick={() => !sentRequests.some(r => r.toUserId === result.id) && handleSendFriendRequest(result)}
-  disabled={sentRequests.some(r => r.toUserId === result.id)}
-  style={{
-    width: '100%',
-    padding: '0.875rem',
-    borderRadius: '14px',
-    border: 'none',
-    background: sentRequests.some(r => r.toUserId === result.id)
-      ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-      : 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-    color: 'white',
-    fontWeight: '800',
-    fontSize: '1rem',
-    cursor: sentRequests.some(r => r.toUserId === result.id) ? 'not-allowed' : 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.5rem',
-    transition: 'all 0.2s',
-    boxShadow: sentRequests.some(r => r.toUserId === result.id)
-      ? 'none'
-      : '0 4px 12px rgba(168, 85, 247, 0.3)'
-  }}
-  onMouseEnter={(e) => {
-    if (!sentRequests.some(r => r.toUserId === result.id)) {
-      e.target.style.transform = 'scale(1.02)';
-      e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
-    }
-  }}
-  onMouseLeave={(e) => {
-    e.target.style.transform = 'scale(1)';
-    e.target.style.boxShadow = sentRequests.some(r => r.toUserId === result.id)
-      ? 'none'
-      : '0 4px 12px rgba(168, 85, 247, 0.3)';
-  }}
->
-  {sentRequests.some(r => r.toUserId === result.id) ? (
-    <>
-      <Clock size={20} />
-      Pending
-    </>
-  ) : (
-    <>
-      <UserPlus size={20} />
-      Add Friend
-    </>
-  )}
-</button>
-      </div>
-    ))}
-  </div>
-)}
+                    <button
+                      onClick={() => !sentRequests.some(r => r.toUserId === result.id) && handleSendFriendRequest(result)}
+                      disabled={sentRequests.some(r => r.toUserId === result.id)}
+                      style={{
+                        width: '100%',
+                        padding: '0.875rem',
+                        borderRadius: '14px',
+                        border: 'none',
+                        background: sentRequests.some(r => r.toUserId === result.id)
+                          ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+                          : 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+                        color: 'white',
+                        fontWeight: '800',
+                        fontSize: '1rem',
+                        cursor: sentRequests.some(r => r.toUserId === result.id) ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s',
+                        boxShadow: sentRequests.some(r => r.toUserId === result.id)
+                          ? 'none'
+                          : '0 4px 12px rgba(168, 85, 247, 0.3)'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!sentRequests.some(r => r.toUserId === result.id)) {
+                          e.target.style.transform = 'scale(1.02)';
+                          e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'scale(1)';
+                        e.target.style.boxShadow = sentRequests.some(r => r.toUserId === result.id)
+                          ? 'none'
+                          : '0 4px 12px rgba(168, 85, 247, 0.3)';
+                      }}
+                    >
+                      {sentRequests.some(r => r.toUserId === result.id) ? (
+                        <>
+                          <Clock size={20} />
+                          Pending
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus size={20} />
+                          Add Friend
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -2529,37 +2714,37 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
 
                     <div style={{ display: 'flex', gap: '0.75rem' }}>
                       <button
-  onClick={() => handleStartConversation(friend.id)}
-  style={{
-    padding: '0.625rem 1rem',
-    borderRadius: '14px',
-    border: 'none',
-    background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-    color: 'white',
-    fontWeight: '800',
-    fontSize: '0.875rem',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    transition: 'all 0.2s',
-    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
-    minWidth: '0'
-  }}
-  onMouseEnter={(e) => {
-    e.target.style.transform = 'scale(1.03)';
-    e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
-  }}
-  onMouseLeave={(e) => {
-    e.target.style.transform = 'scale(1)';
-    e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
-  }}
->
-  <MessageCircle size={18} />
-  <span style={{ display: window.innerWidth > 640 ? 'inline' : 'none' }}>
-    Message
-  </span>
-</button>
+                        onClick={() => handleStartConversation(friend.id)}
+                        style={{
+                          padding: '0.625rem 1rem',
+                          borderRadius: '14px',
+                          border: 'none',
+                          background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+                          color: 'white',
+                          fontWeight: '800',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          transition: 'all 0.2s',
+                          boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
+                          minWidth: '0'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.transform = 'scale(1.03)';
+                          e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = 'scale(1)';
+                          e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
+                        }}
+                      >
+                        <MessageCircle size={18} />
+                        <span style={{ display: window.innerWidth > 640 ? 'inline' : 'none' }}>
+                          Message
+                        </span>
+                      </button>
 
                       <button
                         onClick={() => handleRemoveFriend(friend.id)}
@@ -2646,7 +2831,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                       transition: 'all 0.2s'
                     }}
                   >
-                    {/* User info row */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <div style={{
                         width: '44px',
@@ -2690,7 +2874,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                       </div>
                     </div>
 
-                    {/* Buttons row - full width */}
                     <div style={{ display: 'flex', gap: '0.75rem' }}>
                       <button
                         onClick={() => handleAcceptFriendRequest(request.id)}
@@ -2815,25 +2998,25 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                       </div>
 
                       <button
-  onClick={() => handleCancelFriendRequest(request.id)}
-  style={{
-    padding: '0.75rem 1.25rem',
-    borderRadius: '12px',
-    border: '2px solid rgba(239, 68, 68, 0.3)',
-    background: 'rgba(239, 68, 68, 0.1)',
-    color: '#ef4444',
-    fontWeight: '700',
-    fontSize: '0.875rem',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    transition: 'all 0.2s'
-  }}
->
-  <X size={18} />
-  Cancel
-</button>
+                        onClick={() => handleCancelFriendRequest(request.id)}
+                        style={{
+                          padding: '0.75rem 1.25rem',
+                          borderRadius: '12px',
+                          border: '2px solid rgba(239, 68, 68, 0.3)',
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          color: '#ef4444',
+                          fontWeight: '700',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <X size={18} />
+                        Cancel
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -2873,45 +3056,41 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                     </h2>
                   </div>
 
-                 <button
-  onClick={() => setShowCreateGroupChat(true)}
-  style={{
-    padding: '0.75rem 1rem',
-    borderRadius: '14px',
-    border: 'none',
-    background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
-    color: 'white',
-    fontWeight: '800',
-    fontSize: '0.875rem',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    transition: 'all 0.2s',
-    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
-    whiteSpace: 'nowrap'
-  }}
-  onMouseEnter={(e) => {
-    e.target.style.transform = 'scale(1.03)';
-    e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
-  }}
-  onMouseLeave={(e) => {
-    e.target.style.transform = 'scale(1)';
-    e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
-  }}
->
-  <Plus size={18} />
-  <span style={{ 
-    display: window.innerWidth > 640 ? 'inline' : 'none' 
-  }}>
-    Create Group Chat
-  </span>
-  <span style={{ 
-    display: window.innerWidth <= 640 ? 'inline' : 'none' 
-  }}>
-    Group
-  </span>
-</button>
+                  <button
+                    onClick={() => setShowCreateGroupChat(true)}
+                    style={{
+                      padding: '0.75rem 1rem',
+                      borderRadius: '14px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
+                      color: 'white',
+                      fontWeight: '800',
+                      fontSize: '0.875rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      transition: 'all 0.2s',
+                      boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.transform = 'scale(1.03)';
+                      e.target.style.boxShadow = '0 6px 16px rgba(168, 85, 247, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.transform = 'scale(1)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
+                    }}
+                  >
+                    <Plus size={18} />
+                    <span style={{ display: window.innerWidth > 640 ? 'inline' : 'none' }}>
+                      Create Group Chat
+                    </span>
+                    <span style={{ display: window.innerWidth <= 640 ? 'inline' : 'none' }}>
+                      Group
+                    </span>
+                  </button>
                 </div>
 
                 {conversations.length === 0 ? (
@@ -2937,118 +3116,114 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                     maxHeight: 'calc(600px - 100px)'
                   }}>
                     {conversations
-                      .filter(conv => {
-                        // Only show if conversation has messages OR is a group chat
-                        return conv.lastMessage || conv.lastMessageTime || conv.isGroup;
-                      })
+                      .filter(conv => conv.lastMessage || conv.lastMessageTime || conv.isGroup)
                       .map(conv => {
-                      const conversationUnread = unreadMessages[conv.id] || 0;
-                      return (
-                        <button
-                          key={conv.id}
-                          onClick={() => setSelectedConversation(conv)}
-                          style={{
-                            background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
-                            border: '2px solid #e9d5ff',
-                            borderRadius: '18px',
-                            padding: '1.25rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '1rem',
-                            transition: 'all 0.2s',
-                            textAlign: 'left',
-                            position: 'relative'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateX(4px)';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.2)';
-                            e.currentTarget.style.borderColor = '#a855f7';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateX(0)';
-                            e.currentTarget.style.boxShadow = 'none';
-                            e.currentTarget.style.borderColor = '#e9d5ff';
-                          }}
-                        >
-                          <div style={{
-                            width: '48px',
-                            height: '48px',
-                            borderRadius: '50%',
-                            background: conv.isGroup
-                              ? 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)'
-                              : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontWeight: '900',
-                            fontSize: '1.25rem',
-                            flexShrink: 0,
-                            boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
-                          }}>
-                            {conv.isGroup ? (
-                              <Users size={24} />
-                            ) : (
-                              conv.participantEmails?.find(e => e !== user.email)?.[0]?.toUpperCase() || '?'
-                            )}
-                          </div>
-
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{
-                              margin: '0 0 0.25rem',
-                              fontWeight: '800',
-                              fontSize: '1.125rem',
-                              color: '#1f2937',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
-                            }}>
-                              {conv.isGroup
-                                ? conv.name
-                                : conv.participantEmails?.find(e => e !== user.email)?.split('@')[0] || 'Unknown'
-                              }
-                            </p>
-                            <p style={{
-  margin: 0,
-  fontSize: '0.875rem',
-  color: '#6b7280',
-  fontWeight: '600',
-  whiteSpace: 'nowrap',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis'
-}}>
-  {conv.lastMessage 
-    ? (typeof conv.lastMessage === 'string' 
-        ? conv.lastMessage 
-        : conv.lastMessage.text || 'No messages yet')
-    : 'No messages yet'}
-</p>
-                          </div>
-
-                          {/* 🔔 NEW: Show unread message count on conversation */}
-                          {conversationUnread > 0 && (
-                            <span style={{
-                              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                              color: 'white',
+                        const conversationUnread = unreadMessages[conv.id] || 0;
+                        return (
+                          <button
+                            key={conv.id}
+                            onClick={() => setSelectedConversation(conv)}
+                            style={{
+                              background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+                              border: '2px solid #e9d5ff',
+                              borderRadius: '18px',
+                              padding: '1.25rem',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '1rem',
+                              transition: 'all 0.2s',
+                              textAlign: 'left',
+                              position: 'relative'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'translateX(4px)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.2)';
+                              e.currentTarget.style.borderColor = '#a855f7';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateX(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                              e.currentTarget.style.borderColor = '#e9d5ff';
+                            }}
+                          >
+                            <div style={{
+                              width: '48px',
+                              height: '48px',
                               borderRadius: '50%',
-                              width: '28px',
-                              height: '28px',
+                              background: conv.isGroup
+                                ? 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)'
+                                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontSize: '0.8125rem',
+                              color: 'white',
                               fontWeight: '900',
-                              border: '2px solid white',
-                              boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)',
-                              flexShrink: 0
+                              fontSize: '1.25rem',
+                              flexShrink: 0,
+                              boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
                             }}>
-                              {conversationUnread > 99 ? '99+' : conversationUnread}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
+                              {conv.isGroup ? (
+                                <Users size={24} />
+                              ) : (
+                                conv.participantEmails?.find(e => e !== user.email)?.[0]?.toUpperCase() || '?'
+                              )}
+                            </div>
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{
+                                margin: '0 0 0.25rem',
+                                fontWeight: '800',
+                                fontSize: '1.125rem',
+                                color: '#1f2937',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}>
+                                {conv.isGroup
+                                  ? conv.name
+                                  : conv.participantEmails?.find(e => e !== user.email)?.split('@')[0] || 'Unknown'
+                                }
+                              </p>
+                              <p style={{
+                                margin: 0,
+                                fontSize: '0.875rem',
+                                color: '#6b7280',
+                                fontWeight: '600',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}>
+                                {conv.lastMessage 
+                                  ? (typeof conv.lastMessage === 'string' 
+                                      ? conv.lastMessage 
+                                      : conv.lastMessage.text || 'No messages yet')
+                                  : 'No messages yet'}
+                              </p>
+                            </div>
+
+                            {conversationUnread > 0 && (
+                              <span style={{
+                                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                color: 'white',
+                                borderRadius: '50%',
+                                width: '28px',
+                                height: '28px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.8125rem',
+                                fontWeight: '900',
+                                border: '2px solid white',
+                                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)',
+                                flexShrink: 0
+                              }}>
+                                {conversationUnread > 99 ? '99+' : conversationUnread}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                   </div>
                 )}
               </div>
@@ -3153,9 +3328,56 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                       </p>
                     )}
                   </div>
+
+                  {/* 🛡️ UGC SAFETY: Report/Block in conversation header (DMs only) */}
+                  {!selectedConversation.isGroup && (
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      {(() => {
+                        const otherUserId = selectedConversation.participants?.find(p => p !== user.uid);
+                        const otherUserEmail = selectedConversation.participantEmails?.find(e => e !== user.email);
+                        
+                        return (
+                          <>
+                            <button
+                              onClick={() => handleReportContent('user', otherUserId, { userId: otherUserId, userEmail: otherUserEmail })}
+                              style={{
+                                background: 'rgba(251, 191, 36, 0.15)',
+                                border: '2px solid rgba(251, 191, 36, 0.3)',
+                                borderRadius: '12px',
+                                padding: '0.625rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                transition: 'all 0.2s'
+                              }}
+                              title="Report user"
+                            >
+                              <Flag size={18} style={{ color: '#d97706' }} />
+                            </button>
+                            <button
+                              onClick={() => handleBlockUser(otherUserId, otherUserEmail)}
+                              style={{
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                border: '2px solid rgba(239, 68, 68, 0.3)',
+                                borderRadius: '12px',
+                                padding: '0.625rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                transition: 'all 0.2s'
+                              }}
+                              title="Block user"
+                            >
+                              <ShieldOff size={18} style={{ color: '#ef4444' }} />
+                            </button>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
 
-                {/* 🗑️ AUTO-DELETE WARNING BANNER */}
+                {/* Auto-delete warning banner */}
                 {messages.length > 0 && (
                   <div style={{
                     background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%)',
@@ -3185,7 +3407,6 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
                     </div>
                     <div style={{ flex: 1 }}>
                       <span style={{ fontWeight: '800' }}>Chats auto-delete after 3 days</span>
-
                     </div>
                   </div>
                 )}
@@ -3364,6 +3585,303 @@ const handleLikeDate = async (dateId, currentLikes = []) => {
         )}
       </div>
 
+      {/* 🛡️ UGC SAFETY: Report Modal */}
+      {showReportModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          backdropFilter: 'blur(4px)',
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '24px',
+            padding: '2rem',
+            maxWidth: '450px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            border: '3px solid #ef4444'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: '900',
+                margin: 0,
+                color: '#ef4444',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem'
+              }}>
+                <AlertTriangle size={28} />
+                Report {reportTarget?.type === 'post' ? 'Post' : reportTarget?.type === 'message' ? 'Message' : 'User'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportTarget(null);
+                }}
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '2px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '12px',
+                  padding: '0.625rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <X size={20} style={{ color: '#ef4444' }} />
+              </button>
+            </div>
+
+            <p style={{
+              color: '#6b7280',
+              marginBottom: '1.5rem',
+              fontSize: '1rem',
+              lineHeight: '1.6'
+            }}>
+              Select a reason for reporting. Our team reviews all reports within 24 hours.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {[
+                { id: 'spam', label: 'Spam or misleading', icon: '🗑️', desc: 'Unwanted or deceptive content' },
+                { id: 'harassment', label: 'Harassment or bullying', icon: '😠', desc: 'Targeting or attacking someone' },
+                { id: 'inappropriate', label: 'Inappropriate content', icon: '🚫', desc: 'Adult, violent, or offensive' },
+                { id: 'impersonation', label: 'Impersonation', icon: '🎭', desc: 'Pretending to be someone else' },
+                { id: 'other', label: 'Other concern', icon: '❓', desc: 'Something else not listed' }
+              ].map(reason => (
+                <button
+                  key={reason.id}
+                  onClick={() => submitReport(reason.id)}
+                  style={{
+                    padding: '1.25rem',
+                    borderRadius: '16px',
+                    border: '2px solid #fecaca',
+                    background: 'white',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#fef2f2';
+                    e.currentTarget.style.borderColor = '#ef4444';
+                    e.currentTarget.style.transform = 'translateX(4px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'white';
+                    e.currentTarget.style.borderColor = '#fecaca';
+                    e.currentTarget.style.transform = 'translateX(0)';
+                  }}
+                >
+                  <span style={{ fontSize: '1.75rem' }}>{reason.icon}</span>
+                  <div>
+                    <span style={{
+                      fontWeight: '800',
+                      fontSize: '1.0625rem',
+                      color: '#1f2937',
+                      display: 'block',
+                      marginBottom: '0.25rem'
+                    }}>
+                      {reason.label}
+                    </span>
+                    <span style={{
+                      fontSize: '0.875rem',
+                      color: '#6b7280'
+                    }}>
+                      {reason.desc}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🛡️ UGC SAFETY: Blocked Users Modal */}
+      {showBlockedUsersModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          backdropFilter: 'blur(4px)',
+          padding: '1rem'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '24px',
+            padding: '2rem',
+            maxWidth: '450px',
+            width: '100%',
+            maxHeight: '80vh',
+            overflow: 'auto',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            border: '3px solid #a855f7'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1.5rem'
+            }}>
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: '900',
+                margin: 0,
+                color: '#1f2937',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem'
+              }}>
+                <ShieldCheck size={28} style={{ color: '#a855f7' }} />
+                Blocked Users
+              </h2>
+              <button
+                onClick={() => setShowBlockedUsersModal(false)}
+                style={{
+                  background: '#f3f4f6',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '12px',
+                  padding: '0.625rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <X size={20} style={{ color: '#6b7280' }} />
+              </button>
+            </div>
+
+            {blockedUsersList.length === 0 ? (
+              <div style={{
+                textAlign: 'center',
+                padding: '3rem 2rem',
+                color: '#9ca3af'
+              }}>
+                <ShieldCheck size={56} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
+                <p style={{ fontSize: '1.125rem', fontWeight: '700', marginBottom: '0.5rem', color: '#6b7280' }}>
+                  No blocked users
+                </p>
+                <p style={{ fontSize: '0.9375rem' }}>
+                  Users you block will appear here
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {blockedUsersList.map(blocked => (
+                  <div
+                    key={blocked.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '1rem 1.25rem',
+                      background: '#f9fafb',
+                      borderRadius: '16px',
+                      border: '2px solid #e5e7eb'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', minWidth: 0, flex: 1 }}>
+                      <div style={{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: '900',
+                        fontSize: '1.125rem',
+                        flexShrink: 0
+                      }}>
+                        {blocked.blockedUserEmail?.[0]?.toUpperCase() || '?'}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{
+                          margin: 0,
+                          fontWeight: '700',
+                          fontSize: '1rem',
+                          color: '#1f2937',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {blocked.blockedUserEmail?.split('@')[0] || 'Unknown'}
+                        </p>
+                        <p style={{
+                          margin: '0.125rem 0 0',
+                          fontSize: '0.8125rem',
+                          color: '#6b7280',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          Blocked {blocked.blockedAt?.toDate?.()?.toLocaleDateString() || 'recently'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleUnblockUser(blocked)}
+                      style={{
+                        padding: '0.625rem 1rem',
+                        borderRadius: '12px',
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        color: 'white',
+                        fontWeight: '800',
+                        fontSize: '0.875rem',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        transition: 'all 0.2s',
+                        boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'scale(1.05)';
+                        e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'scale(1)';
+                        e.target.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.3)';
+                      }}
+                    >
+                      Unblock
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Success Modal */}
       {successMessage && (
         <SuccessModal
@@ -3489,7 +4007,8 @@ function CreateGroupChatModal({ friends, onClose, onCreate }) {
             fontSize: '1rem',
             marginBottom: '1.5rem',
             outline: 'none',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            boxSizing: 'border-box'
           }}
           onFocus={(e) => {
             e.target.style.borderColor = '#a855f7';
@@ -3514,7 +4033,9 @@ function CreateGroupChatModal({ friends, onClose, onCreate }) {
           display: 'flex',
           flexDirection: 'column',
           gap: '0.75rem',
-          marginBottom: '1.5rem'
+          marginBottom: '1.5rem',
+          maxHeight: '250px',
+          overflowY: 'auto'
         }}>
           {friends.map(friend => (
             <button

@@ -25,6 +25,7 @@ import DateMemoryScrapbook from './DateMemoryScrapbook';
 import SurpriseDateMode from './SurpriseDateMode';
 import DateStreaksGoals from './DateStreaksGoals';
 import SubscribeButton from './SubscribeButton';
+import { deleteUser } from 'firebase/auth';
 import SubscriptionManager from './Subscriptionmanager';
 import TermsModal from './Terms';
 import PrivacyModal from './Privacy';
@@ -1362,33 +1363,46 @@ const handleOpenSaved = async () => {
 };
 
   const handleUploadPhoto = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const file = e.target.files?.[0];
+  if (!file) return;
+  
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    setProfileError('Please select an image file');
+    return;
+  }
+  
+  if (file.size > 5000000) {
+    setProfileError('Photo must be under 5MB');
+    return;
+  }
+  
+  setProfileError('Uploading...');
+  
+  try {
+    const storage = getStorage();
+    const photoRef = ref(storage, `profilePhotos/${user.uid}`);
     
-    if (file.size > 5000000) {
-      setProfileError('Photo must be under 5MB');
-      return;
-    }
+    await uploadBytes(photoRef, file);
+    const photoURL = await getDownloadURL(photoRef);
     
-    setProfileError('Uploading...');
-    
-    try {
-      const storage = getStorage();
-      const photoRef = ref(storage, `profilePhotos/${user.uid}`);
-      
-      await uploadBytes(photoRef, file);
-      const photoURL = await getDownloadURL(photoRef);
-      
-      setProfilePhoto(photoURL);
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { profilePhoto: photoURL }, { merge: true });
-      setProfileError('');
-      alert('✨ Profile photo updated!');
-    } catch (err) {
-      console.error('Upload error:', err);
+    setProfilePhoto(photoURL);
+    const userDocRef = doc(db, 'users', user.uid);
+    await setDoc(userDocRef, { profilePhoto: photoURL }, { merge: true });
+    setProfileError('');
+    alert('✨ Profile photo updated!');
+  } catch (err) {
+    console.error('Upload error:', err);
+    if (err.message?.includes('permission') || err.message?.includes('denied')) {
+      setProfileError('Camera/photo access denied. Please enable in Settings > DateMaker > Photos.');
+    } else {
       setProfileError(`Failed to upload: ${err.message}`);
     }
-  };
+  }
+  
+  // Reset file input
+  e.target.value = '';
+};
   
   const handleChangePassword = async () => {
     setProfileError('');
@@ -1418,7 +1432,68 @@ const handleOpenSaved = async () => {
     }
   };
   
+  const handleDeleteAccount = async () => {
+  const confirmed = window.confirm(
+    '⚠️ DELETE ACCOUNT\n\n' +
+    'This will permanently delete:\n' +
+    '• Your profile and settings\n' +
+    '• All saved dates\n' +
+    '• Your subscription\n' +
+    '• All your data\n\n' +
+    'This action CANNOT be undone.\n\n' +
+    'Are you sure you want to delete your account?'
+  );
   
+  if (!confirmed) return;
+  
+  const doubleConfirm = window.confirm(
+    '🚨 FINAL WARNING\n\n' +
+    'You are about to permanently delete your account.\n\n' +
+    'Type "DELETE" in your mind and click OK to confirm.'
+  );
+  
+  if (!doubleConfirm) return;
+  
+  try {
+    setProfileError('Deleting account...');
+    
+    // Delete user data from Firestore
+    const userDocRef = doc(db, 'users', user.uid);
+    await setDoc(userDocRef, { deleted: true, deletedAt: new Date().toISOString() }, { merge: true });
+    
+    // Delete related data
+    try {
+      const streakRef = doc(db, 'dateStreaks', user.uid);
+      await setDoc(streakRef, { deleted: true }, { merge: true });
+    } catch (e) {
+      console.log('No streak data to delete');
+    }
+    
+    try {
+      const statusRef = doc(db, 'userStatus', user.uid);
+      await setDoc(statusRef, { deleted: true }, { merge: true });
+    } catch (e) {
+      console.log('No status data to delete');
+    }
+    
+    // Delete Firebase Auth account
+    await deleteUser(user);
+    
+    alert('Your account has been deleted. We\'re sorry to see you go!');
+    
+    // Redirect to login
+    setAuthScreen('login');
+    
+  } catch (err) {
+    console.error('Delete account error:', err);
+    if (err.code === 'auth/requires-recent-login') {
+      setProfileError('For security, please log out and log back in before deleting your account.');
+    } else {
+      setProfileError('Failed to delete account: ' + err.message);
+    }
+  }
+};
+
   const handleCompleteChallenge = async (stopIndex, challengeId) => {
     try {
       const newCompletedChallenges = [...completedChallenges, challengeId];
@@ -2705,6 +2780,58 @@ if (category === 'nightlife') {
                 </button>
               </div>
             )}
+
+{/* DELETE ACCOUNT SECTION */}
+<div style={{ 
+  marginBottom: '2rem',
+  paddingTop: '2rem',
+  borderTop: '2px solid #fecaca'
+}}>
+  <h3 style={{ 
+    fontSize: '1.25rem', 
+    fontWeight: 'bold', 
+    marginBottom: '1rem', 
+    color: '#dc2626',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem'
+  }}>
+    ⚠️ Danger Zone
+  </h3>
+  <p style={{ 
+    color: '#6b7280', 
+    fontSize: '0.875rem', 
+    marginBottom: '1rem' 
+  }}>
+    Once you delete your account, there is no going back. Please be certain.
+  </p>
+  <button 
+    onClick={handleDeleteAccount}
+    style={{
+      width: '100%',
+      background: 'white',
+      color: '#dc2626',
+      padding: '1rem',
+      borderRadius: '12px',
+      border: '2px solid #dc2626',
+      cursor: 'pointer',
+      fontWeight: '700',
+      fontSize: '1rem',
+      transition: 'all 0.2s'
+    }}
+    onMouseEnter={(e) => {
+      e.target.style.background = '#dc2626';
+      e.target.style.color = 'white';
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.background = 'white';
+      e.target.style.color = '#dc2626';
+    }}
+  >
+    🗑️ Delete My Account
+  </button>
+</div>
+
             {profileError && (
               <div style={{ padding: '1rem', background: '#fef2f2', border: '2px solid #fecaca', borderRadius: '12px', color: '#b91c1c', fontWeight: '600', textAlign: 'center' }}>
                 {profileError}
