@@ -609,42 +609,59 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
         blockedAt: serverTimestamp()
       });
       
-      // Remove friend relationship if exists
-      const friendRequestsQuery = query(
-        collection(db, 'friendRequests'),
-        where('status', '==', 'accepted')
-      );
+      console.log('✅ Block record created successfully');
       
-      const snapshot = await getDocs(friendRequestsQuery);
-      const batch = writeBatch(db);
+      // Update local state immediately so UI reflects the block
+      setBlockedUsers(prev => [...prev, targetUserEmail]);
       
-      snapshot.docs.forEach(docSnapshot => {
-        const data = docSnapshot.data();
-        if ((data.fromUserId === user.uid && data.toUserId === targetUserId) ||
-            (data.toUserId === user.uid && data.fromUserId === targetUserId)) {
+      // Remove friend relationship if exists (separate try-catch so block still succeeds)
+      try {
+        const sentQuery = query(
+          collection(db, 'friendRequests'),
+          where('fromUserId', '==', user.uid),
+          where('toUserId', '==', targetUserId),
+          where('status', '==', 'accepted')
+        );
+        
+        const receivedQuery = query(
+          collection(db, 'friendRequests'),
+          where('toUserId', '==', user.uid),
+          where('fromUserId', '==', targetUserId),
+          where('status', '==', 'accepted')
+        );
+        
+        const [sentSnapshot, receivedSnapshot] = await Promise.all([
+          getDocs(sentQuery),
+          getDocs(receivedQuery)
+        ]);
+        
+        const batch = writeBatch(db);
+        let hasDeletes = false;
+        
+        sentSnapshot.docs.forEach(docSnapshot => {
           batch.delete(doc(db, 'friendRequests', docSnapshot.id));
+          hasDeletes = true;
+        });
+        
+        receivedSnapshot.docs.forEach(docSnapshot => {
+          batch.delete(doc(db, 'friendRequests', docSnapshot.id));
+          hasDeletes = true;
+        });
+        
+        if (hasDeletes) {
+          await batch.commit();
+          console.log('✅ Friend relationship removed');
         }
-      });
-      
-      await batch.commit();
-      
-      // Close conversation if viewing blocked user
-      if (selectedConversation) {
-        const otherParticipants = selectedConversation.participants?.filter(p => p !== user.uid) || [];
-        if (otherParticipants.includes(targetUserId)) {
-          setSelectedConversation(null);
-        }
+      } catch (friendError) {
+        // Don't fail the block if friend removal fails
+        console.warn('⚠️ Could not remove friend relationship:', friendError);
       }
       
-      // Close date detail if viewing blocked user's post
-      if (viewingDate && viewingDate.userId === targetUserId) {
-        setViewingDate(null);
-      }
+      // SUCCESS! Show success message
+      alert(`Blocked ${targetUserEmail?.split('@')[0] || 'user'}. You will no longer see their content.`);
       
-      setSuccessMessage(`Blocked ${targetUserEmail?.split('@')[0] || 'user'}. You will no longer see their content.`);
-      console.log('🚫 User blocked successfully:', targetUserId);
-    } catch (error) {
-      console.error('Error blocking user:', error);
+    } catch (err) {
+      console.error('Error blocking user:', err);
       alert('Failed to block user. Please try again.');
     }
   };

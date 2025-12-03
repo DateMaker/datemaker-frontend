@@ -32,6 +32,7 @@ import PrivacyModal from './Privacy';
 import { App } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import InviteFriendsModal from './InviteFriendsModal';
 export default function DateMaker() {
   const navigate = useNavigate(); 
@@ -1363,10 +1364,44 @@ const handleOpenSaved = async () => {
 };
 
   const handleUploadPhoto = async (e) => {
-  const file = e.target.files?.[0];
+  // iOS: Go directly to photo library (no camera option!)
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const image = await Camera.getPhoto({
+        quality: 80,
+        resultType: CameraResultType.Uri,
+        source: CameraSource.Photos  // ← PHOTOS ONLY - no camera!
+      });
+      
+      if (!image?.webPath) return;
+      
+      setProfileError('Uploading...');
+      
+      const response = await fetch(image.webPath);
+      const blob = await response.blob();
+      
+      const storage = getStorage();
+      const photoRef = ref(storage, `profilePhotos/${user.uid}`);
+      await uploadBytes(photoRef, blob);
+      const photoURL = await getDownloadURL(photoRef);
+      
+      setProfilePhoto(photoURL);
+      await setDoc(doc(db, 'users', user.uid), { profilePhoto: photoURL }, { merge: true });
+      setProfileError('');
+      alert('✨ Profile photo updated!');
+    } catch (err) {
+      if (!err.message?.includes('cancel')) {
+        console.error('Upload error:', err);
+        setProfileError('Failed to upload photo');
+      }
+    }
+    return;
+  }
+  
+  // Web: Use file input
+  const file = e?.target?.files?.[0];
   if (!file) return;
   
-  // Validate file type
   if (!file.type.startsWith('image/')) {
     setProfileError('Please select an image file');
     return;
@@ -1393,30 +1428,11 @@ const handleOpenSaved = async () => {
     alert('✨ Profile photo updated!');
   } catch (err) {
     console.error('Upload error:', err);
-    if (err.message?.includes('permission') || err.message?.includes('denied')) {
-      setProfileError('Camera/photo access denied. Please enable in Settings > DateMaker > Photos.');
-    } else {
-      setProfileError(`Failed to upload: ${err.message}`);
-    }
+    setProfileError(`Failed to upload: ${err.message}`);
   }
-  
-  // Reset file input
-  e.target.value = '';
 };
-  
-  const handleChangePassword = async () => {
-    setProfileError('');
-    
-    if (newPassword.length < 6) {
-      setProfileError('Password must be at least 6 characters');
-      return;
-    }
-    
-    if (newPassword !== confirmPassword) {
-      setProfileError('Passwords do not match');
-      return;
-    }
-    
+
+const handleChangePassword = async () => {
     try {
       await updatePassword(user, newPassword);
       alert('✅ Password updated successfully!');
