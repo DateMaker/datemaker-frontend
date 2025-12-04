@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { CreditCard, AlertCircle, Calendar, DollarSign, X } from 'lucide-react';
+import { CreditCard, AlertCircle, Calendar, DollarSign, X, ExternalLink } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 
 export default function SubscriptionManager({ user, userData, onClose, onShowTerms, onShowPrivacy }) {
   const [loading, setLoading] = useState(false);
+  const isNative = Capacitor.isNativePlatform();
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
   
@@ -163,14 +165,16 @@ export default function SubscriptionManager({ user, userData, onClose, onShowTer
                     day: 'numeric'
                   })}
                 </p>
-                <p style={{
-                  margin: '0.75rem 0 0 0',
-                  fontSize: '0.875rem',
-                  color: '#4b5563',
-                  fontWeight: '600'
-                }}>
-                  💳 You'll be charged $9.99/month after trial ends
-                </p>
+                {!isNative && (
+                  <p style={{
+                    margin: '0.75rem 0 0 0',
+                    fontSize: '0.875rem',
+                    color: '#4b5563',
+                    fontWeight: '600'
+                  }}>
+                    💳 You'll be charged $9.99/month after trial ends
+                  </p>
+                )}
               </>
             )}
 
@@ -241,44 +245,99 @@ export default function SubscriptionManager({ user, userData, onClose, onShowTer
             )}
           </div>
 
-          {/* Manage Billing Button */}
-          {(subscriptionStatus === 'trial' || subscriptionStatus === 'premium') && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              
-              <button
-                onClick={handleManageBilling}
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  background: 'linear-gradient(to right, #3b82f6, #2563eb)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  boxShadow: '0 4px 10px rgba(59, 130, 246, 0.3)'
-                }}
-              >
-                <CreditCard size={20} />
-                {loading ? 'Opening...' : 'Manage Subscription & Billing'}
-              </button>
-
-              <p style={{
-                fontSize: '0.875rem',
-                color: '#6b7280',
-                textAlign: 'center',
-                margin: 0
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* 📱 iOS NATIVE - Show website message instead of billing button */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {isNative ? (
+            // iOS Version - No payment buttons
+            (subscriptionStatus === 'trial' || subscriptionStatus === 'premium') && (
+              <div style={{
+                background: '#f0f9ff',
+                border: '2px solid #bae6fd',
+                borderRadius: '16px',
+                padding: '1.5rem',
+                textAlign: 'center'
               }}>
-                Update payment method, cancel subscription, or view invoices
-              </p>
+                <ExternalLink size={32} style={{ color: '#0ea5e9', marginBottom: '1rem' }} />
+                <h3 style={{
+                  margin: '0 0 0.75rem 0',
+                  fontSize: '1.1rem',
+                  fontWeight: '700',
+                  color: '#0c4a6e'
+                }}>
+                  Manage Your Subscription
+                </h3>
+                <p style={{
+                  margin: '0 0 1rem 0',
+                  fontSize: '0.95rem',
+                  color: '#0369a1'
+                }}>
+                  To update payment method, cancel subscription, or view invoices, visit:
+                </p>
+                <div style={{
+                  background: 'white',
+                  border: '2px solid #0ea5e9',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  <span style={{
+                    fontSize: '1.1rem',
+                    fontWeight: '700',
+                    color: '#0c4a6e'
+                  }}>
+                    thedatemakerapp.com
+                  </span>
+                </div>
+                <p style={{
+                  margin: 0,
+                  fontSize: '0.875rem',
+                  color: '#6b7280'
+                }}>
+                  Log in with your account to manage billing
+                </p>
+              </div>
+            )
+          ) : (
+            // Web Version - Full Stripe integration
+            (subscriptionStatus === 'trial' || subscriptionStatus === 'premium') && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                
+                <button
+                  onClick={handleManageBilling}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    background: 'linear-gradient(to right, #3b82f6, #2563eb)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 4px 10px rgba(59, 130, 246, 0.3)'
+                  }}
+                >
+                  <CreditCard size={20} />
+                  {loading ? 'Opening...' : 'Manage Subscription & Billing'}
+                </button>
 
-            </div>
+                <p style={{
+                  fontSize: '0.875rem',
+                  color: '#6b7280',
+                  textAlign: 'center',
+                  margin: 0
+                }}>
+                  Update payment method, cancel subscription, or view invoices
+                </p>
+
+              </div>
+            )
           )}
 
           {/* Terms & Privacy Links */}
@@ -322,13 +381,16 @@ export default function SubscriptionManager({ user, userData, onClose, onShowTer
                 Privacy Policy
               </span>
             </p>
-            <p style={{
-              margin: '0.5rem 0 0 0',
-              fontSize: '0.75rem',
-              color: '#9ca3af'
-            }}>
-              Payments processed securely by Stripe
-            </p>
+            {/* Only show Stripe text on web */}
+            {!isNative && (
+              <p style={{
+                margin: '0.5rem 0 0 0',
+                fontSize: '0.75rem',
+                color: '#9ca3af'
+              }}>
+                Payments processed securely by Stripe
+              </p>
+            )}
           </div>
         </div>
       </div>

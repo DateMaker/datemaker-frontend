@@ -2725,27 +2725,29 @@ if (category === 'nightlife') {
                 </p>
               </div>
 
-              <button
-                onClick={() => setShowSubscriptionManager(true)}
-                style={{
-                  width: '100%',
-                  padding: '1rem',
-                  background: 'linear-gradient(to right, #3b82f6, #2563eb)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  boxShadow: '0 4px 10px rgba(59, 130, 246, 0.3)'
-                }}
-              >
-                💳 Manage Subscription & Billing
-              </button>
+              {!Capacitor.isNativePlatform() && (
+  <button
+    onClick={() => setShowSubscriptionManager(true)}
+    style={{
+      width: '100%',
+      padding: '1rem',
+      background: 'linear-gradient(to right, #3b82f6, #2563eb)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '12px',
+      fontSize: '1rem',
+      fontWeight: '600',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '0.5rem',
+      boxShadow: '0 4px 10px rgba(59, 130, 246, 0.3)'
+    }}
+  >
+    💳 Manage Subscription & Billing
+  </button>
+)}
             </div>
             
             <div style={{ marginBottom: '2rem' }}>
