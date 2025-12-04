@@ -318,7 +318,7 @@ const Subscribe = () => {
               border: '2px solid #fbbf24'
             }}>
               <p style={{ margin: 0, fontWeight: '700', color: '#92400e', fontSize: '1rem' }}>
-                💰 Save 30% compared to App Store prices!
+                💰 Choose between monthly or Yearly save 30%!
               </p>
             </div>
 
