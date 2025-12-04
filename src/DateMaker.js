@@ -2748,6 +2748,50 @@ if (category === 'nightlife') {
     💳 Manage Subscription & Billing
   </button>
 )}
+
+{/* iOS: Manage billing message + Terms & Privacy */}
+{Capacitor.isNativePlatform() && (
+  <div style={{ marginBottom: '1rem' }}>
+    {/* Show billing message for subscribers */}
+    {(subscriptionStatus === 'trial' || subscriptionStatus === 'premium') && (
+      <div style={{
+        background: '#f0f9ff',
+        border: '2px solid #bae6fd',
+        borderRadius: '12px',
+        padding: '1rem',
+        textAlign: 'center',
+        marginBottom: '1rem'
+      }}>
+        <p style={{ margin: '0 0 0.5rem 0', fontWeight: '600', color: '#0c4a6e' }}>
+          💳 To manage your subscription, visit:
+        </p>
+        <p style={{ margin: 0, fontWeight: '700', color: '#0369a1', fontSize: '1.1rem' }}>
+          thedatemakerapp.com
+        </p>
+      </div>
+    )}
+    
+    {/* Terms & Privacy links */}
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      gap: '1.5rem'
+    }}>
+      <span
+        onClick={() => setShowTerms(true)}
+        style={{ color: '#ec4899', fontWeight: '600', cursor: 'pointer', fontSize: '0.95rem' }}
+      >
+        Terms of Service
+      </span>
+      <span
+        onClick={() => setShowPrivacy(true)}
+        style={{ color: '#ec4899', fontWeight: '600', cursor: 'pointer', fontSize: '0.95rem' }}
+      >
+        Privacy Policy
+      </span>
+    </div>
+  </div>
+)}
             </div>
             
             <div style={{ marginBottom: '2rem' }}>
