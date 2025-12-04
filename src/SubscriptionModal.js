@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, Zap, Crown, Calendar, Users, Camera, Gift, TrendingUp, Shield, Star } from 'lucide-react';
+import { X, Check, Zap, Crown, Calendar, Users, Camera, Gift, TrendingUp, Shield, Star, ExternalLink, Copy } from 'lucide-react';
 import { createCheckoutSession } from './Stripe';
 import { Capacitor } from '@capacitor/core';
 import { doc, getDoc } from 'firebase/firestore';
@@ -8,6 +8,7 @@ import { db } from './firebase';
 export default function SubscriptionModal({ user, onClose }) {
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('annual');
+  const [copied, setCopied] = useState(false);
   const isNative = Capacitor.isNativePlatform();
 
   // Poll Firebase for subscription changes when loading (after checkout starts)
@@ -68,6 +69,242 @@ export default function SubscriptionModal({ user, onClose }) {
     }
   };
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText('https://thedatemakerapp.com/#/subscribe');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // ═══════════════════════════════════════════════════════════════
+  // 📱 iOS NATIVE APP - SPOTIFY-STYLE MESSAGE (No in-app payments)
+  // ═══════════════════════════════════════════════════════════════
+  if (isNative) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.85)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 10000,
+        padding: '1.5rem',
+        overflow: 'auto'
+      }}>
+        <div style={{
+          background: 'white',
+          borderRadius: '24px',
+          maxWidth: '500px',
+          width: '100%',
+          overflow: 'hidden',
+          position: 'relative',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)'
+        }}>
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              background: 'rgba(255,255,255,0.9)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              zIndex: 10,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            }}
+          >
+            <X size={20} color="#374151" />
+          </button>
+
+          {/* Hero Section */}
+          <div style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            padding: '3rem 2rem 2rem',
+            textAlign: 'center',
+            color: 'white'
+          }}>
+            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔒</div>
+            <h1 style={{
+              fontSize: '1.75rem',
+              fontWeight: '800',
+              marginBottom: '0.75rem',
+              lineHeight: '1.3'
+            }}>
+              You can't upgrade to Premium in the app
+            </h1>
+            <p style={{
+              fontSize: '1.1rem',
+              opacity: 0.9,
+              margin: 0
+            }}>
+              We know, it's not ideal.
+            </p>
+          </div>
+
+          {/* Content Section */}
+          <div style={{ padding: '2rem' }}>
+            
+            {/* Instructions */}
+            <div style={{
+              background: '#f0f9ff',
+              border: '2px solid #bae6fd',
+              borderRadius: '16px',
+              padding: '1.5rem',
+              marginBottom: '1.5rem',
+              textAlign: 'center'
+            }}>
+              <p style={{
+                fontSize: '1rem',
+                color: '#0c4a6e',
+                marginBottom: '1rem',
+                fontWeight: '600'
+              }}>
+                To subscribe, visit this link in Safari or any browser:
+              </p>
+              
+              <div style={{
+                background: 'white',
+                border: '2px solid #0ea5e9',
+                borderRadius: '12px',
+                padding: '1rem',
+                marginBottom: '1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem'
+              }}>
+                <ExternalLink size={20} color="#0ea5e9" />
+                <span style={{
+                  fontSize: '1.1rem',
+                  fontWeight: '700',
+                  color: '#0c4a6e'
+                }}>
+                  thedatemakerapp.com/#/subscribe
+                </span>
+              </div>
+
+              <button
+                onClick={handleCopyLink}
+                style={{
+                  background: copied ? '#10b981' : 'linear-gradient(135deg, #0ea5e9, #0284c7)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '0.875rem 1.5rem',
+                  fontSize: '1rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  width: '100%',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                {copied ? (
+                  <>
+                    <Check size={20} />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy size={20} />
+                    Copy Link
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* What You'll Get */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h3 style={{
+                fontSize: '1.1rem',
+                fontWeight: '700',
+                color: '#111827',
+                marginBottom: '1rem',
+                textAlign: 'center'
+              }}>
+                🎉 What you'll unlock:
+              </h3>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '0.75rem'
+              }}>
+                {[
+                  { icon: '♾️', text: 'Unlimited Dates' },
+                  { icon: '📅', text: 'Full Itineraries' },
+                  { icon: '🔥', text: 'Date Streaks' },
+                  { icon: '📸', text: 'Memory Scrapbook' },
+                  { icon: '🎁', text: 'Surprise Mode' },
+                  { icon: '👥', text: 'Social Features' },
+                  { icon: '⭐', text: 'XP & Achievements' },
+                  { icon: '💬', text: 'Priority Support' }
+                ].map((item, idx) => (
+                  <div key={idx} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem',
+                    background: '#f9fafb',
+                    borderRadius: '8px'
+                  }}>
+                    <span style={{ fontSize: '1.25rem' }}>{item.icon}</span>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
+                      {item.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Pricing Info */}
+            <div style={{
+              background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+              borderRadius: '12px',
+              padding: '1rem',
+              textAlign: 'center',
+              marginBottom: '1rem'
+            }}>
+              <p style={{ margin: 0, fontWeight: '700', color: '#92400e' }}>
+                ✨ Go to Our Website To Start Today! 
+              </p>
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#a16207' }}>
+                Its up from here
+              </p>
+            </div>
+
+            {/* Already Subscribed Note */}
+            <p style={{
+              textAlign: 'center',
+              fontSize: '0.875rem',
+              color: '#6b7280',
+              margin: 0
+            }}>
+              Already subscribed on our website?<br />
+              <strong>Your premium features will activate automatically!</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 🌐 WEB VERSION - NORMAL STRIPE CHECKOUT (unchanged)
+  // ═══════════════════════════════════════════════════════════════
   return (
     <div style={{
       position: 'fixed',

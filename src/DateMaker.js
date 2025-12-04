@@ -3857,7 +3857,7 @@ if (showResults && itinerary) {
       marginBottom: '0.75rem',
       textShadow: '0 2px 10px rgba(0,0,0,0.2)'
     }}>
-      🎉 Start Your 7-Day FREE Trial!
+      🎉 {Capacitor.isNativePlatform() ? 'Unlock Premium Features!' : 'Start Your 7-Day FREE Trial!'}
     </h3>
     
     <p style={{
@@ -3865,7 +3865,9 @@ if (showResults && itinerary) {
       fontSize: '1.05rem',
       opacity: 0.95
     }}>
-      Enter your card now - won't be charged until trial ends
+      {Capacitor.isNativePlatform() 
+        ? 'Subscribe on our website to unlock everything'
+        : 'Enter your card now - won\'t be charged until trial ends'}
     </p>
     
     <div style={{
@@ -3896,11 +3898,13 @@ if (showResults && itinerary) {
         transition: 'all 0.3s ease'
       }}
     >
-      Start FREE Trial →
+      {Capacitor.isNativePlatform() ? 'Learn More →' : 'Start FREE Trial →'}
     </button>
     
     <p style={{ marginTop: '1rem', fontSize: '0.875rem', opacity: 0.9 }}>
-      💳 Cancel anytime • 🔒 Secure payment • ⏰ $9.99/mo after trial
+      {Capacitor.isNativePlatform() 
+        ? '🌐 Visit thedatemakerapp.com/#/subscribe'
+        : '💳 Cancel anytime • 🔒 Secure payment • ⏰ $9.99/mo after trial'}
     </p>
   </div>
 )}

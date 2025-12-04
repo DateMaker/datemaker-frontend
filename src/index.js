@@ -5,6 +5,7 @@ import DateMaker from './DateMaker';
 import StatsPage from './StatsPage';
 import AchievementsPage from './AchievementsPage';
 import PaymentSuccess from './PaymentSuccess';
+import Subscribe from './Subscribe';
 import './index.css';
 
 import { SplashScreen } from '@capacitor/splash-screen';
