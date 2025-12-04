@@ -39,6 +39,7 @@ root.render(
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/achievements" element={<AchievementsPage />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/subscribe" element={<Subscribe />} />
       </Routes>
     </HashRouter>
   </React.StrictMode>
