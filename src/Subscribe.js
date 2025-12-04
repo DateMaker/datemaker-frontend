@@ -343,7 +343,7 @@ const Subscribe = () => {
                 </div>
                 
                 <div style={{ marginBottom: '1rem' }}>
-                  <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#111827' }}>$6.99</span>
+                  <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#111827' }}>$9.99</span>
                   <span style={{ color: '#6b7280', fontSize: '1rem' }}>/month</span>
                 </div>
                 
@@ -413,8 +413,8 @@ const Subscribe = () => {
                 </div>
                 
                 <div style={{ marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '1.25rem', textDecoration: 'line-through', color: '#9ca3af' }}>$83.88</span>
-                  <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#111827', marginLeft: '0.5rem' }}>$49.99</span>
+                  <span style={{ fontSize: '1.25rem', textDecoration: 'line-through', color: '#9ca3af' }}>$119.88</span>
+                  <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#111827', marginLeft: '0.5rem' }}>$79.99</span>
                   <span style={{ color: '#6b7280', fontSize: '1rem' }}>/year</span>
                 </div>
                 
@@ -424,7 +424,7 @@ const Subscribe = () => {
                   fontSize: '0.875rem',
                   margin: '0 0 1rem 0'
                 }}>
-                  Save $33.89/year - Just $4.17/month!
+                  Save $39.89/year - Just $6.66/month!
                 </p>
                 
                 <div style={{ marginBottom: '1rem' }}>
