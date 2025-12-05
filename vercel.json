@@ -1,0 +1,20 @@
+{
+  "rewrites": [
+    {
+      "source": "/support.html",
+      "destination": "/support.html"
+    },
+    {
+      "source": "/privacy.html",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms.html",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/((?!.*\\.).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
