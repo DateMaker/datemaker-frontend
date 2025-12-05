@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Users, TrendingUp, Trophy, MessageCircle, Heart, User, LogOut, UserPlus, Loader } from 'lucide-react';
+import { Menu, X, Users, TrendingUp, Trophy, MessageCircle, Heart, User, LogOut, UserPlus, Loader, LogIn } from 'lucide-react';
 
 export default function HamburgerMenu({ 
   user, 
   subscriptionStatus,
   savedDatesCount,
   notificationCount,
-  surpriseCount = 0, // ✅ NEW: Unrevealed surprises count (default 0)
+  surpriseCount = 0,
   onNavigate,
-  onLogout 
+  onLogout,
+  isGuestMode = false // ✅ NEW: Guest mode flag
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -37,7 +38,8 @@ export default function HamburgerMenu({
       icon: <UserPlus size={20} />, 
       label: 'Invite Friends', 
       gradient: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
-      shadow: 'rgba(251, 146, 60, 0.4)'
+      shadow: 'rgba(251, 146, 60, 0.4)',
+      locked: isGuestMode
     },
     { 
       id: 'stats', 
@@ -60,7 +62,7 @@ export default function HamburgerMenu({
       gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       shadow: 'rgba(16, 185, 129, 0.4)',
       badge: notificationCount > 0 ? notificationCount : null,
-      locked: subscriptionStatus === 'free'
+      locked: subscriptionStatus === 'free' || isGuestMode
     },
     { 
       id: 'saved', 
@@ -68,14 +70,16 @@ export default function HamburgerMenu({
       label: 'Saved', 
       gradient: 'linear-gradient(135deg, #ec4899 0%, #d946ef 100%)',
       shadow: 'rgba(236, 72, 153, 0.4)',
-      badge: savedDatesCount
+      badge: savedDatesCount,
+      locked: isGuestMode
     },
     { 
       id: 'scrapbook', 
       icon: '📸', 
       label: 'Date Memories', 
       gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      shadow: 'rgba(245, 158, 11, 0.4)'
+      shadow: 'rgba(245, 158, 11, 0.4)',
+      locked: isGuestMode
     },
     { 
       id: 'surprise', 
@@ -83,21 +87,24 @@ export default function HamburgerMenu({
       label: 'Surprise Dates', 
       gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
       shadow: 'rgba(139, 92, 246, 0.4)',
-      badge: surpriseCount > 0 ? surpriseCount : null // ✅ NEW: Surprise badge
+      badge: surpriseCount > 0 ? surpriseCount : null,
+      locked: isGuestMode
     },
     { 
       id: 'streaks', 
       icon: '🔥', 
       label: 'Date Streaks', 
       gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-      shadow: 'rgba(239, 68, 68, 0.4)'
+      shadow: 'rgba(239, 68, 68, 0.4)',
+      locked: isGuestMode
     },
     { 
       id: 'profile', 
       icon: <User size={20} />, 
       label: 'Profile', 
       gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-      shadow: 'rgba(139, 92, 246, 0.4)'
+      shadow: 'rgba(139, 92, 246, 0.4)',
+      locked: isGuestMode
     }
   ];
 
@@ -108,6 +115,10 @@ export default function HamburgerMenu({
 
   // ✅ Calculate total notifications for hamburger button badge (includes surprises)
   const totalNotifications = (notificationCount || 0) + (surpriseCount || 0);
+
+  // ✅ GUEST MODE FIX: Safely get display name and initial
+  const displayName = user?.email ? user.email.split('@')[0] : 'Guest';
+  const displayInitial = user?.email ? user.email.charAt(0).toUpperCase() : '👤';
 
   return (
     <>
@@ -252,16 +263,20 @@ export default function HamburgerMenu({
               width: '48px',
               height: '48px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+              background: isGuestMode 
+                ? 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
+                : 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'white',
               fontSize: '1.5rem',
               fontWeight: 'bold',
-              boxShadow: '0 4px 12px rgba(236, 72, 153, 0.4)'
+              boxShadow: isGuestMode 
+                ? '0 4px 12px rgba(107, 114, 128, 0.4)'
+                : '0 4px 12px rgba(236, 72, 153, 0.4)'
             }}>
-              {user.email.charAt(0).toUpperCase()}
+              {displayInitial}
             </div>
             <div>
               <p style={{
@@ -270,17 +285,42 @@ export default function HamburgerMenu({
                 fontSize: '1rem',
                 margin: 0
               }}>
-                {user.email.split('@')[0]}
+                {displayName}
               </p>
               <p style={{
                 color: 'rgba(255,255,255,0.8)',
                 fontSize: '0.875rem',
                 margin: 0
               }}>
-                {subscriptionStatus === 'premium' ? '✨ Premium' : '🆓 Free'}
+                {isGuestMode ? '👁️ Exploring' : (subscriptionStatus === 'premium' ? '✨ Premium' : '🆓 Free')}
               </p>
             </div>
           </div>
+
+          {/* Guest mode sign up CTA */}
+          {isGuestMode && (
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                onLogout(); // Exit guest mode to show login
+              }}
+              style={{
+                marginTop: '1rem',
+                width: '100%',
+                background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '0.75rem 1rem',
+                color: 'white',
+                fontWeight: '700',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 12px rgba(236, 72, 153, 0.4)'
+              }}
+            >
+              ✨ Sign Up to Unlock All Features
+            </button>
+          )}
         </div>
 
         {/* Menu Items */}
@@ -376,7 +416,7 @@ export default function HamburgerMenu({
           ))}
         </div>
 
-        {/* Logout Button */}
+        {/* Logout/Sign In Button */}
         <div style={{
           padding: '1rem',
           paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 1rem))',
@@ -391,9 +431,13 @@ export default function HamburgerMenu({
             }}
             style={{
               width: '100%',
-              background: 'rgba(239, 68, 68, 0.2)',
+              background: isGuestMode 
+                ? 'rgba(59, 130, 246, 0.2)'
+                : 'rgba(239, 68, 68, 0.2)',
               backdropFilter: 'blur(10px)',
-              border: '2px solid rgba(239, 68, 68, 0.4)',
+              border: isGuestMode 
+                ? '2px solid rgba(59, 130, 246, 0.4)'
+                : '2px solid rgba(239, 68, 68, 0.4)',
               borderRadius: '16px',
               padding: '1rem',
               cursor: 'pointer',
@@ -407,16 +451,20 @@ export default function HamburgerMenu({
               transition: 'all 0.3s ease'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(239, 68, 68, 0.3)';
+              e.target.style.background = isGuestMode 
+                ? 'rgba(59, 130, 246, 0.3)'
+                : 'rgba(239, 68, 68, 0.3)';
               e.target.style.transform = 'scale(1.02)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(239, 68, 68, 0.2)';
+              e.target.style.background = isGuestMode 
+                ? 'rgba(59, 130, 246, 0.2)'
+                : 'rgba(239, 68, 68, 0.2)';
               e.target.style.transform = 'scale(1)';
             }}
           >
-            <LogOut size={20} />
-            Logout
+            {isGuestMode ? <LogIn size={20} /> : <LogOut size={20} />}
+            {isGuestMode ? 'Sign In / Sign Up' : 'Logout'}
           </button>
         </div>
       </div>

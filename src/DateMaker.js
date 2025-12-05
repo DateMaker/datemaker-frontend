@@ -3814,14 +3814,14 @@ if (showResults && itinerary) {
               onLanguageChange={handleLanguageChange} 
             />
             
-            <HamburgerMenu
-              user={user}
-              subscriptionStatus={subscriptionStatus}
-              savedDatesCount={Math.max(0, savedDates.length - lastViewedSavedCount)}
-              notificationCount={notificationCounts.total}
-              surpriseCount={surpriseCount}
-              
-                onNavigate={(destination) => {
+           <HamburgerMenu
+  user={user}
+  subscriptionStatus={subscriptionStatus}
+  savedDatesCount={Math.max(0, savedDates.length - lastViewedSavedCount)}
+  notificationCount={notificationCounts.total}
+  surpriseCount={surpriseCount}
+  isGuestMode={isGuestMode}
+  onNavigate={(destination) => {
   if (destination === 'spin') setShowSpinningWheel(true);
   if (destination === 'invite') setShowInviteFriends(true);
   if (destination === 'stats') navigate('/stats');
