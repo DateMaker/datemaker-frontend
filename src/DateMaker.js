@@ -43,6 +43,7 @@ export default function DateMaker() {
   const isRTL = translations[language]?.dir === 'rtl';
   
   // Core states
+  const [user, setUser] = useState(null);
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [authScreen, setAuthScreen] = useState('login'); // 'login', 'signup', 'success', 'verification', 'main'
