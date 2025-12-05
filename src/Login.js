@@ -4,7 +4,7 @@ import { signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEma
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
-export default function Login({ onSwitchToSignup }) {
+export default function Login({ onSwitchToSignup, onContinueAsGuest }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -240,6 +240,48 @@ export default function Login({ onSwitchToSignup }) {
           </h1>
           <p style={{ color: '#6b7280' }}>Sign in to find your perfect date</p>
         </div>
+
+{/* ═══════════════════════════════════════════════════════════════ */}
+        {/* 🚀 CONTINUE AS GUEST BUTTON - For App Store Compliance */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {onContinueAsGuest && (
+          <button
+            onClick={onContinueAsGuest}
+            type="button"
+            style={{
+              width: '100%',
+              background: 'linear-gradient(to right, #3b82f6, #2563eb)',
+              color: 'white',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              padding: '1rem',
+              borderRadius: '12px',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 10px rgba(59,130,246,0.3)',
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            🗺️ Explore Without Account
+          </button>
+        )}
+
+        {onContinueAsGuest && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            marginBottom: '1.5rem'
+          }}>
+            <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }} />
+            <span style={{ color: '#9ca3af', fontSize: '0.875rem', fontWeight: '500' }}>or sign in</span>
+            <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }} />
+          </div>
+        )}
 
         {/* 📧 EMAIL VERIFICATION BANNER */}
         {needsVerification && (

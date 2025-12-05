@@ -43,7 +43,7 @@ export default function DateMaker() {
   const isRTL = translations[language]?.dir === 'rtl';
   
   // Core states
-  const [user, setUser] = useState(null);
+  const [isGuestMode, setIsGuestMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [authScreen, setAuthScreen] = useState('login'); // 'login', 'signup', 'success', 'verification', 'main'
   const [subscriptionStatus, setSubscriptionStatus] = useState('free');
@@ -1313,6 +1313,14 @@ useEffect(() => {
     }
   };
   
+// 🚀 GUEST MODE HANDLER - For App Store Compliance (Guideline 5.1.1)
+const handleContinueAsGuest = () => {
+  console.log('👤 Continuing as guest');
+  setIsGuestMode(true);
+  setAuthScreen('main');
+  setSubscriptionStatus('free'); // Guests are always free tier
+};
+
  const handleLogout = async () => {
   try {
     // Set user offline before logging out
@@ -1332,7 +1340,8 @@ useEffect(() => {
     setShowSocial(false);
     setPlaces([]);
     setItinerary(null);
-    
+    setIsGuestMode(false);
+
     // Clear form data (Bug #6 fix)
     setLocation('');
     setSelectedActivities([]);
@@ -2514,12 +2523,13 @@ if (category === 'nightlife') {
   );
 }
   
-  if (!user || !user.emailVerified || authScreen !== 'main') {
+  if ((!user || !user.emailVerified || authScreen !== 'main') && !isGuestMode) {
     if (authScreen === 'login') {
       return (
         <Login 
           onSwitchToSignup={() => setAuthScreen('signup')}
           onShowVerification={() => setAuthScreen('verification')}
+          onContinueAsGuest={handleContinueAsGuest}
         />
       );
     }
