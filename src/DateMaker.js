@@ -4085,13 +4085,21 @@ if (showResults && itinerary) {
     </div>
     
     <button 
-      onClick={() => {
-        if (Capacitor.isNativePlatform()) {
-          setShowPremiumModal(true);
-        } else {
-          setShowSubscriptionModal(true);
-        }
-      }}
+  onClick={() => {
+    console.log('🎉 Main feed banner clicked');
+    
+    // Save email to localStorage if user is logged in
+    if (user?.email) {
+      localStorage.setItem('datemaker_prefill_email', user.email);
+      console.log('📧 Saved email for pre-fill:', user.email);
+    }
+    
+    if (Capacitor.isNativePlatform()) {
+      setShowPremiumModal(true);
+    } else {
+      setShowSubscriptionModal(true);
+    }
+  }}
       style={{ 
         background: 'white',
         color: '#ec4899', 
