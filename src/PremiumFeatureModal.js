@@ -1,3 +1,6 @@
+import React from 'react';
+import { Calendar, Heart, Users, Camera, Gift, Target, Sparkles, X } from 'lucide-react';
+
 export default function PremiumFeatureModal({ onClose, onSignIn }) {
   const features = [
     { icon: <Calendar size={24} />, text: 'Unlimited Date Planning', color: '#ec4899' },
@@ -49,7 +52,7 @@ export default function PremiumFeatureModal({ onClose, onSignIn }) {
             position: 'absolute',
             top: '1rem',
             right: '1rem',
-            background: 'white', // ✅ WHITE BACKGROUND
+            background: 'white',
             border: 'none',
             borderRadius: '50%',
             width: '40px',
@@ -71,12 +74,12 @@ export default function PremiumFeatureModal({ onClose, onSignIn }) {
             e.target.style.transform = 'scale(1)';
           }}
         >
-          <X size={24} style={{ color: '#667eea' }} /> {/* Purple X */}
+          <X size={24} style={{ color: '#667eea' }} />
         </button>
 
         {/* Content - add padding at top for X button */}
         <div style={{
-          padding: '3rem 2rem 2rem 2rem', // Extra top padding for X button
+          padding: '3rem 2rem 2rem 2rem',
           overflowY: 'auto',
           maxHeight: '85vh'
         }}>
@@ -159,49 +162,55 @@ export default function PremiumFeatureModal({ onClose, onSignIn }) {
             ))}
           </div>
 
-          {/* Sign In Button */}
-<button
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('🔵 Premium modal - Sign In clicked');
-    try {
-      onSignIn();
-    } catch (error) {
-      console.error('❌ Error calling onSignIn:', error);
-      onClose(); // Fallback - just close the modal
-    }
-  }}
-  style={{
-    width: '100%',
-    background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
-    color: 'white',
-    fontWeight: '800',
-    fontSize: '1.1rem',
-    padding: '1.25rem',
-    borderRadius: '16px',
-    border: 'none',
-    cursor: 'pointer',
-    boxShadow: '0 8px 20px rgba(236, 72, 153, 0.4)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.75rem',
-    marginBottom: '1rem',
-    transition: 'all 0.3s ease'
-  }}
-  onMouseEnter={(e) => {
-    e.target.style.transform = 'translateY(-2px)';
-    e.target.style.boxShadow = '0 12px 30px rgba(236, 72, 153, 0.5)';
-  }}
-  onMouseLeave={(e) => {
-    e.target.style.transform = 'translateY(0)';
-    e.target.style.boxShadow = '0 8px 20px rgba(236, 72, 153, 0.4)';
-  }}
->
-  <Sparkles size={24} />
-  Sign In With Premium Account
-</button>
+          {/* Sign In Button - SIMPLIFIED TO AVOID WHITE SCREEN */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔵 Premium modal - Sign In clicked');
+              
+              // Close modal first
+              onClose();
+              
+              // Then call onSignIn after a delay
+              setTimeout(() => {
+                try {
+                  onSignIn();
+                } catch (error) {
+                  console.error('❌ Error calling onSignIn:', error);
+                }
+              }, 300);
+            }}
+            style={{
+              width: '100%',
+              background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+              color: 'white',
+              fontWeight: '800',
+              fontSize: '1.1rem',
+              padding: '1.25rem',
+              borderRadius: '16px',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 8px 20px rgba(236, 72, 153, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.75rem',
+              marginBottom: '1rem',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 12px 30px rgba(236, 72, 153, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 8px 20px rgba(236, 72, 153, 0.4)';
+            }}
+          >
+            <Sparkles size={24} />
+            Sign In With Premium Account
+          </button>
 
           {/* Info Text */}
           <div style={{
