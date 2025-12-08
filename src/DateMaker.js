@@ -2764,28 +2764,154 @@ if (category === 'nightlife') {
   </button>
 )}
 
-{/* iOS: Manage billing message + Terms & Privacy */}
+{/* iOS: Account Management Info (Apple-Compliant) */}
 {Capacitor.isNativePlatform() && (
   <div style={{ marginBottom: '1rem' }}>
-    {/* Show billing message for subscribers */}
+    {/* Premium users: Show account info WITHOUT external links */}
     {(subscriptionStatus === 'trial' || subscriptionStatus === 'premium') && (
       <div style={{
-        background: '#f0f9ff',
-        border: '2px solid #bae6fd',
-        borderRadius: '12px',
-        padding: '1rem',
-        textAlign: 'center',
+        background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+        border: '2px solid #86efac',
+        borderRadius: '16px',
+        padding: '1.5rem',
         marginBottom: '1rem'
       }}>
-        <p style={{ 
-          margin: 0, 
-          fontWeight: '600', 
-          color: '#0c4a6e',
+        <div style={{ 
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          marginBottom: '1rem'
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.5rem'
+          }}>
+            ✓
+          </div>
+          <div>
+            <p style={{ 
+              margin: 0, 
+              fontWeight: '900',
+              fontSize: '1.1rem',
+              color: '#065f46'
+            }}>
+              {subscriptionStatus === 'trial' ? '🎉 Free Trial Active' : '✨ Premium Active'}
+            </p>
+            <p style={{
+              margin: 0,
+              fontSize: '0.875rem',
+              color: '#059669',
+              fontWeight: '600'
+            }}>
+              All features unlocked
+            </p>
+          </div>
+        </div>
+
+        <div style={{
+          background: 'white',
+          borderRadius: '12px',
+          padding: '1rem',
+          marginBottom: '1rem'
+        }}>
+          <p style={{
+            margin: '0 0 0.75rem 0',
+            fontSize: '0.875rem',
+            fontWeight: '700',
+            color: '#065f46'
+          }}>
+            📧 Account Email
+          </p>
+          <p style={{
+            margin: 0,
+            fontSize: '0.95rem',
+            color: '#047857',
+            fontWeight: '600',
+            wordBreak: 'break-all'
+          }}>
+            {user?.email}
+          </p>
+        </div>
+
+        <div style={{
+          background: 'rgba(16, 185, 129, 0.1)',
+          borderRadius: '12px',
+          padding: '1rem',
+          border: '1px solid rgba(16, 185, 129, 0.3)'
+        }}>
+          <p style={{
+            margin: '0 0 0.5rem 0',
+            fontSize: '0.875rem',
+            fontWeight: '700',
+            color: '#065f46',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            ℹ️ Account Settings
+          </p>
+          <p style={{
+            margin: 0,
+            fontSize: '0.875rem',
+            color: '#059669',
+            lineHeight: '1.6'
+          }}>
+            Your account settings and billing are managed through your original signup platform. Log in with this email address to access your account dashboard.
+          </p>
+        </div>
+      </div>
+    )}
+
+    {/* Free users: Show what Premium offers */}
+    {subscriptionStatus === 'free' && (
+      <div style={{
+        background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+        border: '2px solid #fbbf24',
+        borderRadius: '16px',
+        padding: '1.5rem',
+        marginBottom: '1rem',
+        textAlign: 'center'
+      }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>✨</div>
+        <p style={{
+          margin: '0 0 0.5rem 0',
+          fontSize: '1.1rem',
+          fontWeight: '900',
+          color: '#92400e'
+        }}>
+          Premium Features Available
+        </p>
+        <p style={{
+          margin: '0 0 1rem 0',
+          fontSize: '0.875rem',
+          color: '#78350f',
           lineHeight: '1.6'
         }}>
-          ℹ️ Premium Account<br/>
-          Manage subscription and account settings through the web platform where you originally subscribed
+          Unlock unlimited dates, social features, and more
         </p>
+        <button
+          onClick={() => setShowPremiumModal(true)}
+          style={{
+            width: '100%',
+            background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '12px',
+            padding: '1rem',
+            fontWeight: '800',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(236, 72, 153, 0.4)'
+          }}
+        >
+          ✨ Sign In With Premium Account
+        </button>
       </div>
     )}
     
@@ -2844,22 +2970,62 @@ if (category === 'nightlife') {
                 </button>
               </div>
             )}
-            {subscriptionStatus === 'free' && (
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>{t('upgradeToPremium')}</h3>
-                <div style={{ padding: '1.5rem', background: 'linear-gradient(to right, #fef3c7, #fde68a)', borderRadius: '12px', border: '2px solid #fbbf24', marginBottom: '1rem' }}>
-                  <p style={{ fontSize: '1.125rem', color: '#92400e', marginBottom: '0.5rem', fontWeight: '700' }}>🎉 {t('unlockPremium')}</p>
-                  <ul style={{ fontSize: '0.875rem', color: '#78350f', marginLeft: '1.25rem' }}>
-                    {t('premiumFeatures').map((feature, idx) => (
-                      <li key={idx}>{feature}</li>
-                    ))}
-                  </ul>
-                </div>
-                <button onClick={() => setShowPremiumModal(true)} style={{ width: '100%', background: 'linear-gradient(to right, #ec4899, #a855f7)', color: 'white', padding: '0.875rem', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '1rem' }}>
-                  {t('upgradeButton')}
-                </button>
-              </div>
-            )}
+            {subscriptionStatus === 'free' && Capacitor.isNativePlatform() && (
+  <div style={{ marginBottom: '2rem' }}>
+    <h3 style={{ 
+      fontSize: '1.25rem', 
+      fontWeight: 'bold', 
+      marginBottom: '1rem', 
+      color: '#111827' 
+    }}>
+      Premium Features
+    </h3>
+    <div style={{ 
+      padding: '1.5rem', 
+      background: 'linear-gradient(to right, #fef3c7, #fde68a)', 
+      borderRadius: '12px', 
+      border: '2px solid #fbbf24', 
+      marginBottom: '1rem' 
+    }}>
+      <p style={{ 
+        fontSize: '1.125rem', 
+        color: '#92400e', 
+        marginBottom: '0.5rem', 
+        fontWeight: '700' 
+      }}>
+        ✨ What Premium Includes:
+      </p>
+      <ul style={{ 
+        fontSize: '0.875rem', 
+        color: '#78350f', 
+        marginLeft: '1.25rem' 
+      }}>
+        <li>Unlimited date generation</li>
+        <li>Complete itinerary planning</li>
+        <li>Save unlimited dates</li>
+        <li>Social features & messaging</li>
+        <li>Date memories & photos</li>
+        <li>Surprise date mode</li>
+      </ul>
+    </div>
+    <button 
+      onClick={() => setShowPremiumModal(true)}
+      style={{ 
+        width: '100%', 
+        background: 'linear-gradient(to right, #ec4899, #a855f7)', 
+        color: 'white', 
+        padding: '1rem', 
+        borderRadius: '12px', 
+        border: 'none', 
+        cursor: 'pointer', 
+        fontWeight: '700', 
+        fontSize: '1rem' 
+      }}
+    >
+      ✨ Sign In With Premium Account
+    </button>
+  </div>
+)}
 
 {/* DELETE ACCOUNT SECTION */}
 <div style={{ 
@@ -3921,7 +4087,7 @@ if (showResults && itinerary) {
       marginBottom: '0.75rem',
       textShadow: '0 2px 10px rgba(0,0,0,0.2)'
     }}>
-      🎉 {Capacitor.isNativePlatform() ? 'Unlock Premium Features!' : 'Start Your 7-Day FREE Trial!'}
+      {Capacitor.isNativePlatform() ? '🎉 Premium Features Available!' : '🎉 Start Your 7-Day FREE Trial!'}
     </h3>
     
     <p style={{
@@ -3930,7 +4096,7 @@ if (showResults && itinerary) {
       opacity: 0.95
     }}>
       {Capacitor.isNativePlatform() 
-        ? 'Subscribe on our website to unlock everything'
+        ? 'Unlock everything DateMaker has to offer'
         : 'Enter your card now - won\'t be charged until trial ends'}
     </p>
     
@@ -3948,7 +4114,13 @@ if (showResults && itinerary) {
     </div>
     
     <button 
-      onClick={() => setShowSubscriptionModal(true)} 
+      onClick={() => {
+        if (Capacitor.isNativePlatform()) {
+          setShowPremiumModal(true);
+        } else {
+          setShowSubscriptionModal(true);
+        }
+      }}
       style={{ 
         background: 'white',
         color: '#ec4899', 
@@ -3962,14 +4134,15 @@ if (showResults && itinerary) {
         transition: 'all 0.3s ease'
       }}
     >
-      {Capacitor.isNativePlatform() ? 'Learn More →' : 'Start FREE Trial →'}
+      {Capacitor.isNativePlatform() ? '✨ Sign In With Premium' : 'Start FREE Trial →'}
     </button>
     
-    <p style={{ marginTop: '1rem', fontSize: '0.875rem', opacity: 0.9 }}>
-      {Capacitor.isNativePlatform() 
-        ? '🌐 Visit thedatemakerapp.com/#/subscribe'
-        : '💳 Cancel anytime • 🔒 Secure payment • ⏰ $9.99/mo after trial'}
-    </p>
+    {/* iOS: NO text about websites. Web: Keep payment info */}
+    {!Capacitor.isNativePlatform() && (
+      <p style={{ marginTop: '1rem', fontSize: '0.875rem', opacity: 0.9 }}>
+        💳 Cancel anytime • 🔒 Secure payment • ⏰ $9.99/mo after trial
+      </p>
+    )}
   </div>
 )}
 
