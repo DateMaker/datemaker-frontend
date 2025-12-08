@@ -4364,15 +4364,27 @@ if (showResults && itinerary) {
 
 {showPremiumModal && (
   <PremiumFeatureModal
-    onClose={() => setShowPremiumModal(false)}
-    onSignIn={() => {
-      console.log('✅ onSignIn triggered - closing modal and logging out');
+    onClose={() => {
+      console.log('🚪 Closing premium modal');
       setShowPremiumModal(false);
-      // If user is logged in, log them out to show login screen
-      // If they're a guest, just exit guest mode
-      if (isGuestMode || user) {
-        handleLogout(); // This shows the login screen
-      }
+    }}
+    onSignIn={() => {
+      console.log('✅ onSignIn triggered - closing modal');
+      
+      // Close modal FIRST
+      setShowPremiumModal(false);
+      
+      // Small delay to allow modal to unmount cleanly before changing screens
+      setTimeout(() => {
+        console.log('🔄 Now logging out to show login screen');
+        
+        if (isGuestMode || user) {
+          handleLogout(); // This shows the login screen
+        } else {
+          // Already logged out somehow, just show login
+          setAuthScreen('login');
+        }
+      }, 300); // 300ms delay prevents white screen crash
     }}
   />
 )}
