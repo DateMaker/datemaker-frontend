@@ -2970,62 +2970,7 @@ if (category === 'nightlife') {
                 </button>
               </div>
             )}
-            {subscriptionStatus === 'free' && Capacitor.isNativePlatform() && (
-  <div style={{ marginBottom: '2rem' }}>
-    <h3 style={{ 
-      fontSize: '1.25rem', 
-      fontWeight: 'bold', 
-      marginBottom: '1rem', 
-      color: '#111827' 
-    }}>
-      Premium Features
-    </h3>
-    <div style={{ 
-      padding: '1.5rem', 
-      background: 'linear-gradient(to right, #fef3c7, #fde68a)', 
-      borderRadius: '12px', 
-      border: '2px solid #fbbf24', 
-      marginBottom: '1rem' 
-    }}>
-      <p style={{ 
-        fontSize: '1.125rem', 
-        color: '#92400e', 
-        marginBottom: '0.5rem', 
-        fontWeight: '700' 
-      }}>
-        ✨ What Premium Includes:
-      </p>
-      <ul style={{ 
-        fontSize: '0.875rem', 
-        color: '#78350f', 
-        marginLeft: '1.25rem' 
-      }}>
-        <li>Unlimited date generation</li>
-        <li>Complete itinerary planning</li>
-        <li>Save unlimited dates</li>
-        <li>Social features & messaging</li>
-        <li>Date memories & photos</li>
-        <li>Surprise date mode</li>
-      </ul>
-    </div>
-    <button 
-      onClick={() => setShowPremiumModal(true)}
-      style={{ 
-        width: '100%', 
-        background: 'linear-gradient(to right, #ec4899, #a855f7)', 
-        color: 'white', 
-        padding: '1rem', 
-        borderRadius: '12px', 
-        border: 'none', 
-        cursor: 'pointer', 
-        fontWeight: '700', 
-        fontSize: '1rem' 
-      }}
-    >
-      ✨ Sign In With Premium Account
-    </button>
-  </div>
-)}
+           
 
 {/* DELETE ACCOUNT SECTION */}
 <div style={{ 
@@ -4421,8 +4366,13 @@ if (showResults && itinerary) {
   <PremiumFeatureModal
     onClose={() => setShowPremiumModal(false)}
     onSignIn={() => {
+      console.log('✅ onSignIn triggered - closing modal and logging out');
       setShowPremiumModal(false);
-      setAuthScreen('login'); // Takes them to login screen
+      // If user is logged in, log them out to show login screen
+      // If they're a guest, just exit guest mode
+      if (isGuestMode || user) {
+        handleLogout(); // This shows the login screen
+      }
     }}
   />
 )}

@@ -1,6 +1,3 @@
-import React from 'react';
-import { Sparkles, Calendar, Heart, Users, Camera, Gift, Target, X } from 'lucide-react';
-
 export default function PremiumFeatureModal({ onClose, onSignIn }) {
   const features = [
     { icon: <Calendar size={24} />, text: 'Unlimited Date Planning', color: '#ec4899' },
@@ -45,34 +42,41 @@ export default function PremiumFeatureModal({ onClose, onSignIn }) {
         overflow: 'hidden',
         animation: 'slideUp 0.4s ease'
       }}>
-        {/* Close button */}
+        {/* X Close button - WHITE and VISIBLE */}
         <button
           onClick={onClose}
           style={{
             position: 'absolute',
             top: '1rem',
             right: '1rem',
-            background: 'rgba(255,255,255,0.2)',
+            background: 'white', // ✅ WHITE BACKGROUND
             border: 'none',
             borderRadius: '50%',
-            width: '36px',
-            height: '36px',
+            width: '40px',
+            height: '40px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
             zIndex: 10,
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}
-          onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
-          onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
+          onMouseEnter={(e) => {
+            e.target.style.background = '#f3f4f6';
+            e.target.style.transform = 'scale(1.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'white';
+            e.target.style.transform = 'scale(1)';
+          }}
         >
-          <X size={20} style={{ color: 'white' }} />
+          <X size={24} style={{ color: '#667eea' }} /> {/* Purple X */}
         </button>
 
-        {/* Content */}
+        {/* Content - add padding at top for X button */}
         <div style={{
-          padding: '2rem',
+          padding: '3rem 2rem 2rem 2rem', // Extra top padding for X button
           overflowY: 'auto',
           maxHeight: '85vh'
         }}>
@@ -127,8 +131,7 @@ export default function PremiumFeatureModal({ onClose, onSignIn }) {
                   padding: '1rem',
                   marginBottom: index < features.length - 1 ? '0.75rem' : 0,
                   background: '#f9fafb',
-                  borderRadius: '12px',
-                  transition: 'all 0.2s'
+                  borderRadius: '12px'
                 }}
               >
                 <div style={{
@@ -158,7 +161,10 @@ export default function PremiumFeatureModal({ onClose, onSignIn }) {
 
           {/* Sign In Button */}
           <button
-            onClick={onSignIn}
+            onClick={() => {
+              console.log('🔵 Sign In clicked');
+              onSignIn(); // This should call the handler from DateMaker
+            }}
             style={{
               width: '100%',
               background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
