@@ -27,6 +27,7 @@ import DateStreaksGoals from './DateStreaksGoals';
 import SubscribeButton from './SubscribeButton';
 import { deleteUser } from 'firebase/auth';
 import SubscriptionManager from './Subscriptionmanager';
+import PremiumFeatureModal from './PremiumFeatureModal';
 import TermsModal from './Terms';
 import PrivacyModal from './Privacy';
 import { App } from '@capacitor/app';
@@ -61,6 +62,7 @@ const [showPrivacy, setShowPrivacy] = useState(false);
   const resultsTopRef = useRef(null);
   const abortControllerRef = useRef(null);
 const [showInviteFriends, setShowInviteFriends] = useState(false);
+const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // Date generation states
   const [location, setLocation] = useState('');
@@ -242,7 +244,10 @@ useEffect(() => {
   const shouldOpenSubscribe = sessionStorage.getItem('openSubscribeAfterLogin');
   if (shouldOpenSubscribe === 'true' && user && subscriptionStatus === 'free') {
     sessionStorage.removeItem('openSubscribeAfterLogin');
-    setShowSubscriptionModal(true);
+    if (subscriptionStatus === 'free') {
+  setShowPremiumModal(true);
+  return;
+}
   }
 }, [user, subscriptionStatus]);
 
@@ -830,9 +835,9 @@ const pickBestFrom = (category, userKeyword) => {
 const openScrapbookForDate = (itinerary) => {
   // 🔒 SUBSCRIPTION GATE
   if (subscriptionStatus === 'free') {
-    setShowSubscriptionModal(true);
-    return;
-  }
+  setShowPremiumModal(true);
+  return;
+}
   
   console.log('Opening scrapbook for itinerary:', itinerary);
   setDateToSave(itinerary);
@@ -843,10 +848,9 @@ const openScrapbookForDate = (itinerary) => {
 const openScrapbookMemories = () => {
   // 🔒 SUBSCRIPTION GATE
   if (subscriptionStatus === 'free') {
-    setShowSubscriptionModal(true);
-    return;
-  }
-  
+  setShowPremiumModal(true);
+  return;
+}
   console.log('Opening scrapbook memories');
   setScrapbookMode('view');
   setShowScrapbook(true);
@@ -883,9 +887,9 @@ const closeScrapbook = () => {
 const createSurpriseFromItinerary = (itinerary) => {
   // 🔒 SUBSCRIPTION GATE
   if (subscriptionStatus === 'free') {
-    setShowSubscriptionModal(true);
-    return;
-  }
+  setShowPremiumModal(true);
+  return;
+}
   
   console.log('Creating surprise date from:', itinerary);
   setSurpriseMode('create');
@@ -896,9 +900,9 @@ const createSurpriseFromItinerary = (itinerary) => {
 const openSurpriseDateTracker = () => {
   // 🔒 SUBSCRIPTION GATE  
   if (subscriptionStatus === 'free') {
-    setShowSubscriptionModal(true);
-    return;
-  }
+  setShowPremiumModal(true);
+  return;
+}
   
   console.log('Opening surprise date tracker');
   setSurpriseMode('track');
@@ -914,9 +918,9 @@ const closeSurpriseDate = () => {
 const openStreaksGoals = () => {
   // 🔒 SUBSCRIPTION GATE
   if (subscriptionStatus === 'free') {
-    setShowSubscriptionModal(true);
-    return;
-  }
+  setShowPremiumModal(true);
+  return;
+}
   
   console.log('Opening streaks & goals');
   setShowStreaks(true);
@@ -1592,9 +1596,9 @@ const handleChangePassword = async () => {
   
   // 🔒 SUBSCRIPTION GATE
   if (subscriptionStatus === 'free') {
-    setShowSubscriptionModal(true);
-    return;
-  }
+  setShowPremiumModal(true);
+  return;
+}
   
   try {
     // Validate itinerary
@@ -1754,9 +1758,9 @@ const handleChangePassword = async () => {
  const handleSaveDate = async (place) => {
   // 🔒 SUBSCRIPTION GATE
   if (subscriptionStatus === 'free') {
-    setShowSubscriptionModal(true);
-    return;
-  }
+  setShowPremiumModal(true);
+  return;
+}
   
   // Prevent double-clicks
   if (savingDate) return;
@@ -1802,9 +1806,9 @@ const handleChangePassword = async () => {
   const handleSaveItinerary = async () => {
   // 🔒 SUBSCRIPTION GATE
   if (subscriptionStatus === 'free') {
-    setShowSubscriptionModal(true);
-    return;
-  }
+  setShowPremiumModal(true);
+  return;
+}
   
   // Prevent double-clicks
   if (savingItinerary) return;
@@ -1866,10 +1870,9 @@ const handleChangePassword = async () => {
   console.log('🟢 subscriptionStatus:', subscriptionStatus);
   
   if (subscriptionStatus === 'free') {
-    alert('Sharing is a premium feature! Upgrade to share with the community.');
-    setShowSubscriptionModal(true);
-    return;
-  }
+  setShowPremiumModal(true);
+  return;
+}
 
   console.log('🟢 About to set dateToShare');
 
@@ -1955,11 +1958,12 @@ const handleChangePassword = async () => {
     console.log('  subscriptionStatus:', subscriptionStatus);
     
     if (subscriptionStatus === 'free') {
-      console.log('  ❌ User is free - showing modal');
-      setShowSubscriptionModal(true);
-      setSearchLoading(false);
-      return;
-    }
+  console.log('  ❌ User is free - showing modal');
+  setShowPremiumModal(true);
+  setSearchLoading(false);
+  return;
+}
+
     
     console.log('  ✅ User has premium access');
     
@@ -2773,11 +2777,14 @@ if (category === 'nightlife') {
         textAlign: 'center',
         marginBottom: '1rem'
       }}>
-        <p style={{ margin: '0 0 0.5rem 0', fontWeight: '600', color: '#0c4a6e' }}>
-          💳 To manage your subscription, visit:
-        </p>
-        <p style={{ margin: 0, fontWeight: '700', color: '#0369a1', fontSize: '1.1rem' }}>
-          thedatemakerapp.com
+        <p style={{ 
+          margin: 0, 
+          fontWeight: '600', 
+          color: '#0c4a6e',
+          lineHeight: '1.6'
+        }}>
+          ℹ️ Premium Account<br/>
+          Manage subscription and account settings through the web platform where you originally subscribed
         </p>
       </div>
     )}
@@ -2848,7 +2855,7 @@ if (category === 'nightlife') {
                     ))}
                   </ul>
                 </div>
-                <button onClick={() => setShowSubscriptionModal(true)} style={{ width: '100%', background: 'linear-gradient(to right, #ec4899, #a855f7)', color: 'white', padding: '0.875rem', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '1rem' }}>
+                <button onClick={() => setShowPremiumModal(true)} style={{ width: '100%', background: 'linear-gradient(to right, #ec4899, #a855f7)', color: 'white', padding: '0.875rem', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '1rem' }}>
                   {t('upgradeButton')}
                 </button>
               </div>
@@ -3829,7 +3836,7 @@ if (showResults && itinerary) {
   if (destination === 'social') {
                   if (subscriptionStatus === 'free') {
                     alert('Social is a premium feature!');
-                    setShowSubscriptionModal(true);
+                    setShowPremiumModal(true);
                   } else {
                     setShowSocial(true);
                   }
@@ -4236,6 +4243,17 @@ if (showResults && itinerary) {
           onClose={() => setShowInviteFriends(false)}
         />
       )}
+
+{showPremiumModal && (
+  <PremiumFeatureModal
+    onClose={() => setShowPremiumModal(false)}
+    onSignIn={() => {
+      setShowPremiumModal(false);
+      setAuthScreen('login'); // Takes them to login screen
+    }}
+  />
+)}
+
 
       {/* 💳 Subscription Manager Modal */}
 {showSubscriptionManager && (

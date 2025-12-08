@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.datemaker.app</string>
+	<string>Createyourdate.DateMaker</string>
 	<key>PROJECT_ID</key>
 	<string>datemaker-62679</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:931513579449:ios:7c8c4f2bacce64c471e868</string>
+	<string>1:931513579449:ios:179a82d7d754791871e868</string>
 </dict>
 </plist>
