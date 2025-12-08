@@ -2868,52 +2868,78 @@ if (category === 'nightlife') {
       </div>
     )}
 
-    {/* Free users: Show what Premium offers */}
     {subscriptionStatus === 'free' && (
-      <div style={{
-        background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-        border: '2px solid #fbbf24',
-        borderRadius: '16px',
-        padding: '1.5rem',
-        marginBottom: '1rem',
-        textAlign: 'center'
+  <div style={{
+    background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+    borderRadius: '16px',
+    padding: '1.5rem',
+    marginBottom: '1.5rem',
+    border: '2px solid #fbbf24'
+  }}>
+    <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+      <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>✨</div>
+      <h3 style={{ 
+        margin: '0 0 0.5rem 0',
+        color: '#92400e',
+        fontSize: '1.25rem',
+        fontWeight: '700'
       }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>✨</div>
-        <p style={{
-          margin: '0 0 0.5rem 0',
-          fontSize: '1.1rem',
-          fontWeight: '900',
-          color: '#92400e'
-        }}>
-          Premium Features Available
-        </p>
-        <p style={{
-          margin: '0 0 1rem 0',
-          fontSize: '0.875rem',
-          color: '#78350f',
-          lineHeight: '1.6'
-        }}>
-          Unlock unlimited dates, social features, and more
-        </p>
-        <button
-          onClick={() => setShowPremiumModal(true)}
-          style={{
-            width: '100%',
-            background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '12px',
-            padding: '1rem',
-            fontWeight: '800',
-            fontSize: '1rem',
-            cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(236, 72, 153, 0.4)'
-          }}
-        >
-          ✨ Sign In With Premium Account
-        </button>
-      </div>
-    )}
+        Premium Features Available
+      </h3>
+      <p style={{ 
+        margin: 0,
+        color: '#78350f',
+        fontSize: '0.95rem',
+        lineHeight: '1.5'
+      }}>
+        Unlock unlimited dates, social features, and more
+      </p>
+    </div>
+    
+    <button
+      onClick={() => {
+        console.log('🔵 Profile - Sign In With Premium clicked');
+        console.log('📧 Current email:', user?.email);
+        
+        // Close any modals
+        setShowPremiumModal(false);
+        
+        // Small delay to ensure clean transition
+        setTimeout(() => {
+          if (isGuestMode || user) {
+            // Log out but KEEP the email in localStorage for pre-fill
+            if (user?.email) {
+              localStorage.setItem('datemaker_prefill_email', user.email);
+            }
+            handleLogout();
+          } else {
+            setAuthScreen('login');
+          }
+        }, 100);
+      }}
+      style={{
+        width: '100%',
+        background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+        color: 'white',
+        fontWeight: '700',
+        fontSize: '1rem',
+        padding: '1rem',
+        borderRadius: '12px',
+        border: 'none',
+        cursor: 'pointer',
+        boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.5rem',
+        transition: 'all 0.2s'
+      }}
+    >
+      <Sparkles size={20} />
+      Sign In With Premium Account
+    </button>
+  </div>
+)}
     
     {/* Terms & Privacy links */}
     <div style={{

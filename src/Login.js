@@ -30,20 +30,30 @@ export default function Login({ onSwitchToSignup, onContinueAsGuest }) {
   }, [cooldownTime]);
 
   // Pre-fill email and check for subscribe intent from iOS app
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const emailParam = params.get('email');
-    const subscribeIntent = params.get('subscribe');
-    
-    if (emailParam) {
-      setEmail(emailParam);
-    }
-    
-    // Store subscribe intent for after login
-    if (subscribeIntent === 'true') {
-      sessionStorage.setItem('openSubscribeAfterLogin', 'true');
-    }
-  }, []);
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const emailParam = params.get('email');
+  const subscribeIntent = params.get('subscribe');
+  
+  // Check for URL parameter email
+  if (emailParam) {
+    setEmail(emailParam);
+  }
+  
+  // Check for localStorage email (from profile "Sign In With Premium" button)
+  const savedEmail = localStorage.getItem('datemaker_prefill_email');
+  if (savedEmail) {
+    setEmail(savedEmail);
+    // Clear it after using it
+    localStorage.removeItem('datemaker_prefill_email');
+    console.log('📧 Pre-filled email from localStorage:', savedEmail);
+  }
+  
+  // Store subscribe intent for after login
+  if (subscribeIntent === 'true') {
+    sessionStorage.setItem('openSubscribeAfterLogin', 'true');
+  }
+}, []);
 
   // Handle Forgot Password
   const handleForgotPassword = async () => {
