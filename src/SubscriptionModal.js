@@ -484,23 +484,31 @@ export default function SubscriptionModal({ user, onClose }) {
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '3rem', fontWeight: '900', color: '#111827' }}>$9.99</span>
-                  <span style={{ fontSize: '1.125rem', color: '#6b7280' }}>/ month</span>
-                </div>
-                <div style={{
-                  background: '#fef3c7',
-                  color: '#92400e',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '8px',
-                  fontSize: '0.875rem',
-                  fontWeight: '700',
-                  marginTop: '0.5rem',
-                  display: 'inline-block'
-                }}>
-                  Just $0.33/day!
-                </div>
-              </div>
+  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.5rem' }}>
+    <span style={{
+      fontSize: '1.75rem',
+      textDecoration: 'line-through',
+      color: '#ef4444',
+      fontWeight: '600'
+    }}>
+      $14.99
+    </span>
+    <span style={{ fontSize: '3rem', fontWeight: '900', color: '#111827' }}>$9.99</span>
+    <span style={{ fontSize: '1.125rem', color: '#6b7280' }}>/ month</span>
+  </div>
+  <div style={{
+    background: '#fef3c7',
+    color: '#92400e',
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
+    fontSize: '0.875rem',
+    fontWeight: '700',
+    marginTop: '0.5rem',
+    display: 'inline-block'
+  }}>
+    💰 Save $5/month!
+  </div>
+</div>
 
               <div style={{ marginBottom: '1.5rem' }}>
                 {[

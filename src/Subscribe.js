@@ -318,7 +318,7 @@ const Subscribe = () => {
               border: '2px solid #fbbf24'
             }}>
               <p style={{ margin: 0, fontWeight: '700', color: '#92400e', fontSize: '1rem' }}>
-                💰 Choose between monthly or Yearly save 30%!
+                💰 Choose between monthly or Yearly save 33%!
               </p>
             </div>
 
@@ -343,8 +343,29 @@ const Subscribe = () => {
                 </div>
                 
                 <div style={{ marginBottom: '1rem' }}>
-                  <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#111827' }}>$9.99</span>
-                  <span style={{ color: '#6b7280', fontSize: '1rem' }}>/month</span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                    <span style={{
+                      fontSize: '1.5rem',
+                      color: '#ef4444',
+                      textDecoration: 'line-through',
+                      fontWeight: '600'
+                    }}>
+                      $14.99
+                    </span>
+                    <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#111827' }}>$9.99</span>
+                    <span style={{ color: '#6b7280', fontSize: '1rem' }}>/month</span>
+                  </div>
+                  <div style={{
+                    display: 'inline-block',
+                    background: '#fef3c7',
+                    padding: '0.375rem 0.75rem',
+                    borderRadius: '8px',
+                    border: '2px solid #fbbf24'
+                  }}>
+                    <span style={{ color: '#92400e', fontWeight: '700', fontSize: '0.875rem' }}>
+                      💰 Save $5/month!
+                    </span>
+                  </div>
                 </div>
                 
                 <div style={{ marginBottom: '1rem' }}>
@@ -399,7 +420,7 @@ const Subscribe = () => {
                   fontSize: '0.75rem',
                   fontWeight: '800'
                 }}>
-                  ⭐ BEST VALUE
+                  ⭐ SAVE 33%
                 </div>
                 
                 <div style={{
@@ -413,22 +434,30 @@ const Subscribe = () => {
                 </div>
                 
                 <div style={{ marginBottom: '0.5rem' }}>
-                  <span style={{ fontSize: '1.25rem', textDecoration: 'line-through', color: '#9ca3af' }}>$119.88</span>
-                  <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#111827', marginLeft: '0.5rem' }}>$79.99</span>
-                  <span style={{ color: '#6b7280', fontSize: '1rem' }}>/year</span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                    <span style={{
+                      fontSize: '1.5rem',
+                      color: '#ef4444',
+                      textDecoration: 'line-through',
+                      fontWeight: '600'
+                    }}>
+                      $119
+                    </span>
+                    <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#111827' }}>$79</span>
+                    <span style={{ color: '#6b7280', fontSize: '1rem' }}>/year</span>
+                  </div>
+                  <p style={{
+                    color: '#059669',
+                    fontWeight: '700',
+                    fontSize: '0.875rem',
+                    margin: 0
+                  }}>
+                    💎 Just $6.58/month - Save $40!
+                  </p>
                 </div>
                 
-                <p style={{
-                  color: '#059669',
-                  fontWeight: '700',
-                  fontSize: '0.875rem',
-                  margin: '0 0 1rem 0'
-                }}>
-                  Save $39.89/year - Just $6.66/month!
-                </p>
-                
                 <div style={{ marginBottom: '1rem' }}>
-                  {['Everything in Monthly', '2 months FREE', 'Priority feature access'].map((feature, idx) => (
+                  {['Everything in Monthly', 'Save $40 per year', 'Priority feature access'].map((feature, idx) => (
                     <div key={idx} style={{
                       display: 'flex',
                       alignItems: 'center',
