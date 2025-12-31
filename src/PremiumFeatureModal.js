@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar, Heart, Users, Camera, Gift, Target, Sparkles, X } from 'lucide-react';
 
-export default function PremiumFeatureModal({ onClose, onSignIn }) {
+export default function PremiumFeatureModal({ onClose, onUpgrade }) {
   const features = [
     { icon: <Calendar size={24} />, text: 'Unlimited Date Planning', color: '#ec4899' },
     { icon: <Heart size={24} />, text: 'Save & Share Dates', color: '#ef4444' },
@@ -45,7 +45,7 @@ export default function PremiumFeatureModal({ onClose, onSignIn }) {
         overflow: 'hidden',
         animation: 'slideUp 0.4s ease'
       }}>
-        {/* X Close button - WHITE and VISIBLE */}
+        {/* X Close button */}
         <button
           onClick={onClose}
           style={{
@@ -65,19 +65,11 @@ export default function PremiumFeatureModal({ onClose, onSignIn }) {
             transition: 'all 0.2s',
             boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}
-          onMouseEnter={(e) => {
-            e.target.style.background = '#f3f4f6';
-            e.target.style.transform = 'scale(1.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'white';
-            e.target.style.transform = 'scale(1)';
-          }}
         >
           <X size={24} style={{ color: '#667eea' }} />
         </button>
 
-        {/* Content - add padding at top for X button */}
+        {/* Content */}
         <div style={{
           padding: '3rem 2rem 2rem 2rem',
           overflowY: 'auto',
@@ -105,7 +97,7 @@ export default function PremiumFeatureModal({ onClose, onSignIn }) {
               margin: '0 0 0.5rem 0',
               textShadow: '0 2px 10px rgba(0,0,0,0.2)'
             }}>
-              Premium Features
+              Premium Features Available!
             </h2>
             <p style={{
               fontSize: '1rem',
@@ -162,24 +154,11 @@ export default function PremiumFeatureModal({ onClose, onSignIn }) {
             ))}
           </div>
 
-          {/* Sign In Button - SIMPLIFIED TO AVOID WHITE SCREEN */}
+          {/* Get Premium Button - NEW! */}
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('🔵 Premium modal - Sign In clicked');
-              
-              // Close modal first
-              onClose();
-              
-              // Then call onSignIn after a delay
-              setTimeout(() => {
-                try {
-                  onSignIn();
-                } catch (error) {
-                  console.error('❌ Error calling onSignIn:', error);
-                }
-              }, 300);
+            onClick={() => {
+              console.log('✨ Get Premium Features clicked');
+              onUpgrade(); // This will open Apple IAP
             }}
             style={{
               width: '100%',
@@ -199,17 +178,9 @@ export default function PremiumFeatureModal({ onClose, onSignIn }) {
               marginBottom: '1rem',
               transition: 'all 0.3s ease'
             }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 12px 30px rgba(236, 72, 153, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 8px 20px rgba(236, 72, 153, 0.4)';
-            }}
           >
             <Sparkles size={24} />
-            Sign In With Premium Account
+            Get Premium Features
           </button>
 
           {/* Info Text */}
@@ -221,19 +192,11 @@ export default function PremiumFeatureModal({ onClose, onSignIn }) {
           }}>
             <p style={{
               color: 'white',
-              fontSize: '0.9rem',
-              margin: '0 0 0.5rem 0',
-              fontWeight: '600'
-            }}>
-              Don't have Premium?
-            </p>
-            <p style={{
-              color: 'rgba(255,255,255,0.9)',
               fontSize: '0.875rem',
               margin: 0,
               lineHeight: '1.5'
             }}>
-              Premium accounts unlock all features across all platforms. Create your premium account on the web to get started.
+              Subscribe via Apple to unlock all premium features
             </p>
           </div>
         </div>

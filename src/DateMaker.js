@@ -35,6 +35,8 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import InviteFriendsModal from './InviteFriendsModal';
+import AppleSubscriptionModal from './AppleSubscriptionModal';
+import IAPManager from './IAPManager';
 export default function DateMaker() {
   const navigate = useNavigate(); 
   
@@ -128,6 +130,60 @@ const [userStreakData, setUserStreakData] = useState({
   goals: [],
   weeklyChallenges: {}
 });
+
+const fetchUserData = async () => {
+  if (!user?.uid) return;
+  
+  try {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+    
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      setUserData(data);
+      setSubscriptionStatus(data.subscriptionStatus || 'free');
+      setSavedDates(data.savedDates || []);
+      setProfilePhoto(data.profilePhoto || '');
+      setLastViewedSavedCount(data.lastViewedSavedCount || 0);
+     // 🍎 Initialize IAP for iOS after user data loaded
+  if (Capacitor.getPlatform() === 'ios') {
+    console.log('🚀 Initializing IAP for iOS...');
+    
+    // Wait for Cordova deviceready
+    const initIAP = async () => {
+      try {
+        await new Promise((resolve) => {
+          if (window.cordova && window.CdvPurchase) {
+            console.log('✅ Cordova already ready');
+            resolve();
+          } else {
+            console.log('⏳ Waiting for deviceready...');
+            document.addEventListener('deviceready', resolve, { once: true });
+            setTimeout(resolve, 3000);
+          }
+        });
+        
+        console.log('🔵 CdvPurchase available?', !!window.CdvPurchase);
+        if (window.CdvPurchase) {
+          await IAPManager.initialize();
+          console.log('✅ IAP initialized');
+        }
+      } catch (error) {
+        console.error('❌ IAP error:', error);
+      }
+    };
+    
+    // Run IAP init in background
+    initIAP();
+  }
+  
+} else {
+  setSubscriptionStatus('free');
+    }
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+  }
+};
 
 // 🔍 DEBUG: Monitor subscription status changes
 useEffect(() => {
@@ -1078,6 +1134,91 @@ const getWeekNumber = (date) => {
   return () => unsubscribe();
 }, [authScreen]);
   
+ 
+// Expose user data for IAP
+useEffect(() => {
+  if (user?.uid) {
+    window.currentUserId = user.uid;
+    window.reloadUserData = fetchUserData;
+  }
+}, [user]);
+
+
+
+// Check Apple subscription status on app load (iOS only)
+useEffect(() => {
+  const checkSubscription = async () => {
+    try {
+      // Only run on iOS
+      if (Capacitor.getPlatform() !== 'ios') {
+        console.log('⚠️ Not iOS, skipping subscription check');
+        return;
+      }
+      
+      // Only run if user is logged in
+      if (!user?.uid) {
+        console.log('⚠️ No user, skipping subscription check');
+        return;
+      }
+      
+      // Wait for Cordova to be ready
+      await new Promise((resolve) => {
+        if (window.cordova) {
+          console.log('✅ Cordova ready');
+          resolve();
+        } else {
+          console.log('⏳ Waiting for Cordova...');
+          document.addEventListener('deviceready', () => {
+            console.log('✅ Cordova ready (via event)');
+            resolve();
+          });
+          
+          // Timeout after 5 seconds
+          setTimeout(() => {
+            console.log('⚠️ Cordova timeout, proceeding anyway');
+            resolve();
+          }, 5000);
+        }
+      });
+      
+      // Small delay to ensure everything is loaded
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log('🔍 Checking Apple subscription status...');
+      
+      // Check if IAPManager is available
+      if (!IAPManager) {
+        console.error('❌ IAPManager not available');
+        return;
+      }
+      
+      // Initialize IAP
+      const initialized = await IAPManager.initialize();
+      
+      if (!initialized) {
+        console.error('❌ IAP initialization failed');
+        return;
+      }
+      
+      console.log('✅ IAP initialized');
+      
+      // Sync subscription status with backend
+      await IAPManager.syncSubscriptionStatus();
+      
+      console.log('✅ Subscription check complete');
+      
+    } catch (error) {
+      console.error('❌ Error checking subscription:', error);
+      // Don't crash the app - just log the error
+    }
+  };
+  
+  // Only run if user exists
+  if (user) {
+    checkSubscription();
+  }
+}, [user]);
+
   // 🔔 UNIFIED NOTIFICATION TRACKING SYSTEM
   useEffect(() => {
     if (!user) return;
@@ -1249,6 +1390,13 @@ useEffect(() => {
   let isMounted = true;
 
   const checkSubscriptionOnResume = async () => {
+    // First sync with RevenueCat to catch expired subscriptions
+    try {
+      await IAPManager.syncSubscriptionStatus();
+    } catch (err) {
+      console.log("RevenueCat sync skipped:", err.message);
+    }
+    
     if (!user || !isMounted) return;
     
     try {
@@ -1384,7 +1532,7 @@ const handleOpenSaved = async () => {
       const image = await Camera.getPhoto({
         quality: 80,
         resultType: CameraResultType.Uri,
-        source: CameraSource.Photos  // ← PHOTOS ONLY - no camera!
+        source: CameraSource.Prompt  // ← PHOTOS ONLY - no camera!
       });
       
       if (!image?.webPath) return;
@@ -3914,10 +4062,7 @@ if (showResults && itinerary) {
   }
   
   
-  // Subscription modal
-  if (showSubscriptionModal) {
-    return <SubscriptionModal user={user} onClose={() => setShowSubscriptionModal(false)} />;
-  }
+  
   // Main input screen
   return (
     <>
@@ -4285,25 +4430,36 @@ if (showResults && itinerary) {
         </div>
       </div>
     
-      {showSubscriptionModal && (
-        <SubscriptionModal user={user} onClose={() => setShowSubscriptionModal(false)} />
-      )}
-      
-      {showShareModal && dateToShare ? (
-        <ShareDateModal 
-          user={user} 
-          dateData={dateToShare} 
-          onClose={() => {
-            setShowShareModal(false);
-            setDateToShare(null);
-            if (dateToShare.completedAt) {
-              setShowResults(false);
-              setItinerary(null);
-              setPlaces([]);
-            }
-          }} 
-        />
-      ) : null}
+     {showSubscriptionModal && (
+  Capacitor.getPlatform() === 'ios' ? (
+    <AppleSubscriptionModal 
+      onClose={() => setShowSubscriptionModal(false)}
+      onPurchaseSuccess={() => {
+        if (user) {
+          fetchUserData();
+        }
+      }}
+    />
+  ) : (
+    <SubscriptionModal user={user} onClose={() => setShowSubscriptionModal(false)} />
+  )
+)}
+
+{showShareModal && dateToShare ? (
+  <ShareDateModal 
+    user={user} 
+    dateData={dateToShare} 
+    onClose={() => {
+      setShowShareModal(false);
+      setDateToShare(null);
+      if (dateToShare.completedAt) {
+        setShowResults(false);
+        setItinerary(null);
+        setPlaces([]);
+      }
+    }} 
+  />
+) : null}
       
       {showPointsNotification && pointsNotificationData && (
         <div style={{
@@ -4399,30 +4555,17 @@ if (showResults && itinerary) {
 {showPremiumModal && (
   <PremiumFeatureModal
     onClose={() => {
-      console.log('🚪 Closing premium modal');
       setShowPremiumModal(false);
     }}
-    onSignIn={() => {
-      console.log('✅ onSignIn triggered - closing modal');
-      
-      // Close modal FIRST
+    onUpgrade={() => {
+      // NEW: Open Apple IAP directly
       setShowPremiumModal(false);
-      
-      // Small delay to allow modal to unmount cleanly before changing screens
       setTimeout(() => {
-        console.log('🔄 Now logging out to show login screen');
-        
-        if (isGuestMode || user) {
-          handleLogout(); // This shows the login screen
-        } else {
-          // Already logged out somehow, just show login
-          setAuthScreen('login');
-        }
-      }, 300); // 300ms delay prevents white screen crash
+        setShowSubscriptionModal(true); // This will show AppleSubscriptionModal on iOS
+      }, 300);
     }}
   />
 )}
-
 
       {/* 💳 Subscription Manager Modal */}
 {showSubscriptionManager && (

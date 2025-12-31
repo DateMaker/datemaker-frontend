@@ -39,6 +39,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
   const [participantProfiles, setParticipantProfiles] = useState({});
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [successMessage, setSuccessMessage] = useState(null);
+const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // 🛡️ UGC SAFETY STATE - Apple App Store Requirement
   const [blockedUsers, setBlockedUsers] = useState([]);
@@ -156,6 +157,16 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
     };
     loadUserProfile();
   }, [user.uid]);
+
+// 🎨 Set background color for iOS (prevents white bar)
+useEffect(() => {
+  const originalBackground = document.body.style.background;
+  document.body.style.background = 'linear-gradient(135deg, #fef3c7 0%, #fde68a 25%, #fcd34d 50%, #fbbf24 75%, #f59e0b 100%)';
+  
+  return () => {
+    document.body.style.background = originalBackground;
+  };
+}, []);
 
   // Set user online status
   useEffect(() => {
@@ -1118,11 +1129,17 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
 
   return (
     <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 25%, #fcd34d 50%, #fbbf24 75%, #f59e0b 100%)',
-      padding: '2rem',
-      paddingTop: 'calc(2rem + env(safe-area-inset-top))'
-    }}>
+  minHeight: '100vh',
+  minHeight: '100dvh',
+  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 25%, #fcd34d 50%, #fbbf24 75%, #f59e0b 100%)',
+  padding: 'clamp(1rem, 4vw, 2rem)',
+  paddingTop: 'calc(clamp(1rem, 4vw, 2rem) + env(safe-area-inset-top))',
+  paddingBottom: 'env(safe-area-inset-bottom)',
+  boxSizing: 'border-box',
+  width: '100%',
+  overflowX: 'hidden',
+  position: 'relative'
+}}>
       
       {/* ✅ OFFLINE INDICATOR */}
       {!isOnline && (
@@ -1133,7 +1150,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
           background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
           color: 'white',
           padding: '1rem 1.5rem',
-          borderRadius: '14px',
+          borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
           boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
           display: 'flex',
           alignItems: 'center',
@@ -1149,13 +1166,16 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
       
       {/* Header */}
       <div style={{
-        background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #8b5cf6 100%)',
-        borderRadius: '24px',
-        padding: '1.5rem',
-        marginBottom: '1.5rem',
-        boxShadow: '0 10px 30px rgba(168, 85, 247, 0.3)',
-        border: '3px solid rgba(255, 255, 255, 0.3)'
-      }}>
+  background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 50%, #8b5cf6 100%)',
+  borderRadius: 'clamp(16px, 4vw, 24px)',
+  padding: 'clamp(1rem, 3vw, 1.5rem)',
+  marginBottom: 'clamp(1rem, 3vw, 1.5rem)',
+  boxShadow: '0 10px 30px rgba(168, 85, 247, 0.3)',
+  border: '3px solid rgba(255, 255, 255, 0.3)',
+  boxSizing: 'border-box',
+  width: '100%',
+  overflow: 'hidden'
+}}>
         {/* Top row - Back button, Bell, and Blocked Users button */}
         <div style={{ 
           display: 'flex', 
@@ -1169,8 +1189,8 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
               style={{
                 background: 'rgba(255, 255, 255, 0.2)',
                 border: '2px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '14px',
-                padding: '0.75rem',
+                borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
+                padding: 'clamp(0.5rem, 2vw, 0.75rem)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -1246,7 +1266,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
             style={{
               background: 'rgba(255, 255, 255, 0.2)',
               border: '2px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '14px',
+              borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
               padding: '0.75rem',
               cursor: 'pointer',
               display: 'flex',
@@ -1254,7 +1274,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
               gap: '0.5rem',
               color: 'white',
               fontWeight: '700',
-              fontSize: '0.875rem',
+              fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)',
               backdropFilter: 'blur(10px)',
               transition: 'all 0.2s'
             }}
@@ -1312,11 +1332,13 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
 
         {/* Navigation Tabs */}
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '0.75rem',
-          marginBottom: '1.5rem'
-        }}>
+  display: 'grid',
+  gridTemplateColumns: 'repeat(2, 1fr)',
+  gap: 'clamp(0.5rem, 2vw, 0.75rem)',
+  marginBottom: 'clamp(1rem, 3vw, 1.5rem)',
+  width: '100%',
+  boxSizing: 'border-box'
+}}>
           {[
             { id: 'feed', icon: Sparkles, label: 'Feed', count: feedNotificationCount },
             { id: 'search', icon: Search, label: 'Search', count: 0 },
@@ -1328,8 +1350,8 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: '1rem',
-                borderRadius: '16px',
+                padding: 'clamp(0.75rem, 2.5vw, 1rem)',
+                borderRadius: 'clamp(12px, 3vw, 16px)',
                 border: activeTab === tab.id 
                   ? '3px solid white' 
                   : '3px solid transparent',
@@ -1343,7 +1365,9 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                 gap: '0.5rem',
                 transition: 'all 0.2s',
                 fontWeight: '800',
-                fontSize: '0.95rem',
+                fontSize: 'clamp(0.8rem, 2.5vw, 0.95rem)',
+                overflow: 'hidden',
+  boxSizing: 'border-box',
                 color: activeTab === tab.id ? '#8b5cf6' : 'white',
                 backdropFilter: 'blur(10px)',
                 position: 'relative'
@@ -1390,15 +1414,18 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
       </div>
 
       {/* Content Area */}
-      <div style={{
-        background: 'white',
-        borderRadius: '24px',
-        padding: '2rem',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-        border: '3px solid rgba(168, 85, 247, 0.2)',
-        minHeight: '400px',
-        marginBottom: '2rem'
-      }}>
+<div style={{
+  background: 'white',
+  borderRadius: 'clamp(16px, 4vw, 24px)',
+  padding: 'clamp(1rem, 4vw, 2rem)',
+  boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+  border: '3px solid rgba(168, 85, 247, 0.2)',
+  minHeight: '400px',
+  marginBottom: '0',
+  boxSizing: 'border-box',
+  width: '100%',
+  overflow: 'hidden'
+}}>
         {/* Feed Tab */}
         {activeTab === 'feed' && !viewingDate && (
           <div>
@@ -1410,7 +1437,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
             }}>
               <Sparkles size={32} style={{ color: '#a855f7' }} />
               <h2 style={{
-                fontSize: '2rem',
+                fontSize: 'clamp(1.5rem, 5vw, 2rem)',
                 fontWeight: '900',
                 margin: 0,
                 background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
@@ -1456,14 +1483,17 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                       }
                     }}
                     style={{
-                      background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
-                      borderRadius: '20px',
-                      padding: '1.75rem',
-                      border: '2px solid #e9d5ff',
-                      boxShadow: '0 4px 12px rgba(168, 85, 247, 0.1)',
-                      transition: 'all 0.2s',
-                      cursor: 'pointer'
-                    }}
+  background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+  borderRadius: 'clamp(14px, 4vw, 20px)',
+  padding: 'clamp(1rem, 4vw, 1.75rem)',
+  border: '2px solid #e9d5ff',
+  boxShadow: '0 4px 12px rgba(168, 85, 247, 0.1)',
+  transition: 'all 0.2s',
+  cursor: 'pointer',
+  boxSizing: 'border-box',
+  width: '100%',
+  overflow: 'hidden'
+}}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.transform = 'translateY(-4px)';
                       e.currentTarget.style.boxShadow = '0 8px 24px rgba(168, 85, 247, 0.2)';
@@ -1507,7 +1537,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                           </p>
                           <p style={{
                             margin: 0,
-                            fontSize: '0.875rem',
+                            fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)',
                             color: '#6b7280',
                             fontWeight: '600'
                           }}>
@@ -1624,24 +1654,31 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                     {/* Activities */}
                     {date.activities && date.activities.length > 0 && (
                       <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '0.75rem',
-                        marginBottom: '1.25rem'
-                      }}>
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 'clamp(0.4rem, 2vw, 0.75rem)',
+  marginBottom: 'clamp(0.75rem, 3vw, 1.25rem)',
+  width: '100%',
+  overflow: 'hidden'
+}}>
                         {date.activities.map((activity, idx) => (
                           <div
                             key={idx}
                             style={{
-                              background: 'white',
-                              padding: '0.625rem 1.125rem',
-                              borderRadius: '14px',
-                              border: '2px solid #e9d5ff',
-                              fontSize: '0.9375rem',
-                              fontWeight: '700',
-                              color: '#8b5cf6',
-                              boxShadow: '0 2px 6px rgba(168, 85, 247, 0.1)'
-                            }}
+  background: 'white',
+  padding: 'clamp(0.4rem, 2vw, 0.625rem) clamp(0.75rem, 3vw, 1.125rem)',
+  borderRadius: 'clamp(10px, 3vw, 14px)',
+  border: '2px solid #e9d5ff',
+  fontSize: 'clamp(0.75rem, 2.5vw, 0.9375rem)',
+  fontWeight: '700',
+  color: '#8b5cf6',
+  boxShadow: '0 2px 6px rgba(168, 85, 247, 0.1)',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  boxSizing: 'border-box'
+}}
                           >
                             {activity}
                           </div>
@@ -1651,11 +1688,13 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
 
                     {/* Location & Budget */}
                     <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                      gap: '1rem',
-                      marginBottom: '1.25rem'
-                    }}>
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
+  gap: 'clamp(0.5rem, 2vw, 1rem)',
+  marginBottom: 'clamp(0.75rem, 3vw, 1.25rem)',
+  width: '100%',
+  boxSizing: 'border-box'
+}}>
                       {date.location && (
                         <div style={{
                           display: 'flex',
@@ -1663,7 +1702,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                           gap: '0.625rem',
                           background: 'white',
                           padding: '0.875rem 1.125rem',
-                          borderRadius: '14px',
+                          borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
                           border: '2px solid #dbeafe'
                         }}>
                           <MapPin size={18} style={{ color: '#3b82f6' }} />
@@ -1684,7 +1723,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                           gap: '0.625rem',
                           background: 'white',
                           padding: '0.875rem 1.125rem',
-                          borderRadius: '14px',
+                          borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
                           border: '2px solid #dcfce7'
                         }}>
                           <span style={{ fontSize: '1.125rem' }}>💰</span>
@@ -1704,7 +1743,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                       <p style={{
                         background: 'white',
                         padding: '1rem',
-                        borderRadius: '14px',
+                        borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
                         border: '2px solid #fef3c7',
                         margin: '0 0 1.25rem',
                         fontSize: '0.9375rem',
@@ -1727,8 +1766,8 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                         onClick={() => handleLikeDate(date.id, date.likes || [])}
                         style={{
                           flex: 1,
-                          padding: '0.875rem',
-                          borderRadius: '14px',
+                          padding: 'clamp(0.625rem, 2.5vw, 0.875rem)',
+                          borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
                           border: (date.likes || []).includes(user.uid)
                             ? '2px solid #ec4899'
                             : '2px solid #e9d5ff',
@@ -1779,7 +1818,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                 alignItems: 'center',
                 gap: '0.75rem',
                 padding: '1rem 1.5rem',
-                borderRadius: '14px',
+                borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
                 border: '2px solid #e9d5ff',
                 background: 'white',
                 color: '#a855f7',
@@ -1805,9 +1844,12 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
             {/* Full Date View */}
             <div style={{
               background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
-              borderRadius: '24px',
-              padding: '2rem',
-              border: '2px solid #e9d5ff',
+  borderRadius: 'clamp(16px, 4vw, 24px)',
+  padding: 'clamp(1rem, 4vw, 2rem)',
+  border: '2px solid #e9d5ff',
+  boxSizing: 'border-box',
+  width: '100%',
+  overflow: 'hidden',
               boxShadow: '0 8px 24px rgba(168, 85, 247, 0.15)'
             }}>
               {/* Header */}
@@ -1864,7 +1906,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                         background: 'rgba(251, 191, 36, 0.15)',
                         border: '2px solid rgba(251, 191, 36, 0.3)',
                         borderRadius: '12px',
-                        padding: '0.75rem',
+                        padding: 'clamp(0.5rem, 2vw, 0.75rem)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -1880,7 +1922,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                         background: 'rgba(239, 68, 68, 0.1)',
                         border: '2px solid rgba(239, 68, 68, 0.3)',
                         borderRadius: '12px',
-                        padding: '0.75rem',
+                        padding: 'clamp(0.5rem, 2vw, 0.75rem)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -1928,13 +1970,13 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                     gap: '0.75rem',
                     padding: '1rem 1.5rem',
                     background: 'rgba(168, 85, 247, 0.1)',
-                    borderRadius: '14px',
+                    borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
                     border: '2px solid #e9d5ff'
                   }}>
                     <Calendar size={24} style={{ color: '#a855f7' }} />
                     <div>
                       <p style={{
-                        fontSize: '0.8125rem',
+                        fontSize: 'clamp(0.6rem, 1.8vw, 0.75rem)',
                         fontWeight: '700',
                         color: '#a855f7',
                         margin: 0
@@ -1964,13 +2006,13 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                     gap: '0.75rem',
                     padding: '1rem 1.5rem',
                     background: 'rgba(236, 72, 153, 0.1)',
-                    borderRadius: '14px',
+                    borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
                     border: '2px solid #fce7f3'
                   }}>
                     <Clock size={24} style={{ color: '#ec4899' }} />
                     <div>
                       <p style={{
-                        fontSize: '0.8125rem',
+                        fontSize: 'clamp(0.6rem, 1.8vw, 0.75rem)',
                         fontWeight: '700',
                         color: '#ec4899',
                         margin: 0
@@ -2040,9 +2082,11 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                               key={index}
                               style={{
                                 background: '#ffffff',
-                                borderRadius: '24px',
-                                padding: '0',
-                                border: '3px solid #e9d5ff',
+  borderRadius: 'clamp(16px, 4vw, 24px)',
+  padding: '0',
+  border: '3px solid #e9d5ff',
+  width: '100%',
+  boxSizing: 'border-box',
                                 overflow: 'hidden',
                                 transition: 'all 0.2s'
                               }}
@@ -2098,7 +2142,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                                   )}
                                   {stop.category && (
                                     <p style={{
-                                      fontSize: '0.875rem',
+                                      fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)',
                                       fontWeight: '700',
                                       color: 'rgba(255, 255, 255, 0.9)',
                                       textTransform: 'uppercase',
@@ -2382,7 +2426,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
             }}>
               <Search size={32} style={{ color: '#a855f7' }} />
               <h2 style={{
-                fontSize: '2rem',
+                fontSize: 'clamp(1.5rem, 5vw, 2rem)',
                 fontWeight: '900',
                 margin: 0,
                 background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
@@ -2443,7 +2487,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                     : 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
                   color: 'white',
                   fontWeight: '800',
-                  fontSize: '0.875rem',
+                  fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)',
                   cursor: loading ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -2498,15 +2542,18 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                   <div
                     key={result.id}
                     style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.75rem',
-                      background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
-                      padding: '1.25rem',
-                      borderRadius: '16px',
-                      border: '2px solid #e9d5ff',
-                      boxShadow: '0 2px 8px rgba(168, 85, 247, 0.1)'
-                    }}
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 'clamp(0.5rem, 2vw, 0.75rem)',
+  background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+  padding: 'clamp(1rem, 3vw, 1.25rem)',
+  borderRadius: 'clamp(12px, 3vw, 16px)',
+  border: '2px solid #e9d5ff',
+  boxShadow: '0 2px 8px rgba(168, 85, 247, 0.1)',
+  boxSizing: 'border-box',
+  width: '100%',
+  overflow: 'hidden'
+}}
                   >
                     <div style={{ 
                       display: 'flex', 
@@ -2530,21 +2577,21 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                       }}>
                         {result.email[0].toUpperCase()}
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{
-                          margin: '0 0 0.25rem',
-                          fontWeight: '800',
-                          fontSize: '1.125rem',
-                          color: '#1f2937',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
+                      <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+  <p style={{
+    margin: '0 0 0.125rem',
+    fontWeight: '800',
+    fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
+    color: '#1f2937',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+  }}>
                           {result.name || result.email.split('@')[0]}
                         </p>
                         <p style={{
                           margin: 0,
-                          fontSize: '0.875rem',
+                          fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)',
                           color: '#6b7280',
                           fontWeight: '600',
                           overflow: 'hidden',
@@ -2561,8 +2608,8 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                       disabled={sentRequests.some(r => r.toUserId === result.id)}
                       style={{
                         width: '100%',
-                        padding: '0.875rem',
-                        borderRadius: '14px',
+                        padding: 'clamp(0.625rem, 2.5vw, 0.875rem)',
+                        borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
                         border: 'none',
                         background: sentRequests.some(r => r.toUserId === result.id)
                           ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
@@ -2623,7 +2670,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
             }}>
               <Users size={32} style={{ color: '#a855f7' }} />
               <h2 style={{
-                fontSize: '2rem',
+                fontSize: 'clamp(1.5rem, 5vw, 2rem)',
                 fontWeight: '900',
                 margin: 0,
                 background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
@@ -2720,7 +2767,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                         </p>
                         <p style={{
                           margin: 0,
-                          fontSize: '0.875rem',
+                          fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)',
                           color: onlineUsers.has(friend.id) ? '#10b981' : '#6b7280',
                           fontWeight: '700'
                         }}>
@@ -2734,12 +2781,12 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                         onClick={() => handleStartConversation(friend.id)}
                         style={{
                           padding: '0.625rem 1rem',
-                          borderRadius: '14px',
+                          borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
                           border: 'none',
                           background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
                           color: 'white',
                           fontWeight: '800',
-                          fontSize: '0.875rem',
+                          fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -2766,8 +2813,8 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                       <button
                         onClick={() => handleRemoveFriend(friend.id)}
                         style={{
-                          padding: '0.875rem',
-                          borderRadius: '14px',
+                          padding: 'clamp(0.625rem, 2.5vw, 0.875rem)',
+                          borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
                           border: '2px solid rgba(239, 68, 68, 0.3)',
                           background: 'rgba(239, 68, 68, 0.1)',
                           cursor: 'pointer',
@@ -2805,7 +2852,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
             }}>
               <UserPlus size={32} style={{ color: '#a855f7' }} />
               <h2 style={{
-                fontSize: '2rem',
+                fontSize: 'clamp(1.5rem, 5vw, 2rem)',
                 fontWeight: '900',
                 margin: 0,
                 background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
@@ -2837,16 +2884,19 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                   <div
                     key={request.id}
                     style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '1rem',
-                      background: 'linear-gradient(135deg, #ffffff 0%, #fffbeb 100%)',
-                      padding: '1.25rem',
-                      borderRadius: '18px',
-                      border: '2px solid #fef3c7',
-                      boxShadow: '0 2px 8px rgba(251, 191, 36, 0.1)',
-                      transition: 'all 0.2s'
-                    }}
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 'clamp(0.5rem, 2vw, 1rem)',
+  background: 'linear-gradient(135deg, #ffffff 0%, #fffbeb 100%)',
+  padding: 'clamp(1rem, 3vw, 1.25rem)',
+  borderRadius: 'clamp(14px, 3vw, 18px)',
+  border: '2px solid #fef3c7',
+  boxShadow: '0 2px 8px rgba(251, 191, 36, 0.1)',
+  transition: 'all 0.2s',
+  boxSizing: 'border-box',
+  width: '100%',
+  overflow: 'hidden'
+}}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <div style={{
@@ -2954,7 +3004,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                 }}>
                   <Clock size={32} style={{ color: '#6b7280' }} />
                   <h2 style={{
-                    fontSize: '2rem',
+                    fontSize: 'clamp(1.5rem, 5vw, 2rem)',
                     fontWeight: '900',
                     margin: 0,
                     color: '#6b7280'
@@ -3005,7 +3055,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                           </p>
                           <p style={{
                             margin: 0,
-                            fontSize: '0.875rem',
+                            fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)',
                             color: '#6b7280',
                             fontWeight: '600'
                           }}>
@@ -3023,7 +3073,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                           background: 'rgba(239, 68, 68, 0.1)',
                           color: '#ef4444',
                           fontWeight: '700',
-                          fontSize: '0.875rem',
+                          fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -3044,7 +3094,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
 
         {/* Messages Tab */}
         {activeTab === 'messages' && (
-          <div style={{ display: 'flex', height: '600px', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', height: 'clamp(400px, 70vh, 600px)', gap: 'clamp(0.75rem, 3vw, 1.5rem)', width: '100%', boxSizing: 'border-box' }}>
             {/* Conversations List */}
             {!selectedConversation && (
               <div style={{ flex: 1 }}>
@@ -3061,7 +3111,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                   }}>
                     <MessageCircle size={32} style={{ color: '#a855f7' }} />
                     <h2 style={{
-                      fontSize: '2rem',
+                      fontSize: 'clamp(1.5rem, 5vw, 2rem)',
                       fontWeight: '900',
                       margin: 0,
                       background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
@@ -3077,12 +3127,12 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                     onClick={() => setShowCreateGroupChat(true)}
                     style={{
                       padding: '0.75rem 1rem',
-                      borderRadius: '14px',
+                      borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
                       border: 'none',
                       background: 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)',
                       color: 'white',
                       fontWeight: '800',
-                      fontSize: '0.875rem',
+                      fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -3126,122 +3176,116 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                   </div>
                 ) : (
                   <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.75rem',
-                    overflowY: 'auto',
-                    maxHeight: 'calc(600px - 100px)'
-                  }}>
-                    {conversations
-                      .filter(conv => conv.lastMessage || conv.lastMessageTime || conv.isGroup)
-                      .map(conv => {
-                        const conversationUnread = unreadMessages[conv.id] || 0;
-                        return (
-                          <button
-                            key={conv.id}
-                            onClick={() => setSelectedConversation(conv)}
-                            style={{
-                              background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
-                              border: '2px solid #e9d5ff',
-                              borderRadius: '18px',
-                              padding: '1.25rem',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '1rem',
-                              transition: 'all 0.2s',
-                              textAlign: 'left',
-                              position: 'relative'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'translateX(4px)';
-                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.2)';
-                              e.currentTarget.style.borderColor = '#a855f7';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'translateX(0)';
-                              e.currentTarget.style.boxShadow = 'none';
-                              e.currentTarget.style.borderColor = '#e9d5ff';
-                            }}
-                          >
-                            <div style={{
-                              width: '48px',
-                              height: '48px',
-                              borderRadius: '50%',
-                              background: conv.isGroup
-                                ? 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)'
-                                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'white',
-                              fontWeight: '900',
-                              fontSize: '1.25rem',
-                              flexShrink: 0,
-                              boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
-                            }}>
-                              {conv.isGroup ? (
-                                <Users size={24} />
-                              ) : (
-                                conv.participantEmails?.find(e => e !== user.email)?.[0]?.toUpperCase() || '?'
-                              )}
-                            </div>
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '20px',
+  overflowY: 'auto',
+  maxHeight: 'calc(100vh - 300px)',
+  padding: '12px',
+  WebkitOverflowScrolling: 'touch'
+}}>
+  {conversations
+    .filter(conv => conv.lastMessage || conv.lastMessageTime || conv.isGroup)
+    .map(conv => {
+      const conversationUnread = unreadMessages[conv.id] || 0;
+      return (
+        <button
+  key={conv.id}
+  onClick={() => setSelectedConversation(conv)}
+  style={{
+    background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+    border: '2px solid #e9d5ff',
+    borderRadius: '16px',
+    padding: '16px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    transition: 'all 0.2s',
+    textAlign: 'left',
+    width: '100%',
+    boxSizing: 'border-box'
+  }}
+>
+  {/* Avatar */}
+  <div style={{
+    width: '44px',
+    height: '44px',
+    minWidth: '44px',
+    borderRadius: '50%',
+    background: conv.isGroup
+      ? 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)'
+      : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white',
+    fontWeight: '800',
+    fontSize: '18px',
+    flexShrink: 0
+  }}>
+    {conv.isGroup ? (
+      <Users size={22} />
+    ) : (
+      conv.participantEmails?.find(e => e !== user.email)?.[0]?.toUpperCase() || '?'
+    )}
+  </div>
 
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <p style={{
-                                margin: '0 0 0.25rem',
-                                fontWeight: '800',
-                                fontSize: '1.125rem',
-                                color: '#1f2937',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                              }}>
-                                {conv.isGroup
-                                  ? conv.name
-                                  : conv.participantEmails?.find(e => e !== user.email)?.split('@')[0] || 'Unknown'
-                                }
-                              </p>
-                              <p style={{
-                                margin: 0,
-                                fontSize: '0.875rem',
-                                color: '#6b7280',
-                                fontWeight: '600',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                              }}>
-                                {conv.lastMessage 
-                                  ? (typeof conv.lastMessage === 'string' 
-                                      ? conv.lastMessage 
-                                      : conv.lastMessage.text || 'No messages yet')
-                                  : 'No messages yet'}
-                              </p>
-                            </div>
+  {/* Text Content */}
+  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+    <p style={{
+      margin: '0 0 4px 0',
+      fontWeight: '700',
+      fontSize: '16px',
+      color: '#1f2937',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }}>
+      {conv.isGroup
+        ? conv.name
+        : conv.participantEmails?.find(e => e !== user.email)?.split('@')[0] || 'Unknown'
+      }
+    </p>
+    <p style={{
+      margin: 0,
+      fontSize: '14px',
+      color: '#6b7280',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }}>
+      {conv.lastMessage 
+        ? (typeof conv.lastMessage === 'string' 
+            ? conv.lastMessage 
+            : conv.lastMessage.text || 'No messages yet')
+        : 'No messages yet'}
+    </p>
+  </div>
 
-                            {conversationUnread > 0 && (
-                              <span style={{
-                                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                                color: 'white',
-                                borderRadius: '50%',
-                                width: '28px',
-                                height: '28px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '0.8125rem',
-                                fontWeight: '900',
-                                border: '2px solid white',
-                                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)',
-                                flexShrink: 0
-                              }}>
-                                {conversationUnread > 99 ? '99+' : conversationUnread}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                  </div>
+  {/* Unread Badge */}
+  {conversationUnread > 0 && (
+    <span style={{
+      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      color: 'white',
+      borderRadius: '50%',
+      width: '24px',
+      height: '24px',
+      minWidth: '24px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '12px',
+      fontWeight: '800',
+      flexShrink: 0
+    }}>
+      {conversationUnread > 99 ? '99+' : conversationUnread}
+    </span>
+  )}
+</button>
+      );
+    })}
+</div>
                 )}
               </div>
             )}
@@ -3256,348 +3300,396 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
             )}
 
             {/* Selected Conversation */}
-            {selectedConversation && (
+{selectedConversation && (
+  <div style={{
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+    borderRadius: '20px',
+    border: '2px solid #e9d5ff',
+    overflow: 'hidden',
+    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.1)',
+    height: '100%'
+  }}>
+    {/* Conversation Header */}
+    <div style={{
+      padding: 'clamp(0.75rem, 2.5vw, 1rem)',
+      borderBottom: '2px solid #e9d5ff',
+      background: 'white',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 'clamp(0.5rem, 2vw, 0.75rem)',
+      width: '100%',
+      boxSizing: 'border-box',
+      position: 'relative',
+      flexShrink: 0
+    }}>
+      <button
+        onClick={() => setSelectedConversation(null)}
+        style={{
+          background: 'rgba(168, 85, 247, 0.15)',
+          border: 'none',
+          borderRadius: '10px',
+          padding: '0.5rem',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          flexShrink: 0
+        }}
+      >
+        <ArrowLeft size={18} style={{ color: '#a855f7' }} />
+      </button>
+
+      <div style={{
+        width: '32px',
+        height: '32px',
+        minWidth: '32px',
+        borderRadius: '50%',
+        background: selectedConversation.isGroup
+          ? 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)'
+          : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontWeight: '900',
+        fontSize: '0.875rem',
+        flexShrink: 0
+      }}>
+        {selectedConversation.isGroup ? (
+          <Users size={16} />
+        ) : (
+          selectedConversation.participantEmails?.find(e => e !== user.email)?.[0]?.toUpperCase() || '?'
+        )}
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+        <h3 style={{
+          margin: 0,
+          fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
+          fontWeight: '800',
+          color: '#1f2937',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis'
+        }}>
+          {selectedConversation.isGroup
+            ? selectedConversation.name
+            : selectedConversation.participantEmails?.find(e => e !== user.email)?.split('@')[0] || 'Unknown'
+          }
+        </h3>
+        {Object.keys(typingUsers).length > 0 && (
+          <p style={{
+            margin: 0,
+            fontSize: 'clamp(0.65rem, 1.8vw, 0.75rem)',
+            color: '#a855f7',
+            fontWeight: '600'
+          }}>
+            {Object.values(typingUsers)[0]} is typing...
+          </p>
+        )}
+      </div>
+
+      {/* More button with dropdown for DMs */}
+      {!selectedConversation.isGroup && (
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <button
+            onClick={() => setShowMoreMenu(!showMoreMenu)}
+            style={{
+              background: showMoreMenu ? 'rgba(239, 68, 68, 0.2)' : 'rgba(239, 68, 68, 0.1)',
+              border: '2px solid',
+              borderColor: showMoreMenu ? 'rgba(239, 68, 68, 0.4)' : 'rgba(239, 68, 68, 0.3)',
+              borderRadius: '10px',
+              padding: '0.5rem 0.75rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'all 0.2s'
+            }}
+            title="More options"
+          >
+            <span style={{ 
+              fontSize: '18px', 
+              fontWeight: '900', 
+              color: '#ef4444', 
+              lineHeight: 1 
+            }}>⋮</span>
+          </button>
+
+          {/* Dropdown Menu */}
+          {showMoreMenu && (
+            <>
+              <div 
+                onClick={() => setShowMoreMenu(false)}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 99
+                }}
+              />
+              
               <div style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
-                borderRadius: '20px',
-                border: '2px solid #e9d5ff',
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '0.5rem',
+                background: 'white',
+                borderRadius: '14px',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+                border: '2px solid #e5e7eb',
                 overflow: 'hidden',
-                boxShadow: '0 4px 12px rgba(168, 85, 247, 0.1)'
+                zIndex: 100,
+                minWidth: '160px'
               }}>
-                {/* Conversation Header */}
-                <div style={{
-                  padding: '1.5rem',
-                  borderBottom: '2px solid #e9d5ff',
-                  background: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem'
-                }}>
-                  <button
-                    onClick={() => setSelectedConversation(null)}
-                    style={{
-                      background: 'rgba(168, 85, 247, 0.15)',
-                      border: '2px solid rgba(168, 85, 247, 0.3)',
-                      borderRadius: '14px',
-                      padding: '0.75rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = 'rgba(168, 85, 247, 0.25)';
-                      e.target.style.transform = 'scale(1.05)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = 'rgba(168, 85, 247, 0.15)';
-                      e.target.style.transform = 'scale(1)';
-                    }}
-                  >
-                    <ArrowLeft size={20} style={{ color: '#a855f7' }} />
-                  </button>
-
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '50%',
-                    background: selectedConversation.isGroup
-                      ? 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)'
-                      : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                <button
+                  onClick={() => {
+                    const otherUserId = selectedConversation.participants?.find(p => p !== user.uid);
+                    const otherUserEmail = selectedConversation.participantEmails?.find(e => e !== user.email);
+                    handleReportContent('user', otherUserId, { userId: otherUserId, userEmail: otherUserEmail });
+                    setShowMoreMenu(false);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.875rem 1rem',
+                    background: 'white',
+                    border: 'none',
+                    borderBottom: '1px solid #f3f4f6',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontWeight: '900',
-                    fontSize: '1.25rem',
-                    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
-                  }}>
-                    {selectedConversation.isGroup ? (
-                      <Users size={24} />
-                    ) : (
-                      selectedConversation.participantEmails?.find(e => e !== user.email)?.[0]?.toUpperCase() || '?'
-                    )}
-                  </div>
+                    gap: '0.75rem',
+                    transition: 'all 0.2s',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#fffbeb'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                >
+                  <Flag size={18} style={{ color: '#d97706' }} />
+                  <span style={{ fontWeight: '700', fontSize: '0.9375rem', color: '#92400e' }}>
+                    Report User
+                  </span>
+                </button>
 
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{
-                      margin: '0 0 0.125rem',
-                      fontSize: '1.25rem',
-                      fontWeight: '900',
-                      color: '#1f2937'
-                    }}>
-                      {selectedConversation.isGroup
-                        ? selectedConversation.name
-                        : selectedConversation.participantEmails?.find(e => e !== user.email) || 'Unknown'
-                      }
-                    </h3>
-                    {Object.keys(typingUsers).length > 0 && (
-                      <p style={{
-                        margin: 0,
-                        fontSize: '0.875rem',
-                        color: '#a855f7',
-                        fontWeight: '600'
-                      }}>
-                        {Object.values(typingUsers)[0]} is typing...
-                      </p>
-                    )}
-                  </div>
-
-                  {/* 🛡️ UGC SAFETY: Report/Block in conversation header (DMs only) */}
-                  {!selectedConversation.isGroup && (
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      {(() => {
-                        const otherUserId = selectedConversation.participants?.find(p => p !== user.uid);
-                        const otherUserEmail = selectedConversation.participantEmails?.find(e => e !== user.email);
-                        
-                        return (
-                          <>
-                            <button
-                              onClick={() => handleReportContent('user', otherUserId, { userId: otherUserId, userEmail: otherUserEmail })}
-                              style={{
-                                background: 'rgba(251, 191, 36, 0.15)',
-                                border: '2px solid rgba(251, 191, 36, 0.3)',
-                                borderRadius: '12px',
-                                padding: '0.625rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                transition: 'all 0.2s'
-                              }}
-                              title="Report user"
-                            >
-                              <Flag size={18} style={{ color: '#d97706' }} />
-                            </button>
-                            <button
-                              onClick={() => handleBlockUser(otherUserId, otherUserEmail)}
-                              style={{
-                                background: 'rgba(239, 68, 68, 0.1)',
-                                border: '2px solid rgba(239, 68, 68, 0.3)',
-                                borderRadius: '12px',
-                                padding: '0.625rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                transition: 'all 0.2s'
-                              }}
-                              title="Block user"
-                            >
-                              <ShieldOff size={18} style={{ color: '#ef4444' }} />
-                            </button>
-                          </>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </div>
-
-                {/* Auto-delete warning banner */}
-                {messages.length > 0 && (
-                  <div style={{
-                    background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%)',
-                    padding: '0.875rem 1.5rem',
-                    borderBottom: '2px solid rgba(251, 191, 36, 0.2)',
+                <button
+                  onClick={() => {
+                    const otherUserId = selectedConversation.participants?.find(p => p !== user.uid);
+                    const otherUserEmail = selectedConversation.participantEmails?.find(e => e !== user.email);
+                    handleBlockUser(otherUserId, otherUserEmail);
+                    setShowMoreMenu(false);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '0.875rem 1rem',
+                    background: 'white',
+                    border: 'none',
+                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.875rem',
-                    fontSize: '0.875rem',
-                    color: '#92400e',
-                    fontWeight: '700',
-                    backdropFilter: 'blur(10px)'
-                  }}>
-                    <div style={{
-                      background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                      borderRadius: '50%',
-                      width: '36px',
-                      height: '36px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.25rem',
-                      flexShrink: 0,
-                      boxShadow: '0 2px 8px rgba(251, 191, 36, 0.3)'
-                    }}>
-                      🗑️
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontWeight: '800' }}>Chats auto-delete after 3 days</span>
-                    </div>
-                  </div>
-                )}
+                    gap: '0.75rem',
+                    transition: 'all 0.2s',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                >
+                  <ShieldOff size={18} style={{ color: '#ef4444' }} />
+                  <span style={{ fontWeight: '700', fontSize: '0.9375rem', color: '#dc2626' }}>
+                    Block User
+                  </span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
 
-                {/* Messages area */}
-                <div style={{
-                  flex: 1,
-                  overflowY: 'auto',
-                  padding: '1.5rem',
-                  background: 'linear-gradient(135deg, #ffffff 0%, #fefbff 100%)'
-                }}>
-                  {displayMessages.map((msg, idx) => {
-                    const isOwnMessage = msg.userId === user.uid || msg.userEmail === user.email;
-                    const showAvatar = selectedConversation.isGroup && !isOwnMessage;
-                    
-                    return (
-                      <div
-                        key={msg.id || idx}
-                        style={{
-                          display: 'flex',
-                          justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
-                          gap: '0.75rem',
-                          marginBottom: '1rem',
-                          opacity: msg.isOptimistic ? 0.7 : 1
-                        }}
-                      >
-                        {showAvatar && (
-                          <div style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontWeight: '900',
-                            fontSize: '0.875rem',
-                            flexShrink: 0,
-                            alignSelf: 'flex-end'
-                          }}>
-                            {getUserAvatar(msg.userId, msg.userEmail)}
-                          </div>
-                        )}
-                        
-                        <div style={{
-                          maxWidth: '70%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: isOwnMessage ? 'flex-end' : 'flex-start'
-                        }}>
-                          {showAvatar && (
-                            <p style={{
-                              margin: '0 0 0.25rem 0',
-                              fontSize: '0.75rem',
-                              fontWeight: '700',
-                              color: '#6b7280'
-                            }}>
-                              {getUserDisplayName(msg.userId)}
-                            </p>
-                          )}
-                          
-                          <div style={{
-                            padding: '1rem 1.25rem',
-                            borderRadius: isOwnMessage
-                              ? '22px 22px 4px 22px'
-                              : '22px 22px 22px 4px',
-                            background: isOwnMessage
-                              ? 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)'
-                              : 'white',
-                            color: isOwnMessage ? 'white' : '#1f2937',
-                            border: isOwnMessage ? 'none' : '2px solid #e9d5ff',
-                            boxShadow: isOwnMessage
-                              ? '0 4px 12px rgba(168, 85, 247, 0.3)'
-                              : '0 2px 8px rgba(0,0,0,0.05)',
-                            wordBreak: 'break-word'
-                          }}>
-                            <p style={{
-                              margin: 0,
-                              fontSize: '1rem',
-                              lineHeight: '1.5',
-                              fontWeight: '500'
-                            }}>
-                              {msg.text}
-                            </p>
-                          </div>
-                          
-                          <p style={{
-                            margin: '0.25rem 0 0 0',
-                            fontSize: '0.75rem',
-                            color: '#9ca3af'
-                          }}>
-                            {msg.createdAt?.toDate ? 
-                              msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
-                              new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                            }
-                            {msg.isOptimistic && ' (sending...)'}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div ref={messagesEndRef} />
-                </div>
+    {/* Auto-delete warning banner */}
+    {messages.length > 0 && (
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%)',
+        padding: '0.75rem 1rem',
+        borderBottom: '2px solid rgba(251, 191, 36, 0.2)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.75rem',
+        fontSize: '0.8rem',
+        color: '#92400e',
+        fontWeight: '700',
+        flexShrink: 0
+      }}>
+        <span>🗑️</span>
+        <span>Chats auto-delete after 3 days</span>
+      </div>
+    )}
 
-                {/* Message input */}
-                <div style={{
-                  padding: '1rem',
-                  borderTop: '2px solid #e9d5ff',
-                  background: 'white',
-                  borderRadius: '0 0 20px 20px'
-                }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') handleSendMessage();
-                      }}
-                      onFocus={(e) => {
-                        handleTyping(true);
-                        e.target.style.borderColor = '#a855f7';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(168, 85, 247, 0.1)';
-                      }}
-                      onBlur={(e) => {
-                        handleTyping(false);
-                        e.target.style.borderColor = '#e9d5ff';
-                        e.target.style.boxShadow = 'none';
-                      }}
-                      placeholder="Type a message..."
-                      style={{
-                        flex: 1,
-                        minWidth: 0,
-                        padding: '0.875rem 1rem',
-                        borderRadius: '16px',
-                        border: '2px solid #e9d5ff',
-                        fontSize: '1rem',
-                        outline: 'none',
-                        transition: 'all 0.2s'
-                      }}
-                    />
-                    <button
-                      onClick={handleSendMessage}
-                      disabled={!messageInput.trim()}
-                      style={{
-                        padding: '0.875rem',
-                        borderRadius: '16px',
-                        border: 'none',
-                        background: messageInput.trim()
-                          ? 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)'
-                          : '#d1d5db',
-                        color: 'white',
-                        fontWeight: '800',
-                        fontSize: '1rem',
-                        cursor: messageInput.trim() ? 'pointer' : 'not-allowed',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        width: '48px',
-                        height: '48px',
-                        transition: 'all 0.2s',
-                        boxShadow: messageInput.trim()
-                          ? '0 4px 12px rgba(168, 85, 247, 0.3)'
-                          : 'none'
-                      }}
-                    >
-                      <Send size={20} />
-                    </button>
-                  </div>
-                </div>
+    {/* Messages area */}
+    <div style={{
+      flex: 1,
+      overflowY: 'auto',
+      padding: '1rem',
+      background: 'linear-gradient(135deg, #ffffff 0%, #fefbff 100%)',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      {displayMessages.map((msg, idx) => {
+        const isOwnMessage = msg.userId === user.uid || msg.userEmail === user.email;
+        const showAvatar = selectedConversation.isGroup && !isOwnMessage;
+        
+        return (
+          <div
+            key={msg.id || idx}
+            style={{
+              display: 'flex',
+              justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
+              gap: '0.5rem',
+              marginBottom: '0.75rem',
+              opacity: msg.isOptimistic ? 0.7 : 1
+            }}
+          >
+            {showAvatar && (
+              <div style={{
+                width: '28px',
+                height: '28px',
+                minWidth: '28px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: '900',
+                fontSize: '0.75rem',
+                flexShrink: 0,
+                alignSelf: 'flex-end'
+              }}>
+                {getUserAvatar(msg.userId, msg.userEmail)}
               </div>
             )}
+            
+            <div style={{
+              maxWidth: '75%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: isOwnMessage ? 'flex-end' : 'flex-start'
+            }}>
+              {showAvatar && (
+                <p style={{
+                  margin: '0 0 0.25rem 0',
+                  fontSize: '0.7rem',
+                  fontWeight: '700',
+                  color: '#6b7280'
+                }}>
+                  {getUserDisplayName(msg.userId)}
+                </p>
+              )}
+              
+              <div style={{
+                padding: '0.75rem 1rem',
+                borderRadius: isOwnMessage
+                  ? '18px 18px 4px 18px'
+                  : '18px 18px 18px 4px',
+                background: isOwnMessage
+                  ? 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)'
+                  : 'white',
+                color: isOwnMessage ? 'white' : '#1f2937',
+                border: isOwnMessage ? 'none' : '2px solid #e9d5ff',
+                boxShadow: isOwnMessage
+                  ? '0 4px 12px rgba(168, 85, 247, 0.3)'
+                  : '0 2px 8px rgba(0,0,0,0.05)',
+                wordBreak: 'break-word'
+              }}>
+                <p style={{
+                  margin: 0,
+                  fontSize: '0.9375rem',
+                  lineHeight: '1.5',
+                  fontWeight: '500'
+                }}>
+                  {msg.text}
+                </p>
+              </div>
+              
+              <p style={{
+                margin: '0.25rem 0 0 0',
+                fontSize: '0.7rem',
+                color: '#9ca3af'
+              }}>
+                {msg.createdAt?.toDate ? 
+                  msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+                  new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                }
+                {msg.isOptimistic && ' (sending...)'}
+              </p>
+            </div>
+          </div>
+        );
+      })}
+      <div ref={messagesEndRef} />
+    </div>
+
+    {/* Message input */}
+    <div style={{
+      padding: '0.75rem 1rem',
+      borderTop: '2px solid #e9d5ff',
+      background: 'white',
+      flexShrink: 0
+    }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: '0.5rem', 
+        alignItems: 'center'
+      }}>
+        <input
+          type="text"
+          value={messageInput}
+          onChange={(e) => setMessageInput(e.target.value)}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') handleSendMessage();
+          }}
+          onFocus={() => handleTyping(true)}
+          onBlur={() => handleTyping(false)}
+          placeholder="Type a message..."
+          style={{
+            flex: 1,
+            padding: '0.75rem 1rem',
+            
+            border: '2px solid #e9d5ff',
+            fontSize: '1rem',
+            outline: 'none'
+          }}
+        />
+        <button
+          onClick={handleSendMessage}
+          disabled={!messageInput.trim()}
+          style={{
+            padding: '0.75rem',
+            borderRadius: '16px',
+            border: 'none',
+            background: messageInput.trim()
+              ? 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)'
+              : '#d1d5db',
+            color: 'white',
+            cursor: messageInput.trim() ? 'pointer' : 'not-allowed',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '48px',
+            height: '48px',
+            flexShrink: 0
+          }}
+        >
+          <Send size={20} />
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+              
+            
           </div>
         )}
       </div>
@@ -3621,8 +3713,9 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
           <div style={{
             background: 'white',
             borderRadius: '24px',
-            padding: '2rem',
-            maxWidth: '450px',
+            padding: 'clamp(1.25rem, 4vw, 2rem)',
+maxWidth: 'min(450px, calc(100vw - 2rem))',
+boxSizing: 'border-box',
             width: '100%',
             maxHeight: '90vh',
             overflow: 'auto',
@@ -3721,7 +3814,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                       {reason.label}
                     </span>
                     <span style={{
-                      fontSize: '0.875rem',
+                      fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)',
                       color: '#6b7280'
                     }}>
                       {reason.desc}
@@ -3753,8 +3846,9 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
           <div style={{
             background: 'white',
             borderRadius: '24px',
-            padding: '2rem',
-            maxWidth: '450px',
+            maxWidth: 'min(450px, calc(100vw - 2rem))',
+width: '100%',
+boxSizing: 'border-box',
             width: '100%',
             maxHeight: '80vh',
             overflow: 'auto',
@@ -3854,7 +3948,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                         </p>
                         <p style={{
                           margin: '0.125rem 0 0',
-                          fontSize: '0.8125rem',
+                          fontSize: 'clamp(0.6rem, 1.8vw, 0.75rem)',
                           color: '#6b7280',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -3874,7 +3968,7 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
                         background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                         color: 'white',
                         fontWeight: '800',
-                        fontSize: '0.875rem',
+                        fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)',
                         cursor: 'pointer',
                         flexShrink: 0,
                         transition: 'all 0.2s',
@@ -3908,19 +4002,35 @@ export default function Social({ user, onBack, feedNotificationCount = 0 }) {
       )}
 
       <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
         
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.5;
-          }
-        }
-      `}</style>
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  body, html {
+    overflow-x: hidden;
+    max-width: 100vw;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 25%, #fcd34d 50%, #fbbf24 75%, #f59e0b 100%);
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  
+  html {
+    height: -webkit-fill-available;
+  }
+  
+  button {
+    max-width: 100%;
+  }
+`}</style>
     </div>
   );
 }
@@ -3964,8 +4074,9 @@ function CreateGroupChatModal({ friends, onClose, onCreate }) {
         background: 'white',
         borderRadius: '24px',
         padding: '2rem',
-        maxWidth: '500px',
-        width: '90%',
+        maxWidth: 'min(500px, calc(100vw - 2rem))',
+width: '100%',
+boxSizing: 'border-box',
         maxHeight: '80vh',
         overflow: 'auto',
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
@@ -4019,7 +4130,7 @@ function CreateGroupChatModal({ friends, onClose, onCreate }) {
           style={{
             width: '100%',
             padding: '1rem 1.25rem',
-            borderRadius: '14px',
+            borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
             border: '2px solid #e9d5ff',
             fontSize: '1rem',
             marginBottom: '1.5rem',
@@ -4063,7 +4174,7 @@ function CreateGroupChatModal({ friends, onClose, onCreate }) {
                 alignItems: 'center',
                 gap: '1rem',
                 padding: '1rem',
-                borderRadius: '14px',
+                borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
                 border: selectedFriends.some(f => f.id === friend.id)
                   ? '2px solid #a855f7'
                   : '2px solid #e5e7eb',
@@ -4115,7 +4226,7 @@ function CreateGroupChatModal({ friends, onClose, onCreate }) {
           style={{
             width: '100%',
             padding: '1.125rem',
-            borderRadius: '14px',
+            borderRadius: 'clamp(0.625rem, 2.5vw, 0.875rem)',
             border: 'none',
             background: groupName.trim() && selectedFriends.length > 0
               ? 'linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%)'
