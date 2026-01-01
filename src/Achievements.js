@@ -204,11 +204,15 @@ const AchievementsDisplay = ({ userStats, onClose }) => {
 
   return (
     <div style={{ 
-      minHeight: '100vh', 
+      minHeight: '100vh',
+      minHeight: '100dvh',
       background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
+      backgroundColor: '#475569',
       paddingTop: 'env(safe-area-inset-top)',
+      paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))',
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      boxSizing: 'border-box'
     }}>
       <div style={{ padding: '2rem' }}>
         {/* Animated stars background */}
@@ -423,6 +427,18 @@ const AchievementsDisplay = ({ userStats, onClose }) => {
         @keyframes twinkle {
           0%, 100% { opacity: 0.3; transform: scale(1); }
           50% { opacity: 1; transform: scale(1.5); }
+        }
+        body, html {
+          background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+          background-color: #475569;
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
+        #root {
+          background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+          background-color: #475569;
+          min-height: 100vh;
+          min-height: 100dvh;
         }
       `}</style>
     </div>

@@ -1134,11 +1134,12 @@ useEffect(() => {
   background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 25%, #fcd34d 50%, #fbbf24 75%, #f59e0b 100%)',
   padding: 'clamp(1rem, 4vw, 2rem)',
   paddingTop: 'calc(clamp(1rem, 4vw, 2rem) + env(safe-area-inset-top))',
-  paddingBottom: 'env(safe-area-inset-bottom)',
+  paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))',
   boxSizing: 'border-box',
   width: '100%',
   overflowX: 'hidden',
-  position: 'relative'
+  position: 'relative',
+  minHeight: '100%'
 }}>
       
       {/* ✅ OFFLINE INDICATOR */}
@@ -3178,10 +3179,11 @@ useEffect(() => {
                   <div style={{
   display: 'flex',
   flexDirection: 'column',
-  gap: '20px',
+  gap: '16px',
   overflowY: 'auto',
-  maxHeight: 'calc(100vh - 300px)',
+  maxHeight: 'calc(100vh - 350px)',
   padding: '12px',
+  paddingBottom: '100px',
   WebkitOverflowScrolling: 'touch'
 }}>
   {conversations
@@ -3196,7 +3198,9 @@ useEffect(() => {
     background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
     border: '2px solid #e9d5ff',
     borderRadius: '16px',
-    padding: '16px',
+    padding: '24px 20px',
+    minHeight: '85px',
+    flexShrink: 0,
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -4018,6 +4022,13 @@ boxSizing: 'border-box',
   body, html {
     overflow-x: hidden;
     max-width: 100vw;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 25%, #fcd34d 50%, #fbbf24 75%, #f59e0b 100%);
+    min-height: 100vh;
+    min-height: 100dvh;
+    background-color: #fbbf24;
+  }
+  
+  #root {
     background: linear-gradient(135deg, #fef3c7 0%, #fde68a 25%, #fcd34d 50%, #fbbf24 75%, #f59e0b 100%);
     min-height: 100vh;
     min-height: 100dvh;

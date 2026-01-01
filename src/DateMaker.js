@@ -2846,7 +2846,21 @@ if (category === 'nightlife') {
  if (showProfile) {
   return (
     <>
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', padding: '2rem', paddingTop: 'calc(2rem + env(safe-area-inset-top))', direction: isRTL ? 'rtl' : 'ltr' }}>
+      <style>{`
+        body, html {
+          background: linear-gradient(to bottom right, #fce7f3, #f3e8ff);
+          background-color: #f3e8ff;
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
+        #root {
+          background: linear-gradient(to bottom right, #fce7f3, #f3e8ff);
+          background-color: #f3e8ff;
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
+      `}</style>
+      <div style={{ minHeight: '100vh', minHeight: '100dvh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', backgroundColor: '#f3e8ff', padding: '2rem', paddingTop: 'calc(2rem + env(safe-area-inset-top))', paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))', direction: isRTL ? 'rtl' : 'ltr', boxSizing: 'border-box' }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
             <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ec4899' }}>{t('myProfile')}</h1>
@@ -3223,7 +3237,22 @@ if (category === 'nightlife') {
   
  if (showSavedDates) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', padding: '2rem', paddingTop: 'calc(2rem + env(safe-area-inset-top))', direction: isRTL ? 'rtl' : 'ltr' }}>
+      <>
+      <style>{`
+        body, html {
+          background: linear-gradient(to bottom right, #fce7f3, #f3e8ff);
+          background-color: #f3e8ff;
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
+        #root {
+          background: linear-gradient(to bottom right, #fce7f3, #f3e8ff);
+          background-color: #f3e8ff;
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
+      `}</style>
+      <div style={{ minHeight: '100vh', minHeight: '100dvh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', backgroundColor: '#f3e8ff', padding: '2rem', paddingTop: 'calc(2rem + env(safe-area-inset-top))', paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))', direction: isRTL ? 'rtl' : 'ltr', boxSizing: 'border-box' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -3326,8 +3355,9 @@ if (category === 'nightlife') {
               })}
             </div>
           )}
-        </div>
+     </div>
       </div>
+      </>
     );
   }
 if (showResults && itinerary) {

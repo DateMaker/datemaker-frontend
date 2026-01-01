@@ -77,12 +77,16 @@ const StatsDisplay = ({ gameStats, onClose }) => {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)', 
+   <div style={{ 
+      minHeight: '100vh',
+      minHeight: '100dvh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+      backgroundColor: '#f093fb',
       paddingTop: 'env(safe-area-inset-top)',
+      paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))',
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      boxSizing: 'border-box'
     }}>
       <div style={{ padding: '2rem' }}>
         {/* Animated background elements */}
@@ -268,6 +272,18 @@ const StatsDisplay = ({ gameStats, onClose }) => {
       </div>
 
       <style>{`
+        body, html {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+          background-color: #f093fb;
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
+        #root {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+          background-color: #f093fb;
+          min-height: 100vh;
+          min-height: 100dvh;
+        }
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-20px); }
