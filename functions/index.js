@@ -1,10 +1,265 @@
 const {onSchedule} = require("firebase-functions/v2/scheduler");
-const {onDocumentCreated} = require("firebase-functions/v2/firestore");
+const {onDocumentCreated, onDocumentUpdated} = require("firebase-functions/v2/firestore");
 const {onRequest} = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
 const db = admin.firestore();
+const messaging = admin.messaging();
+
+// ============================================
+// PUSH NOTIFICATION HELPER
+// ============================================
+/**
+ * Send push notification to a user
+ * @param {string} userId - The user ID to send notification to
+ * @param {object} notification - The notification title and body
+ * @param {object} data - Additional data to send with notification
+ * @return {Promise} - The messaging response
+ */
+async function sendPushNotification(userId, notification, data = {}) {
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+
+    if (!userDoc.exists) {
+      console.log("User not found:", userId);
+      return;
+    }
+
+    const userData = userDoc.data();
+    const tokens = userData.fcmTokens || [];
+
+    if (tokens.length === 0) {
+      console.log("No FCM tokens for user:", userId);
+      return;
+    }
+
+    const message = {
+      notification: {
+        title: notification.title,
+        body: notification.body,
+      },
+      data: {
+        ...data,
+        click_action: "FLUTTER_NOTIFICATION_CLICK",
+      },
+      apns: {
+        headers: {
+          "apns-priority": "10",
+        },
+        payload: {
+          aps: {
+            "badge": 1,
+            "sound": "default",
+            "content-available": 1,
+          },
+        },
+      },
+      tokens: tokens,
+    };
+
+    const response = await messaging.sendEachForMulticast(message);
+    console.log(`Sent ${response.successCount}/${tokens.length} notifications to ${userId}`);
+
+    // Remove invalid tokens
+    if (response.failureCount > 0) {
+      const tokensToRemove = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          const errorCode = resp.error?.code;
+          if (errorCode === "messaging/invalid-registration-token" ||
+              errorCode === "messaging/registration-token-not-registered") {
+            tokensToRemove.push(tokens[idx]);
+          }
+        }
+      });
+
+      if (tokensToRemove.length > 0) {
+        await db.collection("users").doc(userId).update({
+          fcmTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove),
+        });
+        console.log("Removed invalid tokens:", tokensToRemove.length);
+      }
+    }
+
+    return response;
+  } catch (error) {
+    console.error("Error sending notification:", error);
+  }
+}
+
+// ============================================
+// NEW MESSAGE PUSH NOTIFICATION
+// ============================================
+exports.sendMessageNotification = onDocumentCreated(
+    "messages/{messageId}",
+    async (event) => {
+      try {
+        const message = event.data.data();
+        const senderId = message.userId;
+        const conversationId = message.conversationId;
+
+        if (!conversationId) return null;
+
+        const convDoc = await db.collection("conversations").doc(conversationId).get();
+        if (!convDoc.exists) return null;
+
+        const conversation = convDoc.data();
+        const participants = conversation.participants || [];
+
+        // Get sender info
+        const senderDoc = await db.collection("users").doc(senderId).get();
+        const senderData = senderDoc.data() || {};
+        const senderName = senderData.name || senderData.email?.split("@")[0] || "Someone";
+
+        // Send to all participants except sender
+        for (const participantId of participants) {
+          if (participantId === senderId) continue;
+
+          // Check if blocked
+          const blockedQuery = await db.collection("blockedUsers")
+              .where("blockedBy", "==", participantId)
+              .where("blockedUserId", "==", senderId)
+              .get();
+
+          if (!blockedQuery.empty) continue;
+
+          const title = conversation.isGroup ? conversation.name : senderName;
+          const body = conversation.isGroup ?
+            `${senderName}: ${message.text}` :
+            message.text;
+
+          await sendPushNotification(participantId, {
+            title: title,
+            body: body.length > 100 ? body.substring(0, 100) + "..." : body,
+          }, {
+            type: "message",
+            conversationId: conversationId,
+            senderId: senderId,
+          });
+        }
+
+        console.log("Message notifications sent");
+        return null;
+      } catch (error) {
+        console.error("Error in sendMessageNotification:", error);
+        return null;
+      }
+    },
+);
+
+// ============================================
+// FRIEND REQUEST NOTIFICATION
+// ============================================
+exports.sendFriendRequestNotification = onDocumentCreated(
+    "friendRequests/{requestId}",
+    async (event) => {
+      try {
+        const request = event.data.data();
+
+        if (request.status !== "pending") return null;
+
+        const senderName = request.fromUserEmail?.split("@")[0] || "Someone";
+
+        await sendPushNotification(request.toUserId, {
+          title: "New Friend Request 💜",
+          body: `${senderName} wants to be your friend!`,
+        }, {
+          type: "friend_request",
+          requestId: event.params.requestId,
+          fromUserId: request.fromUserId,
+        });
+
+        console.log("Friend request notification sent");
+        return null;
+      } catch (error) {
+        console.error("Error in sendFriendRequestNotification:", error);
+        return null;
+      }
+    },
+);
+
+// ============================================
+// FRIEND ACCEPTED NOTIFICATION
+// ============================================
+exports.sendFriendAcceptedNotification = onDocumentUpdated(
+    "friendRequests/{requestId}",
+    async (event) => {
+      try {
+        const before = event.data.before.data();
+        const after = event.data.after.data();
+
+        if (before.status === "pending" && after.status === "accepted") {
+          const accepterName = after.toUserEmail?.split("@")[0] || "Someone";
+
+          await sendPushNotification(after.fromUserId, {
+            title: "Friend Request Accepted! 🎉",
+            body: `${accepterName} accepted your friend request!`,
+          }, {
+            type: "friend_accepted",
+            friendId: after.toUserId,
+          });
+
+          console.log("Friend accepted notification sent");
+        }
+
+        return null;
+      } catch (error) {
+        console.error("Error in sendFriendAcceptedNotification:", error);
+        return null;
+      }
+    },
+);
+
+// ============================================
+// DATE LIKED NOTIFICATION
+// ============================================
+exports.sendDateLikedNotification = onDocumentUpdated(
+    "sharedDates/{dateId}",
+    async (event) => {
+      try {
+        const before = event.data.before.data();
+        const after = event.data.after.data();
+
+        const beforeLikes = before.likes || [];
+        const afterLikes = after.likes || [];
+
+        const newLikers = afterLikes.filter((uid) => !beforeLikes.includes(uid));
+        if (newLikers.length === 0) return null;
+
+        const ownerId = after.userId;
+        const actualNewLikers = newLikers.filter((uid) => uid !== ownerId);
+        if (actualNewLikers.length === 0) return null;
+
+        for (const likerId of actualNewLikers) {
+          const likerDoc = await db.collection("users").doc(likerId).get();
+          const likerData = likerDoc.data() || {};
+          const likerName = likerData.name || likerData.email?.split("@")[0] || "Someone";
+
+          const dateTitle = after.dateData?.title || after.name || "your date";
+
+          await sendPushNotification(ownerId, {
+            title: "Someone liked your date! ❤️",
+            body: `${likerName} liked "${dateTitle}"`,
+          }, {
+            type: "date_liked",
+            dateId: event.params.dateId,
+            likerId: likerId,
+          });
+        }
+
+        console.log("Date liked notifications sent");
+        return null;
+      } catch (error) {
+        console.error("Error in sendDateLikedNotification:", error);
+        return null;
+      }
+    },
+);
+
+// ============================================
+// YOUR EXISTING FUNCTIONS BELOW
+// ============================================
 
 // Delete old messages (runs daily)
 exports.deleteOldMessages = onSchedule("every 24 hours", async (event) => {
@@ -78,7 +333,7 @@ exports.cleanupTypingIndicators = onSchedule("every 1 hours", async (event) => {
   }
 });
 
-// Update conversation on new message
+// Update conversation on new message (KEEP THIS - it updates unread counts)
 exports.updateConversationOnNewMessage = onDocumentCreated(
     "messages/{messageId}",
     async (event) => {

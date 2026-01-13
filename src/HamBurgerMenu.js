@@ -9,21 +9,38 @@ export default function HamburgerMenu({
   surpriseCount = 0,
   onNavigate,
   onLogout,
-  isGuestMode = false // ✅ NEW: Guest mode flag
+  isGuestMode = false,
+  bgTheme = null,
+  profilePhoto = null // 📸 Profile photo
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+  if (isOpen) {
+    // Lock scroll on iOS
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.top = `-${window.scrollY}px`;
+  } else {
+    // Restore scroll position
+    const scrollY = document.body.style.top;
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.top = '';
+    if (scrollY) {
+      window.scrollTo(0, parseInt(scrollY || '0') * -1);
     }
-    
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
+  }
+  
+  return () => {
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.top = '';
+  };
+}, [isOpen]);
 
   const menuItems = [
     { 
@@ -124,7 +141,11 @@ export default function HamburgerMenu({
     <>
       {/* Hamburger Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+  // Close any open dropdowns
+  document.dispatchEvent(new CustomEvent('closeDropdowns'));
+  setIsOpen(!isOpen);
+}}
         style={{
           background: 'rgba(255,255,255,0.2)',
           backdropFilter: 'blur(10px)',
@@ -201,7 +222,7 @@ export default function HamburgerMenu({
           maxWidth: '85vw',
           height: '100dvh',
           maxHeight: '-webkit-fill-available',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: bgTheme?.gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           boxShadow: '-4px 0 20px rgba(0,0,0,0.3)',
           zIndex: 1000,
           transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
@@ -260,24 +281,33 @@ export default function HamburgerMenu({
             marginBottom: '0.5rem'
           }}>
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              background: isGuestMode 
-                ? 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
-                : 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '1.5rem',
-              fontWeight: 'bold',
-              boxShadow: isGuestMode 
-                ? '0 4px 12px rgba(107, 114, 128, 0.4)'
-                : '0 4px 12px rgba(236, 72, 153, 0.4)'
-            }}>
-              {displayInitial}
-            </div>
+  width: '48px',
+  height: '48px',
+  borderRadius: '50%',
+  overflow: 'hidden',
+  background: isGuestMode 
+    ? 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
+    : 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: 'white',
+  fontSize: '1.5rem',
+  fontWeight: 'bold',
+  boxShadow: isGuestMode 
+    ? '0 4px 12px rgba(107, 114, 128, 0.4)'
+    : '0 4px 12px rgba(236, 72, 153, 0.4)'
+}}>
+  {profilePhoto ? (
+    <img 
+      src={profilePhoto} 
+      alt="Profile" 
+      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+    />
+  ) : (
+    displayInitial
+  )}
+</div>
             <div>
               <p style={{
                 color: 'white',
@@ -380,14 +410,15 @@ export default function HamburgerMenu({
                 {item.icon}
               </div>
               
-              <span style={{
-                color: 'white',
-                fontWeight: '700',
-                fontSize: '1rem',
-                flex: 1
-              }}>
-                {item.label}
-              </span>
+             <span style={{
+  color: 'white',
+  fontWeight: '700',
+  fontSize: '1rem',
+  flex: 1,
+  textShadow: '0 1px 3px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2)'
+}}>
+  {item.label}
+</span>
 
               {item.badge > 0 && (
                 <span style={{

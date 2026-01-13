@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { MapPin, Heart, Navigation, ExternalLink, Star, Sparkles, BookmarkPlus, BookmarkCheck, RefreshCw, User, Clock, ArrowRight, MessageCircle, Share2, CheckCircle, Gift } from 'lucide-react';
+import { MapPin, Heart, Navigation, ExternalLink, Star, Sparkles, BookmarkPlus, BookmarkCheck, RefreshCw, User, Clock, ArrowRight, MessageCircle, Share2, CheckCircle, Gift, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut, sendEmailVerification } from 'firebase/auth';
 import { collection, query, where, onSnapshot, getDocs, writeBatch, doc, getDoc, setDoc, serverTimestamp, orderBy, limit, updateDoc } from 'firebase/firestore';
@@ -37,13 +37,34 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import InviteFriendsModal from './InviteFriendsModal';
 import AppleSubscriptionModal from './AppleSubscriptionModal';
 import IAPManager from './IAPManager';
+import PushNotificationService from './PushNotificationService';
 export default function DateMaker() {
   const navigate = useNavigate(); 
-  
+
   // Language state and helper
   const [language, setLanguage] = useState('en');
   const t = (key) => getTranslation(language, key);
   const isRTL = translations[language]?.dir === 'rtl';
+  
+const [bgTheme] = useState(() => {
+  const themes = [
+    // Light Pink
+    { gradient: 'linear-gradient(-45deg, #fdf2f8, #fce7f3, #fbcfe8, #fdf2f8)', accent: '#ec4899' },
+    // Soft Lavender
+    { gradient: 'linear-gradient(-45deg, #faf5ff, #f3e8ff, #e9d5ff, #faf5ff)', accent: '#a855f7' },
+    // Warm Peach
+    { gradient: 'linear-gradient(-45deg, #fff7ed, #ffedd5, #fed7aa, #fff7ed)', accent: '#f97316' },
+    // Cool Mint
+    { gradient: 'linear-gradient(-45deg, #f0fdfa, #ccfbf1, #99f6e4, #f0fdfa)', accent: '#14b8a6' },
+    // Soft Blue
+    { gradient: 'linear-gradient(-45deg, #eff6ff, #dbeafe, #bfdbfe, #eff6ff)', accent: '#3b82f6' },
+    // Rose Gold
+    { gradient: 'linear-gradient(-45deg, #fff1f2, #ffe4e6, #fecdd3, #fff1f2)', accent: '#e11d48' },
+    // Light Lime
+    { gradient: 'linear-gradient(-45deg, #f7fee7, #ecfccb, #d9f99d, #f7fee7)', accent: '#84cc16' },
+  ];
+  return themes[Math.floor(Math.random() * themes.length)];
+});
   
   // Core states
   const [user, setUser] = useState(null);
@@ -89,6 +110,18 @@ const [initialLoading, setInitialLoading] = useState(true);
   const [startTime, setStartTime] = useState('6:00 PM');
   const [duration, setDuration] = useState('6');
   const [itineraryToShare, setItineraryToShare] = useState(null);
+
+// 🎮 ADVENTURE MODE STATE - Add with your other useState calls
+const [earnedXP, setEarnedXP] = useState(0);
+const [showConfetti, setShowConfetti] = useState(false);
+const [activeWildcard, setActiveWildcard] = useState(null);
+const [showConversation, setShowConversation] = useState(false);
+const [currentConversation, setCurrentConversation] = useState('');
+const [conversationCategory, setConversationCategory] = useState('deep');
+const [completedStages, setCompletedStages] = useState([]);
+const [comboCount, setComboCount] = useState(0);
+const [lastChallengeTime, setLastChallengeTime] = useState(null);
+const [expandedTips, setExpandedTips] = useState({});
 
   // Profile states
   const [showProfile, setShowProfile] = useState(false);
@@ -194,7 +227,11 @@ useEffect(() => {
   console.log('🔍 Banner should show:', subscriptionStatus === 'free');
   console.log('============================');
 }, [subscriptionStatus, user]);
-
+useEffect(() => {
+  if (user?.uid) {
+    PushNotificationService.initialize(user.uid);
+  }
+}, [user?.uid]);
 // Load saved language preference on mount
 useEffect(() => {
   const savedLanguage = localStorage.getItem('datemaker_language') || 'en';
@@ -3016,7 +3053,7 @@ if (category === 'nightlife') {
             alignItems: 'center',
             gap: '0.5rem'
           }}>
-            ℹ️ Account Settings
+             Premium Features!
           </p>
           <p style={{
             margin: 0,
@@ -3024,7 +3061,7 @@ if (category === 'nightlife') {
             color: '#059669',
             lineHeight: '1.6'
           }}>
-            Your account settings and billing are managed through your original signup platform. Log in with this email address to access your account dashboard.
+            Premium Feautures Include all of our functions from Itenerary planning, Socials, Surprise Dates, Date Memories and much more!
           </p>
         </div>
       </div>
@@ -3135,29 +3172,32 @@ if (category === 'nightlife') {
               </button>
             </div>
             {subscriptionStatus === 'premium' && (
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>{t('subscription')}</h3>
-                <div style={{ padding: '1.5rem', background: '#f0fdf4', borderRadius: '12px', border: '2px solid #86efac', marginBottom: '1rem' }}>
-                  <p style={{ fontSize: '0.875rem', color: '#166534', marginBottom: '0.5rem', fontWeight: '600' }}>✨ {t('premiumActive')}</p>
-                  <p style={{ fontSize: '0.875rem', color: '#15803d' }}>{t('premiumDesc')}</p>
-                </div>
-                <button onClick={async () => {
-                  if (window.confirm('Are you sure you want to cancel your premium subscription?')) {
-                    try {
-                      const userDocRef = doc(db, 'users', user.uid);
-                      await setDoc(userDocRef, { subscriptionStatus: 'free' }, { merge: true });
-                      setSubscriptionStatus('free');
-                      alert('Your subscription has been cancelled.');
-                    } catch (err) {
-                      console.error('Cancel subscription error:', err);
-                      setProfileError('Failed to cancel subscription.');
-                    }
-                  }
-                }} style={{ width: '100%', background: 'white', color: '#dc2626', padding: '0.875rem', borderRadius: '12px', border: '2px solid #fecaca', cursor: 'pointer', fontWeight: '600' }}>
-                  {t('cancelSubscription')}
-                </button>
-              </div>
-            )}
+  <div style={{ marginBottom: '2rem' }}>
+    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem', color: '#111827' }}>{t('subscription')}</h3>
+    <div style={{ padding: '1.5rem', background: '#f0fdf4', borderRadius: '12px', border: '2px solid #86efac', marginBottom: '1rem' }}>
+      <p style={{ fontSize: '0.875rem', color: '#166534', marginBottom: '0.5rem', fontWeight: '600' }}>✨ {t('premiumActive')}</p>
+      <p style={{ fontSize: '0.875rem', color: '#15803d' }}>{t('premiumDesc')}</p>
+    </div>
+    <div style={{
+      background: 'rgba(239, 68, 68, 0.08)',
+      border: '2px solid rgba(239, 68, 68, 0.2)',
+      borderRadius: '12px',
+      padding: '1.25rem',
+      textAlign: 'center'
+    }}>
+      <p style={{ 
+        color: '#6b7280', 
+        fontSize: '0.95rem', 
+        margin: 0,
+        lineHeight: '1.6'
+      }}>
+        To cancel your subscription, go to your device's{' '}
+        <strong style={{ color: '#374151' }}>Settings → Apple ID → Subscriptions</strong>{' '}
+        and manage it there.
+      </p>
+    </div>
+  </div>
+)}
            
 
 {/* DELETE ACCOUNT SECTION */}
@@ -3264,15 +3304,81 @@ if (category === 'nightlife') {
             </button>
           </div>
           {savedDates.length === 0 ? (
-            <div style={{ background: 'white', borderRadius: '24px', padding: '4rem 2rem', textAlign: 'center' }}>
-              <Heart size={64} style={{ color: '#ec4899', margin: '0 auto 1rem', opacity: 0.5 }} />
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{t('noSavedDates')}</h2>
-              <p style={{ color: '#6b7280', marginBottom: '2rem' }}>{t('noSavedDatesDesc')}</p>
-              <button onClick={() => setShowSavedDates(false)} style={{ background: 'linear-gradient(to right, #ec4899, #a855f7)', color: 'white', fontWeight: 'bold', padding: '0.75rem 2rem', borderRadius: '9999px', border: 'none', cursor: 'pointer' }}>
-                {t('findPerfectDate')}
-              </button>
-            </div>
-          ) : (
+  <div style={{ 
+    background: 'linear-gradient(135deg, #ffffff 0%, #fdf2f8 50%, #faf5ff 100%)', 
+    borderRadius: '32px', 
+    padding: '4rem 2rem', 
+    textAlign: 'center',
+    boxShadow: '0 20px 60px rgba(236, 72, 153, 0.15)',
+    border: '2px solid rgba(236, 72, 153, 0.1)',
+    position: 'relative',
+    overflow: 'hidden'
+  }}>
+    {/* Decorative elements */}
+    <div style={{
+      position: 'absolute',
+      top: '-20px',
+      right: '-20px',
+      fontSize: '6rem',
+      opacity: 0.1,
+      transform: 'rotate(15deg)'
+    }}>💕</div>
+    <div style={{
+      position: 'absolute',
+      bottom: '-10px',
+      left: '-10px',
+      fontSize: '4rem',
+      opacity: 0.1,
+      transform: 'rotate(-15deg)'
+    }}>✨</div>
+    
+    <div style={{
+      width: '120px',
+      height: '120px',
+      margin: '0 auto 1.5rem',
+      background: 'linear-gradient(135deg, #fce7f3 0%, #f3e8ff 100%)',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 10px 30px rgba(236, 72, 153, 0.2)'
+    }}>
+      <Heart size={56} style={{ color: '#ec4899' }} />
+    </div>
+    <h2 style={{ 
+      fontSize: '1.75rem', 
+      fontWeight: '800', 
+      marginBottom: '0.75rem',
+      background: 'linear-gradient(135deg, #ec4899, #a855f7)',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent'
+    }}>{t('noSavedDates')}</h2>
+    <p style={{ 
+      color: '#6b7280', 
+      marginBottom: '2rem',
+      fontSize: '1.1rem',
+      maxWidth: '300px',
+      margin: '0 auto 2rem'
+    }}>{t('noSavedDatesDesc')}</p>
+    <button 
+      onClick={() => setShowSavedDates(false)} 
+      style={{ 
+        background: 'linear-gradient(135deg, #ec4899, #a855f7)', 
+        color: 'white', 
+        fontWeight: '700', 
+        padding: '1rem 2.5rem', 
+        borderRadius: '9999px', 
+        border: 'none', 
+        cursor: 'pointer',
+        fontSize: '1.1rem',
+        boxShadow: '0 8px 30px rgba(236, 72, 153, 0.4)',
+        transition: 'all 0.3s ease'
+      }}
+    >
+      💕 {t('findPerfectDate')}
+    </button>
+  </div>
+) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
               {savedDates.map((savedItem) => {
                 if (savedItem.isItinerary) {
@@ -3361,1280 +3467,2504 @@ if (category === 'nightlife') {
     );
   }
 if (showResults && itinerary) {
-    return (
-      <>
-       <div ref={resultsTopRef} style={{ position: 'absolute', top: 0, left: 0, height: '1px', width: '1px' }} />
-       <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom right, #fce7f3, #f3e8ff)', padding: '1rem', paddingTop: 'calc(1rem + env(safe-area-inset-top))', direction: isRTL ? 'rtl' : 'ltr' }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Heart style={{ color: '#ec4899' }} size={32} fill="currentColor" />
-              <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ec4899' }}>{t('yourPerfectDate')}</h1>
-            </div>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <button onClick={() => handleGenerateDate(true)} disabled={searchLoading} style={{ background: searchLoading ? '#d1d5db' : 'linear-gradient(to right, #3b82f6, #2563eb)', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '9999px', border: 'none', cursor: searchLoading ? 'not-allowed' : 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <RefreshCw size={18} />
-                {searchLoading ? t('loading') : t('refresh')}
-              </button>
-              <button onClick={handleSaveItinerary} style={{ background: 'linear-gradient(to right, #10b981, #059669)', color: 'white', padding: '0.5rem 1.5rem', borderRadius: '9999px', border: 'none', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <BookmarkPlus size={18} />
-                {t('saveItinerary')}
-              </button>
-              <button onClick={() => setShowResults(false)} style={{ background: 'white', padding: '0.5rem 1.5rem', borderRadius: '9999px', border: 'none', cursor: 'pointer', fontWeight: '600' }}>
-                ← {t('back')}
-              </button>
-            </div>
-          </div>
-          <div style={{ background: 'white', borderRadius: '20px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.15)' }}>
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '2rem', fontWeight: 'bold', background: 'linear-gradient(to right, #ec4899, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '0.5rem' }}>
-                🎉 {t('dateNightItinerary')}
-              </h2>
-              <p style={{ color: '#6b7280', fontSize: '1rem' }}>
-                {itinerary.startTime} - {itinerary.endTime} • {itinerary.totalDuration}
-              </p>
-            </div>
-            <div style={{ position: 'relative' }}>
-              {itinerary.stops.map((stop, index) => (
-  <div key={index} style={{ marginBottom: '2rem' }}>
-    {/* Gradient Header Card */}
-    <div style={{ 
-      background: 'white', 
-      borderRadius: '20px', 
-      overflow: 'hidden',
-      boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-      border: '2px solid #f3f4f6'
-    }}>
-      {/* Gradient Header */}
-      <div style={{ 
-        background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
-        padding: '1.5rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        color: 'white'
-      }}>
-        <div style={{ fontSize: '2.5rem' }}>
-          {stop.icon}
+  
+  // =====================================================
+  // 🎯 HELPER FUNCTIONS - DATA EXTRACTION
+  // =====================================================
+
+  // Map Google types[] to our categories
+  const getVenueCategory = (types) => {
+    if (!types || !Array.isArray(types)) return 'other';
+    
+    const typeMap = {
+      'restaurant': 'food',
+      'food': 'food',
+      'meal_delivery': 'food',
+      'meal_takeaway': 'food',
+      'bakery': 'cafe',
+      'cafe': 'cafe',
+      'coffee_shop': 'cafe',
+      'bar': 'drinks',
+      'night_club': 'nightlife',
+      'casino': 'nightlife',
+      'movie_theater': 'entertainment',
+      'museum': 'entertainment',
+      'art_gallery': 'entertainment',
+      'amusement_park': 'entertainment',
+      'aquarium': 'entertainment',
+      'bowling_alley': 'activity',
+      'gym': 'activity',
+      'spa': 'activity',
+      'park': 'outdoor',
+      'tourist_attraction': 'outdoor',
+      'zoo': 'outdoor',
+      'shopping_mall': 'shopping',
+      'store': 'shopping'
+    };
+    
+    for (const type of types) {
+      if (typeMap[type]) return typeMap[type];
+    }
+    return 'other';
+  };
+
+  // Get cuisine type from Google types
+  const getCuisineType = (types, name) => {
+    if (!types) return null;
+    
+    const cuisineTypes = {
+      'italian_restaurant': 'Italian',
+      'chinese_restaurant': 'Chinese',
+      'japanese_restaurant': 'Japanese',
+      'mexican_restaurant': 'Mexican',
+      'indian_restaurant': 'Indian',
+      'thai_restaurant': 'Thai',
+      'french_restaurant': 'French',
+      'korean_restaurant': 'Korean',
+      'vietnamese_restaurant': 'Vietnamese',
+      'greek_restaurant': 'Greek',
+      'spanish_restaurant': 'Spanish',
+      'american_restaurant': 'American',
+      'seafood_restaurant': 'Seafood',
+      'steakhouse': 'Steakhouse',
+      'pizza_restaurant': 'Pizza',
+      'sushi_restaurant': 'Sushi',
+      'burger_restaurant': 'Burgers',
+      'vegetarian_restaurant': 'Vegetarian',
+      'vegan_restaurant': 'Vegan',
+      'brunch_restaurant': 'Brunch',
+      'breakfast_restaurant': 'Breakfast'
+    };
+    
+    for (const type of types) {
+      if (cuisineTypes[type]) return cuisineTypes[type];
+    }
+    
+    // Try to detect from name
+    const nameLower = (name || '').toLowerCase();
+    if (nameLower.includes('italian') || nameLower.includes('pizza') || nameLower.includes('pasta')) return 'Italian';
+    if (nameLower.includes('sushi') || nameLower.includes('japanese')) return 'Japanese';
+    if (nameLower.includes('mexican') || nameLower.includes('taco') || nameLower.includes('burrito')) return 'Mexican';
+    if (nameLower.includes('chinese') || nameLower.includes('dim sum')) return 'Chinese';
+    if (nameLower.includes('indian') || nameLower.includes('curry')) return 'Indian';
+    if (nameLower.includes('thai')) return 'Thai';
+    if (nameLower.includes('french') || nameLower.includes('bistro')) return 'French';
+    if (nameLower.includes('burger')) return 'Burgers';
+    if (nameLower.includes('steakhouse') || nameLower.includes('steak')) return 'Steakhouse';
+    if (nameLower.includes('seafood') || nameLower.includes('fish')) return 'Seafood';
+    if (nameLower.includes('cafe') || nameLower.includes('coffee')) return 'Cafe';
+    if (nameLower.includes('bar') || nameLower.includes('pub')) return 'Bar';
+    
+    return null;
+  };
+
+  // =====================================================
+  // 💰 SMART PRICE ESTIMATION
+  // =====================================================
+  
+  const getBudgetInfo = (priceLevel, types, name) => {
+    // If we have real price_level from Google, use it
+    if (priceLevel !== undefined && priceLevel !== null) {
+      const budgetMap = {
+        0: { symbols: '💰', filled: 1, label: 'Free/Cheap', estimate: 'Under $15', color: '#10b981', isReal: true },
+        1: { symbols: '💰', filled: 1, label: 'Budget', estimate: '$15-30', color: '#10b981', isReal: true },
+        2: { symbols: '💰💰', filled: 2, label: 'Moderate', estimate: '$30-60', color: '#f59e0b', isReal: true },
+        3: { symbols: '💰💰💰', filled: 3, label: 'Upscale', estimate: '$60-100', color: '#f97316', isReal: true },
+        4: { symbols: '💰💰💰💰', filled: 4, label: 'Luxury', estimate: '$100+', color: '#ef4444', isReal: true }
+      };
+      return budgetMap[priceLevel] || budgetMap[2];
+    }
+    
+    // Estimate based on venue type
+    const category = getVenueCategory(types);
+    const nameLower = (name || '').toLowerCase();
+    
+    // Check for luxury indicators in name
+    const luxuryWords = ['fine dining', 'luxury', 'premium', 'exclusive', 'gourmet', 'michelin'];
+    const budgetWords = ['fast food', 'quick', 'express', 'cheap', 'budget'];
+    
+    if (luxuryWords.some(w => nameLower.includes(w))) {
+      return { symbols: '💰💰💰', filled: 3, label: 'Upscale', estimate: '$60-100', color: '#f97316', isReal: false };
+    }
+    if (budgetWords.some(w => nameLower.includes(w))) {
+      return { symbols: '💰', filled: 1, label: 'Budget', estimate: '$15-30', color: '#10b981', isReal: false };
+    }
+    
+    // Estimate by category
+    const categoryEstimates = {
+      'food': { symbols: '💰💰', filled: 2, label: 'Moderate', estimate: '$25-50', color: '#f59e0b', isReal: false },
+      'cafe': { symbols: '💰', filled: 1, label: 'Budget', estimate: '$10-25', color: '#10b981', isReal: false },
+      'drinks': { symbols: '💰💰', filled: 2, label: 'Moderate', estimate: '$20-50', color: '#f59e0b', isReal: false },
+      'nightlife': { symbols: '💰💰💰', filled: 3, label: 'Pricey', estimate: '$40-80', color: '#f97316', isReal: false },
+      'entertainment': { symbols: '💰💰', filled: 2, label: 'Moderate', estimate: '$20-60', color: '#f59e0b', isReal: false },
+      'activity': { symbols: '💰💰', filled: 2, label: 'Moderate', estimate: '$30-60', color: '#f59e0b', isReal: false },
+      'outdoor': { symbols: '💰', filled: 1, label: 'Free/Cheap', estimate: '$0-20', color: '#10b981', isReal: false },
+      'shopping': { symbols: '💰💰', filled: 2, label: 'Varies', estimate: '$20-100', color: '#f59e0b', isReal: false },
+      'other': { symbols: '💰💰', filled: 2, label: 'Moderate', estimate: '$25-50', color: '#f59e0b', isReal: false }
+    };
+    
+    return categoryEstimates[category] || categoryEstimates['other'];
+  };
+
+  // =====================================================
+  // 👥 IMPROVED BUSYNESS ESTIMATION
+  // =====================================================
+  
+  const estimateBusyness = (stopTime, types, stopIndex) => {
+  // Parse the stop's scheduled time
+  let hour = 18; // default to evening
+  if (stopTime) {
+    const timeMatch = stopTime.match(/(\d{1,2}):?(\d{2})?\s*(AM|PM)?/i);
+    if (timeMatch) {
+      hour = parseInt(timeMatch[1]);
+      const isPM = timeMatch[3]?.toUpperCase() === 'PM';
+      if (isPM && hour !== 12) hour += 12;
+      if (!isPM && hour === 12) hour = 0;
+    }
+  }
+  
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 5 || dayOfWeek === 6;
+  const category = getVenueCategory(types);
+  
+  // Conservative base busyness by time
+  let baseBusyness;
+  if (hour >= 5 && hour < 8) baseBusyness = 10;
+  else if (hour >= 8 && hour < 11) baseBusyness = 20;
+  else if (hour >= 11 && hour < 14) baseBusyness = 40;  // Lunch
+  else if (hour >= 14 && hour < 17) baseBusyness = 20;  // Afternoon lull
+  else if (hour >= 17 && hour < 19) baseBusyness = 35;  // Early evening
+  else if (hour >= 19 && hour < 21) baseBusyness = 55;  // Dinner peak
+  else if (hour >= 21 && hour < 23) baseBusyness = 45;  // Late evening
+  else baseBusyness = 15;
+  
+  // Moderate category adjustments
+  const categoryBonus = {
+    'food': hour >= 12 && hour <= 14 ? 10 : (hour >= 19 && hour <= 21 ? 15 : -5),
+    'cafe': hour >= 8 && hour <= 10 ? 10 : -5,
+    'drinks': hour >= 20 ? 15 : -10,
+    'nightlife': hour >= 22 ? 20 : -15,
+    'entertainment': isWeekend ? 10 : 0,
+    'activity': isWeekend ? 5 : -5,
+    'outdoor': (hour >= 10 && hour <= 16) ? 5 : -10,
+    'other': 0
+  };
+  
+  let busyness = baseBusyness + (categoryBonus[category] || 0);
+  
+  // Weekend boost (moderate)
+  if (isWeekend) busyness += 8;
+  
+  // Random variation for realism (±15)
+  const randomVariation = Math.floor(Math.random() * 30) - 15;
+  busyness += randomVariation;
+  
+  // Venue personality based on stop index
+  busyness += (stopIndex % 3) * 5 - 5;
+  
+  // Clamp to 10-80 range (Packed should be rare/impossible for estimates)
+  busyness = Math.max(10, Math.min(80, busyness));
+  
+  // Determine level
+  let level;
+  if (busyness < 25) level = { label: 'Quiet', color: '#10b981', emoji: '😌' };
+  else if (busyness < 40) level = { label: 'Calm', color: '#22c55e', emoji: '👍' };
+  else if (busyness < 55) level = { label: 'Moderate', color: '#3b82f6', emoji: '👥' };
+  else if (busyness < 70) level = { label: 'Busy', color: '#f59e0b', emoji: '🔥' };
+  else level = { label: 'Very Busy', color: '#f97316', emoji: '⚡' };
+  
+  const peakMap = {
+    'food': '12-2pm & 7-9pm',
+    'cafe': '8-10am',
+    'drinks': '8-11pm',
+    'nightlife': '10pm-2am',
+    'entertainment': 'Evenings & weekends',
+    'outdoor': '10am-4pm',
+    'activity': 'Evenings & weekends',
+    'other': 'Varies'
+  };
+  
+  return { 
+    percentage: busyness, 
+    level, 
+    peakHours: peakMap[category] || 'Varies',
+    isEstimate: true
+  };
+};
+
+  // =====================================================
+  // 🌅 DYNAMIC TITLE BASED ON TIME
+  // =====================================================
+  
+  const getDateTitle = () => {
+    const startTime = itinerary.startTime || '6:00 PM';
+    const timeMatch = startTime.match(/(\d{1,2}):?(\d{2})?\s*(AM|PM)?/i);
+    
+    let hour = 18; // default to evening
+    if (timeMatch) {
+      hour = parseInt(timeMatch[1]);
+      const isPM = timeMatch[3]?.toUpperCase() === 'PM';
+      if (isPM && hour !== 12) hour += 12;
+      if (!isPM && hour === 12) hour = 0;
+    }
+    
+    if (hour >= 5 && hour < 11) return { title: 'Morning Adventure', emoji: '☀️', gradient: 'linear-gradient(135deg, #f59e0b, #fbbf24)' };
+    if (hour >= 11 && hour < 14) return { title: 'Lunch Date', emoji: '🌤️', gradient: 'linear-gradient(135deg, #f97316, #fb923c)' };
+    if (hour >= 14 && hour < 17) return { title: 'Afternoon Escape', emoji: '🌅', gradient: 'linear-gradient(135deg, #ec4899, #f472b6)' };
+    if (hour >= 17 && hour < 21) return { title: "Tonight's Adventure", emoji: '🌙', gradient: 'linear-gradient(135deg, #8b5cf6, #a855f7)' };
+    return { title: 'Late Night Adventure', emoji: '✨', gradient: 'linear-gradient(135deg, #6366f1, #8b5cf6)' };
+  };
+
+  // =====================================================
+  // 🎯 AUTO-DETECT DATE THEME
+  // =====================================================
+  
+  const getDateTheme = () => {
+    const categories = itinerary.stops.map(stop => getVenueCategory(stop.place?.types));
+    
+    const counts = categories.reduce((acc, cat) => {
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    }, {});
+    
+    const hasFood = counts.food >= 1;
+    const hasDrinks = counts.drinks >= 1 || counts.nightlife >= 1;
+    const hasOutdoor = counts.outdoor >= 1;
+    const hasActivity = counts.activity >= 1;
+    const hasEntertainment = counts.entertainment >= 1;
+    const hasCafe = counts.cafe >= 1;
+    
+    // Determine theme
+    if (counts.food >= 2) return { name: 'Foodie Adventure', emoji: '🍽️', color: '#f97316' };
+    if (hasDrinks && counts.nightlife >= 1) return { name: 'Night Out', emoji: '🌃', color: '#8b5cf6' };
+    if (hasOutdoor && hasActivity) return { name: 'Active Date', emoji: '🏃', color: '#10b981' };
+    if (hasOutdoor && hasCafe) return { name: 'Chill & Explore', emoji: '🌿', color: '#22c55e' };
+    if (hasEntertainment) return { name: 'Fun & Games', emoji: '🎮', color: '#ec4899' };
+    if (hasFood && hasDrinks) return { name: 'Dinner & Drinks', emoji: '🥂', color: '#a855f7' };
+    if (hasCafe && hasFood) return { name: 'Cozy Date', emoji: '☕', color: '#78716c' };
+    
+    return { name: 'Perfect Date', emoji: '💕', color: '#ec4899' };
+  };
+
+  // =====================================================
+  // 👔 DRESS CODE HINTS
+  // =====================================================
+  
+  const getDressCode = (types, priceLevel) => {
+    const category = getVenueCategory(types);
+    const isUpscale = priceLevel >= 3;
+    
+    if (isUpscale || category === 'nightlife') {
+      return { code: 'Smart Elegant', emoji: '👗', tip: 'Dress to impress!' };
+    }
+    if (category === 'drinks') {
+      return { code: 'Trendy', emoji: '🎨', tip: 'Look stylish & cool' };
+    }
+    if (category === 'food' && priceLevel >= 2) {
+      return { code: 'Smart Casual', emoji: '👔', tip: 'Nice but relaxed' };
+    }
+    if (category === 'outdoor' || category === 'activity') {
+      return { code: 'Comfortable', emoji: '👟', tip: 'Dress for movement' };
+    }
+    if (category === 'cafe') {
+      return { code: 'Casual', emoji: '👕', tip: 'Keep it relaxed' };
+    }
+    
+    return { code: 'Casual', emoji: '👕', tip: 'Anything goes!' };
+  };
+
+  // =====================================================
+  // 🌙 AFTER HOURS DETECTION
+  // =====================================================
+  
+  const isAfterHoursVenue = (types, stopTime) => {
+    const category = getVenueCategory(types);
+    const lateCategories = ['drinks', 'nightlife'];
+    
+    // Parse time
+    let hour = 18;
+    if (stopTime) {
+      const match = stopTime.match(/(\d{1,2}):?(\d{2})?\s*(AM|PM)?/i);
+      if (match) {
+        hour = parseInt(match[1]);
+        if (match[3]?.toUpperCase() === 'PM' && hour !== 12) hour += 12;
+      }
+    }
+    
+    return lateCategories.includes(category) || hour >= 22;
+  };
+
+  // =====================================================
+  // 📍 DISTANCE & TRAVEL TIME
+  // =====================================================
+  
+  const calculateDistance = (lat1, lng1, lat2, lng2) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const getTravelInfo = (fromStop, toStop) => {
+    if (!fromStop?.place?.geometry?.location || !toStop?.place?.geometry?.location) {
+      return null;
+    }
+    
+    const from = fromStop.place.geometry.location;
+    const to = toStop.place.geometry.location;
+    const distance = calculateDistance(from.lat, from.lng, to.lat, to.lng);
+    
+    // Estimate times (rough estimates)
+    const walkingTime = Math.round(distance / 5 * 60); // 5 km/h walking
+    const drivingTime = Math.round(distance / 30 * 60); // 30 km/h city driving
+    
+    return {
+      distance: distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`,
+      walking: walkingTime,
+      driving: drivingTime,
+      recommendation: distance < 0.8 ? 'walk' : distance < 3 ? 'walk or drive' : 'drive'
+    };
+  };
+
+  // =====================================================
+  // 🍽️ VIBE & TIPS BASED ON VENUE TYPE
+  // =====================================================
+  
+  const getVenueTips = (types, name, category) => {
+    const cuisine = getCuisineType(types, name);
+    const cat = category || getVenueCategory(types);
+    
+    const tips = {
+      'food': {
+        vibe: 'Great for conversation',
+        tip: cuisine ? `Known for ${cuisine} cuisine` : 'Explore the menu together',
+        suggestion: '💡 Ask for their most popular dish!'
+      },
+      'cafe': {
+        vibe: 'Cozy & intimate',
+        tip: 'Perfect for deep conversations',
+        suggestion: '💡 Try their specialty drink'
+      },
+      'drinks': {
+        vibe: 'Fun & social',
+        tip: 'Great cocktail spot',
+        suggestion: '💡 Ask the bartender for recommendations'
+      },
+      'nightlife': {
+        vibe: 'Energetic & exciting',
+        tip: 'Let loose and have fun!',
+        suggestion: '💡 Arrive before 11pm to skip the line'
+      },
+      'entertainment': {
+        vibe: 'Fun & memorable',
+        tip: 'Create shared experiences',
+        suggestion: '💡 Take photos together!'
+      },
+      'activity': {
+        vibe: 'Active & playful',
+        tip: 'Bond through shared activity',
+        suggestion: '💡 A little competition is fun!'
+      },
+      'outdoor': {
+        vibe: 'Relaxed & romantic',
+        tip: 'Enjoy the atmosphere',
+        suggestion: '💡 Find a scenic spot'
+      },
+      'other': {
+        vibe: 'Unique experience',
+        tip: 'Go with the flow',
+        suggestion: '💡 Be open to surprises'
+      }
+    };
+    
+    return tips[cat] || tips['other'];
+  };
+
+  // =====================================================
+  // ⏰ SMART TIMING TIPS
+  // =====================================================
+  
+  const getTimingTip = (types, stopTime) => {
+    const category = getVenueCategory(types);
+    
+    let hour = 18;
+    if (stopTime) {
+      const match = stopTime.match(/(\d{1,2}):?(\d{2})?\s*(AM|PM)?/i);
+      if (match) {
+        hour = parseInt(match[1]);
+        if (match[3]?.toUpperCase() === 'PM' && hour !== 12) hour += 12;
+      }
+    }
+    
+    // Category-specific timing tips
+    if (category === 'food') {
+      if (hour >= 11 && hour <= 13) return '🕐 Lunch rush - may need to wait';
+      if (hour >= 18 && hour <= 20) return '🕐 Peak dinner time - reservation helps';
+      if (hour >= 14 && hour <= 17) return '🕐 Off-peak - quick seating likely';
+      if (hour >= 21) return '🕐 Late seating - check kitchen hours';
+    }
+    if (category === 'cafe') {
+      if (hour >= 7 && hour <= 9) return '🕐 Morning rush - grab a table fast';
+      if (hour >= 14 && hour <= 16) return '🕐 Afternoon lull - plenty of seats';
+    }
+    if (category === 'drinks') {
+      if (hour >= 17 && hour <= 19) return '🍸 Happy hour likely - check for deals!';
+      if (hour >= 21) return '🕐 Getting lively - great energy!';
+    }
+    if (category === 'nightlife') {
+      if (hour < 22) return '🕐 Early - beat the crowds';
+      if (hour >= 22 && hour <= 24) return '🕐 Prime time - expect lines';
+    }
+    if (category === 'outdoor') {
+      if (hour >= 16 && hour <= 19) return '🌅 Golden hour - beautiful lighting!';
+    }
+    
+    return null;
+  };
+
+  // =====================================================
+  // 🎰 WILDCARD CHALLENGES (50+)
+  // =====================================================
+  
+  const wildcardChallenges = [
+    { text: "Take a selfie together", points: 25, emoji: "📸", category: "easy" },
+    { text: "Give a genuine compliment to staff", points: 30, emoji: "💬", category: "easy" },
+    { text: "Try something new from the menu", points: 35, emoji: "🍽️", category: "easy" },
+    { text: "Share your favorite memory together", points: 30, emoji: "💭", category: "romance" },
+    { text: "No phones for 30 minutes", points: 50, emoji: "📵", category: "challenge" },
+    { text: "Take a photo with a stranger", points: 45, emoji: "🤳", category: "bold" },
+    { text: "Learn something new about each other", points: 25, emoji: "🎓", category: "romance" },
+    { text: "Plan your next adventure together", points: 30, emoji: "🗺️", category: "romance" },
+    { text: "Speak in accents for 5 minutes", points: 40, emoji: "🎭", category: "fun" },
+    { text: "Feed each other a bite", points: 35, emoji: "🥄", category: "romance" },
+    { text: "Make each other laugh for 1 minute", points: 25, emoji: "😂", category: "fun" },
+    { text: "Describe your partner in 3 words", points: 20, emoji: "💕", category: "romance" },
+    { text: "Share an embarrassing story", points: 35, emoji: "😳", category: "fun" },
+    { text: "Do a mini photoshoot together", points: 30, emoji: "📷", category: "easy" },
+    { text: "Rate this spot 1-10 together", points: 20, emoji: "⭐", category: "easy" },
+    { text: "Come up with a couple nickname", points: 35, emoji: "👫", category: "romance" },
+    { text: "Toast to something specific", points: 25, emoji: "🥂", category: "easy" },
+    { text: "Swap seats/positions", points: 15, emoji: "🔄", category: "easy" },
+    { text: "Hold hands for 5 minutes straight", points: 30, emoji: "🤝", category: "romance" },
+    { text: "Share your dream vacation", points: 25, emoji: "✈️", category: "romance" },
+    { text: "Do rock-paper-scissors for the bill", points: 35, emoji: "✊", category: "fun" },
+    { text: "Compliment something specific", points: 20, emoji: "💝", category: "romance" },
+    { text: "Try the most unusual menu item", points: 45, emoji: "🎲", category: "bold" },
+    { text: "Ask for the chef's recommendation", points: 30, emoji: "👨‍🍳", category: "easy" },
+    { text: "Leave a generous tip", points: 40, emoji: "💵", category: "kind" },
+  ];
+
+  // =====================================================
+  // 💬 CONVERSATION CARDS (50+ with categories)
+  // =====================================================
+  
+  const conversationCards = {
+    deep: [
+      "What's a dream you've never told anyone?",
+      "What's the best advice you've ever received?",
+      "What does your ideal life look like in 10 years?",
+      "What's something you're proud of but don't talk about?",
+      "What fear have you overcome?",
+      "What would you do if you couldn't fail?",
+      "What's shaped who you are today?",
+      "What do you value most in a relationship?",
+      "What's a turning point in your life?",
+      "What legacy do you want to leave?",
+    ],
+    funny: [
+      "What's your most embarrassing moment?",
+      "What's the weirdest food combo you enjoy?",
+      "What's a skill you wish you had but would be useless?",
+      "What's the funniest thing you believed as a kid?",
+      "What would be your talent in a talent show?",
+      "If animals could talk, which would be rudest?",
+      "What's your guilty pleasure TV show?",
+      "What's the worst fashion choice you've made?",
+      "If you were a superhero, what useless power would you have?",
+      "What's your go-to karaoke song?",
+    ],
+    flirty: [
+      "What did you first notice about me?",
+      "What's something that always makes you smile?",
+      "What's your idea of a perfect date?",
+      "What's the most romantic thing someone's done for you?",
+      "Where would you love to wake up tomorrow?",
+      "What makes you feel loved?",
+      "What's a memory of us you replay in your head?",
+      "What's something you find irresistible?",
+      "If we could be anywhere right now, where?",
+      "What do you love most about us?",
+    ],
+    gettingToKnow: [
+      "What's your favorite way to spend a Sunday?",
+      "What's on your bucket list?",
+      "What's a hobby you'd love to try?",
+      "What's your comfort food?",
+      "Morning person or night owl?",
+      "What's the last thing that made you really happy?",
+      "What's your love language?",
+      "Beach vacation or mountain adventure?",
+      "What song is stuck in your head right now?",
+      "What's a small thing that brings you joy?",
+    ],
+    wouldYouRather: [
+      "Would you rather travel to the past or future?",
+      "Would you rather have a chef or chauffeur?",
+      "Would you rather be famous or rich (not both)?",
+      "Would you rather never use social media or never watch shows?",
+      "Would you rather have a home cinema or home gym?",
+      "Would you rather speak all languages or play all instruments?",
+      "Would you rather be too hot or too cold?",
+      "Would you rather live by the ocean or in the mountains?",
+      "Would you rather have unlimited flights or food?",
+      "Would you rather lose your phone or wallet for a week?",
+    ]
+  };
+
+  // =====================================================
+  // 📊 CALCULATE TOTALS
+  // =====================================================
+  
+  const totalStops = itinerary?.stops?.length || 0;
+  const totalChallenges = itinerary?.stops?.reduce((acc, stop) => acc + (stop.challenges?.length || 0), 0) || 0;
+  const potentialXP = 100 + (totalStops * 50) + (totalChallenges * 25);
+  
+  const calculateTotalBudget = () => {
+    let min = 0, max = 0;
+    itinerary?.stops?.forEach(stop => {
+      const budget = getBudgetInfo(stop.place?.price_level, stop.place?.types, stop.place?.name);
+      const estimate = budget.estimate;
+      const match = estimate.match(/\$?(\d+)-?(\d+)?/);
+      if (match) {
+        min += parseInt(match[1]) || 0;
+        max += parseInt(match[2] || match[1]) || 0;
+      }
+    });
+    return { min: min * 2, max: max * 2 }; // For 2 people
+  };
+  const totalBudget = calculateTotalBudget();
+  const dateTitle = getDateTitle();
+  const dateTheme = getDateTheme();
+
+  // =====================================================
+  // 🎮 INTERACTIVE STATE
+  // ⚠️ IMPORTANT: These useState calls have been REMOVED from here!
+  // You must add them to the TOP of your DateMaker component,
+  // with your other useState declarations.
+  //
+  // ADD THESE LINES near line 50-150 of DateMaker.js:
+  //
+  // const [earnedXP, setEarnedXP] = useState(0);
+  // const [showConfetti, setShowConfetti] = useState(false);
+  // const [activeWildcard, setActiveWildcard] = useState(null);
+  // const [showConversation, setShowConversation] = useState(false);
+  // const [currentConversation, setCurrentConversation] = useState('');
+  // const [conversationCategory, setConversationCategory] = useState('deep');
+  // const [completedStages, setCompletedStages] = useState([]);
+  // const [comboCount, setComboCount] = useState(0);
+  // const [lastChallengeTime, setLastChallengeTime] = useState(null);
+  // const [expandedTips, setExpandedTips] = useState({});
+  //
+  // =====================================================
+
+  // Confetti trigger
+  const triggerConfetti = () => {
+    setShowConfetti(true);
+    setTimeout(() => setShowConfetti(false), 2500);
+  };
+
+  // Random wildcard
+  const getRandomWildcard = () => {
+    const randomIndex = Math.floor(Math.random() * wildcardChallenges.length);
+    setActiveWildcard(wildcardChallenges[randomIndex]);
+  };
+
+  // Random conversation by category
+  const getConversationStarter = (category = null) => {
+    const cat = category || conversationCategory;
+    const cards = conversationCards[cat];
+    const randomIndex = Math.floor(Math.random() * cards.length);
+    setCurrentConversation(cards[randomIndex]);
+    setConversationCategory(cat);
+    setShowConversation(true);
+  };
+
+  // Challenge with combo
+  const handleChallengeWithCombo = (stopIndex, challengeId) => {
+    const now = Date.now();
+    let multiplier = 1;
+    
+    if (lastChallengeTime && (now - lastChallengeTime) < 30000) {
+      setComboCount(prev => Math.min(prev + 1, 5));
+      multiplier = 1 + (comboCount * 0.25);
+    } else {
+      setComboCount(1);
+    }
+    
+    setLastChallengeTime(now);
+    triggerConfetti();
+    handleCompleteChallenge(stopIndex, challengeId);
+    
+    const challenge = itinerary.stops[stopIndex]?.challenges?.find(c => c.id === challengeId);
+    if (challenge) {
+      const bonusXP = Math.round(challenge.points * multiplier);
+      setEarnedXP(prev => prev + bonusXP);
+    }
+  };
+
+  // Mark stage complete
+  const markStageComplete = (index) => {
+    if (!completedStages.includes(index)) {
+      setCompletedStages([...completedStages, index]);
+      setEarnedXP(prev => prev + 50);
+      triggerConfetti();
+    }
+  };
+
+  // Toggle tips expanded
+  const toggleTips = (index) => {
+    setExpandedTips(prev => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  return (
+    <>
+      <div ref={resultsTopRef} style={{ position: 'absolute', top: 0, left: 0, height: '1px', width: '1px' }} />
+      
+      {/* 🎨 STYLES */}
+      <style>{`
+        @keyframes questGlow {
+          0%, 100% { box-shadow: 0 4px 20px rgba(168, 85, 247, 0.3); }
+          50% { box-shadow: 0 4px 35px rgba(168, 85, 247, 0.6); }
+        }
+        @keyframes shimmerGold {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+        @keyframes slideInRight {
+          from { transform: translateX(100px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes confettiFall {
+          0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes xpPop {
+          0% { transform: scale(0); opacity: 0; }
+          50% { transform: scale(1.3); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes glow {
+          0%, 100% { box-shadow: 0 0 5px rgba(255,215,0,0.5); }
+          50% { box-shadow: 0 0 20px rgba(255,215,0,0.8), 0 0 30px rgba(255,215,0,0.6); }
+        }
+        .adventure-card { transition: all 0.3s ease; }
+        .adventure-card:hover { transform: translateY(-2px); }
+        .xp-badge {
+          background: linear-gradient(135deg, #FFD700, #FFA500, #FFD700);
+          background-size: 200% auto;
+          animation: shimmerGold 3s linear infinite;
+        }
+        .glow-card { animation: questGlow 3s ease-in-out infinite; }
+        .confetti-piece {
+          position: fixed;
+          width: 10px;
+          height: 10px;
+          animation: confettiFall 3s linear forwards;
+          z-index: 10001;
+        }
+        .wildcard-btn { animation: float 3s ease-in-out infinite; }
+        .combo-badge { animation: glow 1s ease-in-out infinite; }
+        .xp-counter { animation: xpPop 0.5s ease-out; }
+        .tip-card { transition: max-height 0.3s ease, padding 0.3s ease; overflow: hidden; }
+        html, body, #root { background: #0f0f23 !important; }
+      `}</style>
+
+      {/* 🎊 CONFETTI */}
+      {showConfetti && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 10000, overflow: 'hidden' }}>
+          {[...Array(60)].map((_, i) => (
+            <div
+              key={i}
+              className="confetti-piece"
+              style={{
+                left: `${Math.random() * 100}%`,
+                background: ['#FFD700', '#FF6B6B', '#4ECDC4', '#A855F7', '#EC4899', '#10B981', '#3B82F6'][Math.floor(Math.random() * 7)],
+                borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+                width: `${6 + Math.random() * 8}px`,
+                height: `${6 + Math.random() * 8}px`,
+                animationDelay: `${Math.random() * 0.5}s`,
+                animationDuration: `${2 + Math.random() * 2}s`
+              }}
+            />
+          ))}
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '0.5rem',
-            marginBottom: '0.25rem'
-          }}>
-            <Clock size={18} />
-            <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>
-              {stop.time} • {stop.duration}
-            </span>
-          </div>
-          <h3 style={{ 
-            fontSize: '1.5rem', 
-            fontWeight: 'bold',
-            margin: 0 
-          }}>
-            {stop.title}
-          </h3>
-        </div>
-      </div>
+      )}
 
-     {/* Content */}
-      <div style={{ padding: '1rem' }}>
-        <p style={{ 
-          color: '#6b7280', 
-          fontSize: '0.95rem', 
-          marginBottom: '1.5rem',
-          lineHeight: '1.6'
-        }}>
-          {stop.description}
-        </p>
-
-        {/* Venue Image */}
-        <div style={{ 
-          position: 'relative', 
-          height: '320px',
-          borderRadius: '16px',
-          overflow: 'hidden',
-          marginBottom: '1.5rem'
-        }}>
-          {(() => {
-            const placePhoto = getPlacePhoto(stop.place);
-            const placeholderColors = getPlaceholderImage(stop.place.name);
-            const placeholderId = `main-stop-${index}`;
-            
-            return (
-              <>
-                <div 
-                  id={placeholderId}
-                  style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    background: `linear-gradient(135deg, ${placeholderColors[0]}, ${placeholderColors[1]})`, 
-                    display: 'flex',
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    fontSize: '4rem', 
-                    color: 'white', 
-                    fontWeight: 'bold',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    zIndex: 1
-                  }}>
-                  {stop.place.name.charAt(0).toUpperCase()}
-                </div>
-                
-                {placePhoto && (
-                  <img 
-                    src={placePhoto} 
-                    alt={stop.place.name}
-                    crossOrigin="anonymous"
-                    referrerPolicy="no-referrer"
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
-                      objectFit: 'cover',
-                      display: 'block',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      zIndex: 2,
-                    }} 
-                    onLoad={(e) => {
-                      const placeholder = document.getElementById(placeholderId);
-                      if (placeholder) placeholder.style.display = 'none';
-                    }}
-                    onError={(e) => { 
-                      e.target.style.display = 'none';
-                    }} 
-                  />
-                )}
-                
-                {stop.place.rating && (
-                  <div style={{ 
-                    position: 'absolute', 
-                    top: '1rem', 
-                    right: '1rem', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '0.25rem', 
-                    background: 'white', 
-                    padding: '0.5rem 1rem', 
-                    borderRadius: '9999px', 
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    zIndex: 10
-                  }}>
-                    <Star size={18} style={{ color: '#eab308' }} fill="currentColor" />
-                    <span style={{ fontWeight: 'bold' }}>{stop.place.rating}</span>
-                  </div>
-                )}
-              </>
-            );
-          })()}
-        </div>
-
-        {/* Venue Name & Location */}
-        <h4 style={{ 
-          fontSize: '1.25rem', 
-          fontWeight: 'bold', 
-          marginBottom: '0.5rem' 
-        }}>
-          {stop.place.name}
-        </h4>
-        <p style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.5rem', 
-          color: '#6b7280', 
-          fontSize: '0.875rem', 
-          marginBottom: '1.5rem' 
-        }}>
-          <MapPin size={16} style={{ color: '#ec4899' }} />
-          {stop.place.vicinity}
-        </p>
-
-        {/* Event Info */}
-        {stop.place.isEvent && (
-          <div style={{ 
-            marginBottom: '1.5rem', 
-            padding: '0.75rem', 
-            background: 'linear-gradient(to right, #fef3c7, #fde68a)', 
-            borderRadius: '8px', 
-            border: '2px solid #fbbf24' 
-          }}>
-            {stop.place.eventDate && (
-              <p style={{ 
-                color: '#92400e', 
-                fontWeight: '700', 
-                fontSize: '0.875rem', 
-                marginBottom: '0.25rem',
-                margin: 0 
-              }}>
-                📅 {new Date(stop.place.eventDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                {stop.place.eventTime && ` • ${stop.place.eventTime}`}
-              </p>
-            )}
-            {stop.place.priceRange && (
-              <p style={{ 
-                color: '#059669', 
-                fontWeight: '700', 
-                fontSize: '0.875rem',
-                margin: 0 
-              }}>
-                🎟️ {stop.place.priceRange}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Map */}
+      {/* 🎰 WILDCARD MODAL */}
+      {activeWildcard && (
         <div 
-          onClick={() => openDirections(stop.place.geometry.location.lat, stop.place.geometry.location.lng)} 
-          style={{ 
-            cursor: 'pointer', 
-            marginBottom: '1.5rem', 
-            borderRadius: '12px', 
-            overflow: 'hidden', 
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+          onClick={() => setActiveWildcard(null)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', zIndex: 9999, padding: '1rem'
           }}
         >
-          <img 
-            src={getStaticMapUrl(stop.place.geometry.location.lat, stop.place.geometry.location.lng)} 
-            alt="Map" 
-            style={{ width: '100%', height: '200px', objectFit: 'cover' }} 
-          />
-        </div>
-
-       {/* Challenges */}
-{stop.challenges && stop.challenges.length > 0 && (
-  <div style={{ marginBottom: '1.5rem' }}>
-    <h4 style={{ 
-      fontSize: '1.1rem', 
-      fontWeight: '700',
-      marginBottom: '0.75rem',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem',
-      color: '#111827'
-    }}>
-      🎯 Challenges
-    </h4>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-      {stop.challenges.map((challenge) => {
-        const isCompleted = completedChallenges.includes(challenge.id);
-        return (
           <div 
-            key={challenge.id}
+            onClick={(e) => e.stopPropagation()}
             style={{
-              padding: '1rem',
-              background: isCompleted 
-                ? 'linear-gradient(135deg, #06D6A020, #06D6A010)'
-                : 'linear-gradient(135deg, #FF6B3520, #FF8C4210)',
-              borderRadius: '12px',
-              border: isCompleted
-                ? '2px solid #06D6A060'
-                : '2px solid #FF6B3540',
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              gap: '1rem'
+              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+              borderRadius: '24px', padding: '2rem', maxWidth: '350px', width: '100%',
+              textAlign: 'center', border: '2px solid rgba(255,215,0,0.5)',
+              boxShadow: '0 0 60px rgba(255,215,0,0.3)'
             }}
           >
-            <p style={{ 
-              fontSize: '0.95rem',
-              fontWeight: '600',
-              color: '#111827',
-              margin: 0,
-              textDecoration: isCompleted ? 'line-through' : 'none',
-              opacity: isCompleted ? 0.7 : 1,
-              flex: 1,
-              paddingRight: '0.5rem'
-            }}>
-              {challenge.text}
-            </p>
-            <button
-              onClick={() => handleCompleteChallenge(index, challenge.id)}
-              disabled={isCompleted}
-              style={{
-                padding: '0.5rem 1rem',
-                background: isCompleted 
-                  ? '#06D6A0'
-                  : 'linear-gradient(135deg, #FF6B35, #FF8C42)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '700',
-                fontSize: '0.875rem',
-                cursor: isCompleted ? 'not-allowed' : 'pointer',
-                opacity: isCompleted ? 0.6 : 1,
-                transition: 'all 0.3s ease',
-                whiteSpace: 'nowrap',
-                flexShrink: 0
-              }}
-            >
-              {isCompleted ? `✓ +${challenge.points}` : `+${challenge.points} XP`}
-            </button>
-          </div>
-        );
-      })}
-    </div>
-  </div>
-)}
-
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <button 
-            onClick={() => openDirections(stop.place.geometry.location.lat, stop.place.geometry.location.lng)} 
-            style={{ 
-              flex: 1, 
-              minWidth: '120px', 
-              background: 'linear-gradient(to right, #ec4899, #d946ef)', 
-              color: 'white', 
-              fontWeight: '600', 
-              padding: '0.75rem 1rem', 
-              borderRadius: '9999px', 
-              border: 'none', 
-              cursor: 'pointer', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '0.5rem', 
-              fontSize: '0.875rem' 
-            }}
-          >
-            <Navigation size={16} />
-            {t('directions')}
-          </button>
-          {stop.place.website && (
-            <button 
-              onClick={() => window.open(stop.place.website, '_blank')} 
-              style={{ 
-                flex: 1, 
-                minWidth: '120px', 
-                background: 'linear-gradient(to right, #a855f7, #7c3aed)', 
-                color: 'white', 
-                fontWeight: '600', 
-                padding: '0.75rem 1rem', 
-                borderRadius: '9999px', 
-                border: 'none', 
-                cursor: 'pointer', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                gap: '0.5rem', 
-                fontSize: '0.875rem' 
-              }}
-            >
-              <ExternalLink size={16} />
-              {stop.place.isEvent ? t('tickets') : t('website')}
-            </button>
-          )}
-          <button 
-            onClick={() => handleSaveDate(stop.place)} 
-            disabled={isDateSaved(stop.place.place_id)} 
-            style={{ 
-              background: isDateSaved(stop.place.place_id) ? '#f3f4f6' : 'linear-gradient(to right, #10b981, #059669)', 
-              color: isDateSaved(stop.place.place_id) ? '#9ca3af' : 'white', 
-              fontWeight: '600', 
-              padding: '0.75rem 1rem', 
-              borderRadius: '9999px', 
-              border: 'none', 
-              cursor: isDateSaved(stop.place.place_id) ? 'not-allowed' : 'pointer', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '0.5rem', 
-              fontSize: '0.875rem' 
-            }}
-          >
-            {isDateSaved(stop.place.place_id) ? <><BookmarkCheck size={16} />{t('saved')}</> : <><BookmarkPlus size={16} />{t('save')}</>}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    {/* Arrow between stops */}
-    {index < itinerary.stops.length - 1 && (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        margin: '1.5rem 0' 
-      }}>
-        <ArrowRight size={32} style={{ color: '#ec4899' }} />
-      </div>
-    )}
-  </div>
-))}
+            <div style={{ fontSize: '4rem', marginBottom: '1rem', animation: 'bounce 1s infinite' }}>
+              {activeWildcard.emoji}
             </div>
-          </div>
-          
-          {/* Date Finished Section */}
-          <div style={{
-            background: 'white',
-            borderRadius: '24px',
-            padding: '2.5rem',
-            marginBottom: '2rem',
-            boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              fontSize: '4rem',
-              marginBottom: '1rem'
-            }}>
-              🎉
-            </div>
-            <h3 style={{
-              fontSize: '2rem',
-              fontWeight: '900',
-              marginBottom: '1rem',
-              background: 'linear-gradient(to right, #ec4899, #a855f7)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>
-              Date Finished!
+            <h3 style={{ color: '#FFD700', fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem' }}>
+              ⚡ WILDCARD CHALLENGE!
             </h3>
-            <p style={{
-              fontSize: '1.1rem',
-              color: '#6b7280',
-              lineHeight: '1.6',
-              maxWidth: '600px',
-              margin: '0 auto'
-            }}>
-              End here or continue on - check out the alternative options below or generate another date
+            <p style={{ color: 'white', fontSize: '1.1rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+              {activeWildcard.text}
             </p>
+            <div className="xp-badge" style={{ display: 'inline-block', padding: '0.5rem 1.5rem', borderRadius: '9999px', marginBottom: '1.5rem' }}>
+              <span style={{ color: '#1a1a2e', fontWeight: '900', fontSize: '1.25rem' }}>+{activeWildcard.points} BONUS XP</span>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => { setEarnedXP(prev => prev + activeWildcard.points); triggerConfetti(); setActiveWildcard(null); }}
+                style={{ flex: 1, background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', fontWeight: '700', padding: '1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
+              >
+                ✓ Completed!
+              </button>
+              <button
+                onClick={() => setActiveWildcard(null)}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: 'white', fontWeight: '700', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', fontSize: '1rem' }}
+              >
+                Skip
+              </button>
+            </div>
           </div>
+        </div>
+      )}
+
+      {/* 💬 CONVERSATION MODAL */}
+      {showConversation && (
+        <div 
+          onClick={() => setShowConversation(false)}
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', zIndex: 9999, padding: '1rem'
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+              borderRadius: '24px', padding: '2rem', maxWidth: '380px', width: '100%',
+              textAlign: 'center', border: '2px solid rgba(236,72,153,0.5)',
+              boxShadow: '0 0 60px rgba(236,72,153,0.3)'
+            }}
+          >
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💬</div>
+            
+            {/* Category Pills */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', marginBottom: '1rem' }}>
+              {Object.keys(conversationCards).map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => getConversationStarter(cat)}
+                  style={{
+                    background: conversationCategory === cat ? 'linear-gradient(135deg, #ec4899, #a855f7)' : 'rgba(255,255,255,0.1)',
+                    border: 'none', borderRadius: '9999px', padding: '0.4rem 0.8rem',
+                    color: 'white', fontSize: '0.75rem', fontWeight: '600', cursor: 'pointer',
+                    textTransform: 'capitalize'
+                  }}
+                >
+                  {cat === 'gettingToKnow' ? 'Getting to Know' : cat === 'wouldYouRather' ? 'Would You Rather' : cat}
+                </button>
+              ))}
+            </div>
+            
+            <p style={{ color: 'white', fontSize: '1.2rem', fontWeight: '600', marginBottom: '1.5rem', lineHeight: 1.5, fontStyle: 'italic', minHeight: '60px' }}>
+              "{currentConversation}"
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => getConversationStarter()}
+                style={{ flex: 1, background: 'linear-gradient(135deg, #ec4899, #a855f7)', color: 'white', fontWeight: '700', padding: '1rem', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '0.95rem' }}
+              >
+                🔄 Another
+              </button>
+              <button
+                onClick={() => setShowConversation(false)}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: 'white', fontWeight: '700', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', fontSize: '0.95rem' }}
+              >
+                Got it!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🌟 MAIN CONTAINER */}
+      <div style={{ 
+        minHeight: '100vh', minHeight: '100dvh',
+        background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #0f0f23 100%)', 
+        padding: '1rem', 
+        paddingTop: 'calc(1rem + env(safe-area-inset-top))',
+        paddingBottom: 'calc(160px + env(safe-area-inset-bottom))',
+        boxSizing: 'border-box'
+      }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           
+          {/* 🏔️ HEADER */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(236,72,153,0.15) 0%, rgba(168,85,247,0.15) 100%)',
+            borderRadius: '24px', padding: '1.5rem', marginBottom: '1.5rem',
+            border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)'
+          }}>
+            {/* Top Bar */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <button 
+                onClick={() => setShowResults(false)}
+                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '0.6rem 1.25rem', color: 'white', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}
+              >
+                ← {t('back')}
+              </button>
+              
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button 
+                  onClick={() => handleGenerateDate(true)}
+                  disabled={searchLoading}
+                  style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '12px', padding: '0.6rem 1.25rem', color: 'white', fontWeight: '600', cursor: searchLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: searchLoading ? 0.6 : 1, fontSize: '0.9rem' }}
+                >
+                  <RefreshCw size={16} />
+                  {t('refresh')}
+                </button>
+                <button 
+                  onClick={handleSaveItinerary}
+                  style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '12px', padding: '0.6rem 1.25rem', color: 'white', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}
+                >
+                  <BookmarkPlus size={16} />
+                  {t('save')}
+                </button>
+              </div>
+            </div>
+
+            {/* Title */}
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              {/* Date Theme Badge */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                  background: `${dateTheme.color}30`, padding: '0.35rem 0.9rem', borderRadius: '9999px',
+                  border: `1px solid ${dateTheme.color}50`
+                }}>
+                  <span style={{ fontSize: '0.9rem' }}>{dateTheme.emoji}</span>
+                  <span style={{ color: dateTheme.color, fontWeight: '700', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {dateTheme.name}
+                  </span>
+                </div>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                  background: 'rgba(255,215,0,0.2)', padding: '0.35rem 0.9rem', borderRadius: '9999px'
+                }}>
+                  <span style={{ fontSize: '0.9rem' }}>{dateTitle.emoji}</span>
+                  <span style={{ color: '#FFD700', fontWeight: '700', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {dateTitle.title}
+                  </span>
+                </div>
+              </div>
+              
+              <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.25rem)', fontWeight: '900', color: 'white', marginBottom: '0.5rem', lineHeight: 1.2 }}>
+                {location || 'Your Adventure'} ✨
+              </h1>
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1rem', margin: 0 }}>
+                {itinerary.startTime} → {itinerary.endTime} • {itinerary.totalDuration}
+              </p>
+            </div>
+
+            {/* Live XP Counter */}
+            {earnedXP > 0 && (
+              <div className="xp-counter" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                <div className="combo-badge" style={{
+                  background: 'linear-gradient(135deg, rgba(255,215,0,0.3), rgba(255,165,0,0.3))',
+                  border: '2px solid #FFD700', borderRadius: '9999px', padding: '0.5rem 1.5rem',
+                  display: 'flex', alignItems: 'center', gap: '0.5rem'
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>⚡</span>
+                  <span style={{ color: '#FFD700', fontWeight: '900', fontSize: '1.25rem' }}>{earnedXP} XP</span>
+                  {comboCount > 1 && (
+                    <span style={{ background: '#ef4444', color: 'white', fontWeight: '800', fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '9999px' }}>
+                      {comboCount}x COMBO!
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Stats Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.15)', borderRadius: '12px', padding: '0.75rem 0.5rem', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                <p style={{ fontSize: '1.1rem', margin: '0 0 0.25rem 0' }}>💰</p>
+                <p style={{ color: '#10b981', fontWeight: '800', fontSize: '0.75rem', margin: 0 }}>${totalBudget.min}-{totalBudget.max}</p>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.6rem', margin: 0 }}>Est. Total</p>
+              </div>
+              <div style={{ background: 'rgba(236, 72, 153, 0.15)', borderRadius: '12px', padding: '0.75rem 0.5rem', textAlign: 'center', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
+                <p style={{ fontSize: '1.1rem', margin: '0 0 0.25rem 0' }}>🎯</p>
+                <p style={{ color: '#ec4899', fontWeight: '800', fontSize: '0.75rem', margin: 0 }}>{totalStops} Stops</p>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.6rem', margin: 0 }}>Stages</p>
+              </div>
+              <div style={{ background: 'rgba(249, 115, 22, 0.15)', borderRadius: '12px', padding: '0.75rem 0.5rem', textAlign: 'center', border: '1px solid rgba(249, 115, 22, 0.3)' }}>
+                <p style={{ fontSize: '1.1rem', margin: '0 0 0.25rem 0' }}>🔥</p>
+                <p style={{ color: '#f97316', fontWeight: '800', fontSize: '0.75rem', margin: 0 }}>{totalChallenges}</p>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.6rem', margin: 0 }}>Missions</p>
+              </div>
+              <div style={{ background: 'rgba(255, 215, 0, 0.15)', borderRadius: '12px', padding: '0.75rem 0.5rem', textAlign: 'center', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
+                <p style={{ fontSize: '1.1rem', margin: '0 0 0.25rem 0' }}>⚡</p>
+                <p style={{ color: '#FFD700', fontWeight: '800', fontSize: '0.75rem', margin: 0 }}>{potentialXP} XP</p>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.6rem', margin: 0 }}>Potential</p>
+              </div>
+            </div>
+
+            {/* Interactive Buttons */}
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={getRandomWildcard}
+                className="wildcard-btn"
+                style={{ flex: 1, minWidth: '140px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none', borderRadius: '12px', padding: '0.75rem', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem' }}
+              >
+                🎰 Wildcard
+              </button>
+              <button
+                onClick={() => getConversationStarter()}
+                style={{ flex: 1, minWidth: '140px', background: 'linear-gradient(135deg, #ec4899, #a855f7)', border: 'none', borderRadius: '12px', padding: '0.75rem', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem' }}
+              >
+                💬 Talk Prompt
+              </button>
+            </div>
+          </div>
+
+          {/* 🎯 STAGE CARDS */}
+          {itinerary.stops.map((stop, index) => {
+            const category = getVenueCategory(stop.place?.types);
+            const busyness = estimateBusyness(stop.time, stop.place?.types, index);
+            const budgetInfo = getBudgetInfo(stop.place?.price_level, stop.place?.types, stop.place?.name);
+            const dressCode = getDressCode(stop.place?.types, stop.place?.price_level);
+            const isLateNight = isAfterHoursVenue(stop.place?.types, stop.time);
+            const venueTips = getVenueTips(stop.place?.types, stop.place?.name, category);
+            const timingTip = getTimingTip(stop.place?.types, stop.time);
+            const placePhoto = getPlacePhoto(stop.place);
+            const placeholderColors = getPlaceholderImage(stop.place.name);
+            const isFirstStop = index === 0;
+            const isStageComplete = completedStages.includes(index);
+            
+            // Travel info to next stop
+            const nextStop = itinerary.stops[index + 1];
+            const travelInfo = nextStop ? getTravelInfo(stop, nextStop) : null;
+            
+            return (
+              <div key={index} style={{ marginBottom: '1rem' }}>
+                <div 
+                  className={`adventure-card ${isFirstStop && !isStageComplete ? 'glow-card' : ''}`}
+                  style={{
+                    background: isStageComplete ? 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.1))' : 'rgba(255,255,255,0.05)',
+                    borderRadius: '20px', overflow: 'hidden',
+                    border: isStageComplete ? '2px solid rgba(16,185,129,0.5)' : isFirstStop ? '2px solid rgba(168,85,247,0.5)' : '1px solid rgba(255,255,255,0.1)'
+                  }}
+                >
+                  {/* Stage Header */}
+                  <div style={{
+                    background: isStageComplete ? 'linear-gradient(135deg, rgba(16,185,129,0.4) 0%, rgba(5,150,105,0.3) 100%)' : 'linear-gradient(135deg, rgba(236,72,153,0.3) 0%, rgba(168,85,247,0.3) 100%)',
+                    padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem'
+                  }}>
+                    {/* Stage Number */}
+                    <div style={{
+                      width: '48px', height: '48px', borderRadius: '50%',
+                      background: isStageComplete ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #ec4899, #a855f7)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      boxShadow: isStageComplete ? '0 4px 15px rgba(16,185,129,0.4)' : '0 4px 15px rgba(236,72,153,0.4)'
+                    }}>
+                      {isStageComplete ? <CheckCircle size={24} style={{ color: 'white' }} /> : <span style={{ color: 'white', fontWeight: '900', fontSize: '1.25rem' }}>{index + 1}</span>}
+                    </div>
+
+                    {/* Stage Info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '1.5rem' }}>{stop.icon}</span>
+                        <span style={{ color: 'white', fontWeight: '800', fontSize: '1.1rem' }}>{stop.title}</span>
+                        {isFirstStop && !isStageComplete && (
+                          <span style={{ background: 'linear-gradient(135deg, #ec4899, #a855f7)', color: 'white', fontSize: '0.65rem', fontWeight: '700', padding: '0.2rem 0.6rem', borderRadius: '9999px', textTransform: 'uppercase', animation: 'pulse 2s infinite' }}>
+                            Start Here
+                          </span>
+                        )}
+                        {isLateNight && (
+                          <span style={{ background: 'rgba(139,92,246,0.3)', color: '#a78bfa', fontSize: '0.65rem', fontWeight: '700', padding: '0.2rem 0.6rem', borderRadius: '9999px' }}>
+                            🌙 Late Night
+                          </span>
+                        )}
+                        {isStageComplete && (
+                          <span style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', fontSize: '0.65rem', fontWeight: '700', padding: '0.2rem 0.6rem', borderRadius: '9999px', textTransform: 'uppercase' }}>
+                            ✓ Complete
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', flexWrap: 'wrap' }}>
+                        <Clock size={14} />
+                        <span>{stop.time} • {stop.duration}</span>
+                      </div>
+                    </div>
+
+                    {/* XP Badge */}
+                    <div className="xp-badge" style={{ padding: '0.4rem 0.75rem', borderRadius: '9999px', flexShrink: 0 }}>
+                      <span style={{ color: '#1a1a2e', fontWeight: '800', fontSize: '0.8rem' }}>+{50 + (stop.challenges?.length || 0) * 25} XP</span>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div style={{ padding: '1.25rem' }}>
+                    {/* Description */}
+                    <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem', margin: '0 0 1rem 0' }}>{stop.description}</p>
+
+                    {/* Quick Info Pills */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+                      {/* Dress Code */}
+                      <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '9999px', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <span style={{ fontSize: '0.85rem' }}>{dressCode.emoji}</span>
+                        <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.75rem', fontWeight: '600' }}>{dressCode.code}</span>
+                      </div>
+                      {/* Vibe */}
+                      <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '9999px', padding: '0.35rem 0.75rem' }}>
+                        <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.75rem', fontWeight: '600' }}>✨ {venueTips.vibe}</span>
+                      </div>
+                      {/* Timing Tip */}
+                      {timingTip && (
+                        <div style={{ background: 'rgba(59,130,246,0.2)', borderRadius: '9999px', padding: '0.35rem 0.75rem' }}>
+                          <span style={{ color: '#60a5fa', fontSize: '0.75rem', fontWeight: '600' }}>{timingTip}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Venue Image */}
+                    <div style={{ position: 'relative', height: '200px', borderRadius: '16px', overflow: 'hidden', marginBottom: '1rem' }}>
+                      <div style={{ width: '100%', height: '100%', background: `linear-gradient(135deg, ${placeholderColors[0]}, ${placeholderColors[1]})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', color: 'white', fontWeight: 'bold', position: 'absolute', zIndex: 1 }}>
+                        {stop.place.name.charAt(0).toUpperCase()}
+                      </div>
+                      {placePhoto && (
+                        <img src={placePhoto} alt={stop.place.name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'relative', zIndex: 2 }} onError={(e) => { e.target.style.display = 'none'; }} />
+                      )}
+                      {stop.place.rating && (
+                        <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', padding: '0.4rem 0.75rem', borderRadius: '9999px', zIndex: 10 }}>
+                          <Star size={14} style={{ color: '#FFD700' }} fill="#FFD700" />
+                          <span style={{ color: 'white', fontWeight: '700', fontSize: '0.9rem' }}>{stop.place.rating}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Venue Name & Location */}
+                    <h4 style={{ color: 'white', fontSize: '1.25rem', fontWeight: '700', margin: '0 0 0.5rem 0' }}>{stop.place.name}</h4>
+                    <p style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: '0 0 1rem 0' }}>
+                      <MapPin size={14} style={{ color: '#ec4899' }} />
+                      {stop.place.vicinity}
+                    </p>
+
+                    {/* Budget & Busyness Row */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                      {/* Budget Card */}
+                      <div style={{ background: `${budgetInfo.color}20`, borderRadius: '12px', padding: '0.85rem', border: `1px solid ${budgetInfo.color}40` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <span style={{ fontSize: '1rem' }}>💰</span>
+                            <span style={{ color: budgetInfo.color, fontWeight: '700', fontSize: '0.85rem' }}>{budgetInfo.label}</span>
+                          </div>
+                          {!budgetInfo.isReal && (
+                            <span style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)', fontSize: '0.6rem', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>Est.</span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: '2px', marginBottom: '0.25rem' }}>
+                          {[1,2,3,4].map(i => (
+                            <span key={i} style={{ fontSize: '0.85rem', opacity: i <= budgetInfo.filled ? 1 : 0.25 }}>💰</span>
+                          ))}
+                        </div>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', margin: 0 }}>{budgetInfo.estimate}/person</p>
+                      </div>
+
+                      {/* Busyness Card */}
+                      <div style={{ background: `${busyness.level.color}20`, borderRadius: '12px', padding: '0.85rem', border: `1px solid ${busyness.level.color}40` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <span style={{ fontSize: '1rem' }}>{busyness.level.emoji}</span>
+                            <span style={{ color: busyness.level.color, fontWeight: '700', fontSize: '0.85rem' }}>{busyness.level.label}</span>
+                          </div>
+                          <span style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)', fontSize: '0.6rem', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>Est.</span>
+                        </div>
+                        <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden', marginBottom: '0.4rem' }}>
+                          <div style={{ width: `${busyness.percentage}%`, height: '100%', background: busyness.level.color, borderRadius: '3px', transition: 'width 0.5s' }} />
+                        </div>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', margin: 0 }}>~{busyness.percentage}% • Peak: {busyness.peakHours}</p>
+                      </div>
+                    </div>
+
+                    {/* Expandable Tips */}
+                    <button
+                      onClick={() => toggleTips(index)}
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '0.75rem', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}
+                    >
+                      <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>💡 Tips & Info</span>
+                      <ChevronRight size={18} style={{ transform: expandedTips[index] ? 'rotate(90deg)' : 'rotate(0)', transition: 'transform 0.3s' }} />
+                    </button>
+                    
+                    {expandedTips[index] && (
+                      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '1rem', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <div style={{ display: 'grid', gap: '0.75rem' }}>
+                          <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <span style={{ fontSize: '1.25rem' }}>👔</span>
+                            <div>
+                              <p style={{ color: 'white', fontWeight: '600', fontSize: '0.85rem', margin: '0 0 0.2rem 0' }}>{dressCode.code}</p>
+                              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', margin: 0 }}>{dressCode.tip}</p>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <span style={{ fontSize: '1.25rem' }}>✨</span>
+                            <div>
+                              <p style={{ color: 'white', fontWeight: '600', fontSize: '0.85rem', margin: '0 0 0.2rem 0' }}>{venueTips.vibe}</p>
+                              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem', margin: 0 }}>{venueTips.tip}</p>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <span style={{ fontSize: '1.25rem' }}>💡</span>
+                            <p style={{ color: '#fbbf24', fontSize: '0.85rem', margin: 0, fontStyle: 'italic' }}>{venueTips.suggestion}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Map */}
+                    <div 
+                      onClick={() => openDirections(stop.place.geometry.location.lat, stop.place.geometry.location.lng)}
+                      style={{ cursor: 'pointer', marginBottom: '1rem', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}
+                    >
+                      <img src={getStaticMapUrl(stop.place.geometry.location.lat, stop.place.geometry.location.lng)} alt="Map" style={{ width: '100%', height: '140px', objectFit: 'cover' }} />
+                    </div>
+
+                    {/* Missions */}
+                    {stop.challenges && stop.challenges.length > 0 && (
+                      <div style={{ marginBottom: '1rem' }}>
+                        <h5 style={{ color: '#f97316', fontWeight: '700', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', margin: '0 0 0.75rem 0' }}>
+                          🎯 Missions
+                          <span style={{ background: 'rgba(249,115,22,0.2)', color: '#f97316', fontSize: '0.7rem', padding: '0.2rem 0.5rem', borderRadius: '9999px' }}>+XP</span>
+                        </h5>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {stop.challenges.map((challenge) => {
+                            const isDone = completedChallenges.includes(challenge.id);
+                            return (
+                              <div key={challenge.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', padding: '0.75rem 1rem', background: isDone ? 'rgba(16,185,129,0.2)' : 'rgba(249,115,22,0.15)', borderRadius: '12px', border: isDone ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(249,115,22,0.3)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+                                  <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{isDone ? '✅' : '🎯'}</span>
+                                  <span style={{ color: isDone ? 'rgba(255,255,255,0.5)' : 'white', fontWeight: '600', fontSize: '0.9rem', textDecoration: isDone ? 'line-through' : 'none' }}>{challenge.text}</span>
+                                </div>
+                                <button onClick={() => handleChallengeWithCombo(index, challenge.id)} disabled={isDone} className="xp-badge" style={{ padding: '0.4rem 0.75rem', borderRadius: '9999px', border: 'none', cursor: isDone ? 'default' : 'pointer', fontWeight: '800', fontSize: '0.75rem', color: '#1a1a2e', opacity: isDone ? 0.5 : 1, flexShrink: 0 }}>
+                                  {isDone ? '✓' : `+${challenge.points}`}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <button onClick={() => openDirections(stop.place.geometry.location.lat, stop.place.geometry.location.lng)} style={{ flex: 1, minWidth: '80px', background: 'linear-gradient(135deg, #ec4899, #d946ef)', color: 'white', border: 'none', borderRadius: '12px', padding: '0.75rem', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                        <Navigation size={16} /> Go
+                      </button>
+                      <button onClick={() => handleSaveDate(stop.place)} disabled={isDateSaved(stop.place.place_id)} style={{ flex: 1, minWidth: '80px', background: isDateSaved(stop.place.place_id) ? 'rgba(255,255,255,0.1)' : 'linear-gradient(135deg, #10b981, #059669)', color: 'white', border: 'none', borderRadius: '12px', padding: '0.75rem', fontWeight: '700', fontSize: '0.85rem', cursor: isDateSaved(stop.place.place_id) ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', opacity: isDateSaved(stop.place.place_id) ? 0.5 : 1 }}>
+                        {isDateSaved(stop.place.place_id) ? <><BookmarkCheck size={16} /> Saved</> : <><BookmarkPlus size={16} /> Save</>}
+                      </button>
+                      <button onClick={() => markStageComplete(index)} disabled={isStageComplete} style={{ flex: 1, minWidth: '80px', background: isStageComplete ? 'rgba(16,185,129,0.3)' : 'linear-gradient(135deg, #3b82f6, #2563eb)', color: 'white', border: 'none', borderRadius: '12px', padding: '0.75rem', fontWeight: '700', fontSize: '0.85rem', cursor: isStageComplete ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                        <CheckCircle size={16} /> {isStageComplete ? 'Done!' : 'Done'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Travel Connector */}
+                {travelInfo && (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem 0' }}>
+                    <div style={{ width: '3px', height: '16px', background: completedStages.includes(index) ? 'linear-gradient(180deg, #10b981, #059669)' : 'repeating-linear-gradient(to bottom, rgba(236,72,153,0.5) 0px, rgba(236,72,153,0.5) 4px, transparent 4px, transparent 8px)', borderRadius: '2px' }} />
+                    <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '12px', padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: '600' }}>📍 {travelInfo.distance}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.4)' }}>•</span>
+                      <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem' }}>
+                        {travelInfo.recommendation === 'walk' ? `🚶 ${travelInfo.walking} min walk` : travelInfo.recommendation === 'drive' ? `🚗 ~${travelInfo.driving} min drive` : `🚶 ${travelInfo.walking} min / 🚗 ${travelInfo.driving} min`}
+                      </span>
+                    </div>
+                    <div style={{ width: '3px', height: '16px', background: completedStages.includes(index) ? 'linear-gradient(180deg, #10b981, #059669)' : 'repeating-linear-gradient(to bottom, rgba(236,72,153,0.5) 0px, rgba(236,72,153,0.5) 4px, transparent 4px, transparent 8px)', borderRadius: '2px' }} />
+                    <ArrowRight size={20} style={{ color: completedStages.includes(index) ? '#10b981' : '#ec4899', transform: 'rotate(90deg)' }} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* 🏆 QUEST COMPLETE */}
+          <div style={{ background: 'linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,165,0,0.1))', borderRadius: '24px', padding: '2rem', textAlign: 'center', border: '1px solid rgba(255,215,0,0.2)', marginTop: '1rem' }}>
+            <div style={{ fontSize: '3.5rem', marginBottom: '0.75rem' }}>🎉</div>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#FFD700', margin: '0 0 0.5rem 0' }}>
+              {completedStages.length === totalStops ? '🏆 Quest Complete!' : 'Quest in Progress...'}
+            </h3>
+            <p style={{ color: 'rgba(255,255,255,0.6)', margin: '0 0 1rem 0', fontSize: '0.95rem' }}>
+              {completedStages.length === totalStops ? 'Amazing adventure! Save your memories!' : `${completedStages.length}/${totalStops} stages complete`}
+            </p>
+            <div className="xp-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem', borderRadius: '9999px' }}>
+              <span style={{ fontSize: '1.25rem' }}>⚡</span>
+              <span style={{ color: '#1a1a2e', fontWeight: '900', fontSize: '1.1rem' }}>{earnedXP} / {potentialXP} XP</span>
+            </div>
+          </div>
+
+          {/* ✨ ALTERNATIVES */}
           {itinerary.alternatives && itinerary.alternatives.length > 0 && (
-            <div style={{ background: 'white', borderRadius: '24px', padding: '2rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', color: '#111827' }}>
-                ✨ {t('alternativeOptions')}
+            <div style={{ marginTop: '1.5rem' }}>
+              <h3 style={{ color: 'white', fontWeight: '800', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem' }}>
+                <Sparkles size={20} style={{ color: '#a855f7' }} />
+                {t('alternativeOptions')}
               </h3>
-              <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>{t('alternativeDescription')}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                {itinerary.alternatives.slice(0,6).map((place) => {
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem' }}>
+                {itinerary.alternatives.slice(0, 6).map((place) => {
                   const placePhoto = getPlacePhoto(place);
                   const placeholderColors = getPlaceholderImage(place.name);
+                  const altBudget = getBudgetInfo(place.price_level, place.types, place.name);
+                  
                   return (
-                  <div key={place.place_id} style={{ background: '#f9fafb', borderRadius: '16px', overflow: 'hidden', border: '2px solid #e5e7eb' }}>
-                      <div style={{ position: 'relative', height: '150px' }}>
-                        {(() => {
-                          const placePhoto = getPlacePhoto(place);
-                          const placeholderColors = getPlaceholderImage(place.name);
-                          const placeholderId = `alt-${place.place_id}`;
-                          
-                          return (
-                            <>
-                              {/* Placeholder - always visible first */}
-                              <div 
-                                id={placeholderId}
-                                style={{ 
-                                  width: '100%', 
-                                  height: '100%', 
-                                  background: `linear-gradient(135deg, ${placeholderColors[0]}, ${placeholderColors[1]})`, 
-                                  display: 'flex',
-                                  alignItems: 'center', 
-                                  justifyContent: 'center', 
-                                  fontSize: '2rem', 
-                                  color: 'white', 
-                                  fontWeight: 'bold',
-                                  position: 'absolute',
-                                  top: 0,
-                                  left: 0,
-                                  zIndex: 1
-                                }}>
-                                {place.name.charAt(0).toUpperCase()}
-                              </div>
-                              
-                              {/* Image - rendered on top if available */}
-                              {placePhoto && (
-                                <img 
-                                  src={placePhoto} 
-                                  alt={place.name}
-                                  crossOrigin="anonymous"
-                                  referrerPolicy="no-referrer"
-                                  style={{ 
-                                    width: '100%', 
-                                    height: '100%', 
-                                    objectFit: 'cover',
-                                    display: 'block',
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    zIndex: 2
-                                  }} 
-                                  onLoad={(e) => {
-                                    console.log(`✅ ALT IMAGE LOADED: ${place.name}`);
-                                    const placeholder = document.getElementById(placeholderId);
-                                    if (placeholder) {
-                                      placeholder.style.display = 'none';
-                                    }
-                                  }}
-                                  onError={(e) => { 
-                                    console.error(`❌ ALT IMAGE FAILED: ${place.name}`, placePhoto);
-                                    e.target.style.display = 'none';
-                                  }} 
-                                />
-                              )}
-                              
-                              {/* Rating badge - always on top */}
-                              {place.rating && (
-                                <div style={{ 
-                                  position: 'absolute', 
-                                  top: '0.5rem', 
-                                  right: '0.5rem', 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  gap: '0.25rem', 
-                                  background: 'white', 
-                                  padding: '0.25rem 0.75rem', 
-                                  borderRadius: '9999px',
-                                  zIndex: 10
-                                }}>
-                                  <Star size={14} style={{ color: '#eab308' }} fill="currentColor" />
-                                  <span style={{ fontWeight: 'bold', fontSize: '0.875rem' }}>{place.rating}</span>
-                                </div>
-                              )}
-                            </>
-                          );
-                        })()}
-                      </div>  
-                      <div style={{ padding: '1rem' }}>
-                        <h4 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{place.name}</h4>
-                        <p style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <MapPin size={14} />
-                          {place.vicinity}
-                        </p>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-  <button onClick={() => openDirections(place.geometry.location.lat, place.geometry.location.lng)} style={{ flex: 1, background: '#ec4899', color: 'white', fontWeight: '600', padding: '0.5rem', borderRadius: '9999px', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>
-    {t('directions')}
-  </button>
-  <button onClick={() => handleSaveDate(place)} disabled={isDateSaved(place.place_id)} style={{ flex: 1, background: isDateSaved(place.place_id) ? '#e5e7eb' : '#10b981', color: isDateSaved(place.place_id) ? '#9ca3af' : 'white', fontWeight: '600', padding: '0.5rem', borderRadius: '9999px', border: 'none', cursor: isDateSaved(place.place_id) ? 'not-allowed' : 'pointer', fontSize: '0.75rem' }}>
-    {isDateSaved(place.place_id) ? t('saved') : t('save')}
-  </button>
-</div>
+                    <div key={place.place_id} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <div style={{ position: 'relative', height: '90px' }}>
+                        <div style={{ width: '100%', height: '100%', background: `linear-gradient(135deg, ${placeholderColors[0]}, ${placeholderColors[1]})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.75rem', color: 'white', fontWeight: 'bold', position: 'absolute' }}>
+                          {place.name.charAt(0).toUpperCase()}
+                        </div>
+                        {placePhoto && <img src={placePhoto} alt={place.name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'relative' }} onError={(e) => { e.target.style.display = 'none'; }} />}
+                        {place.rating && (
+                          <div style={{ position: 'absolute', top: '0.4rem', right: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.15rem', background: 'rgba(0,0,0,0.75)', padding: '0.15rem 0.4rem', borderRadius: '9999px' }}>
+                            <Star size={10} style={{ color: '#FFD700' }} fill="#FFD700" />
+                            <span style={{ color: 'white', fontWeight: '700', fontSize: '0.7rem' }}>{place.rating}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ padding: '0.6rem' }}>
+                        <h4 style={{ color: 'white', fontSize: '0.8rem', fontWeight: '700', margin: '0 0 0.2rem 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{place.name}</h4>
+                        <p style={{ color: altBudget.color, fontSize: '0.65rem', fontWeight: '600', margin: '0 0 0.4rem 0' }}>{altBudget.symbols} {altBudget.estimate}</p>
+                        <button onClick={() => openDirections(place.geometry.location.lat, place.geometry.location.lng)} style={{ width: '100%', background: 'linear-gradient(135deg, #ec4899, #a855f7)', color: 'white', border: 'none', borderRadius: '8px', padding: '0.4rem', fontWeight: '700', fontSize: '0.7rem', cursor: 'pointer' }}>
+                          {t('directions')}
+                        </button>
                       </div>
                     </div>
                   );
                 })}
-      </div>
+              </div>
             </div>
           )}
-          
-          <div style={{ 
-  display: 'flex', 
-  flexDirection: 'column',
-  gap: '1rem',
-  position: 'fixed', 
-  bottom: '2rem', 
-  right: '2rem',
-  zIndex: 100
-}}>
-  
-  {/* 🎁 Make This a Surprise Button */}
-  <button
-    onClick={() => createSurpriseFromItinerary(itinerary)}
-    style={{
-      background: 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)',
-      color: 'white',
-      fontWeight: '900',
-      fontSize: '1.1rem',
-      padding: '1.25rem 2.5rem',
-      borderRadius: '50px',
-      border: 'none',
-      cursor: 'pointer',
-      boxShadow: '0 8px 30px rgba(236,72,153,0.4)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.75rem',
-      transition: 'all 0.3s ease'
-    }}
-    onMouseEnter={(e) => {
-      e.target.style.transform = 'translateY(-4px) scale(1.05)';
-      e.target.style.boxShadow = '0 12px 40px rgba(236,72,153,0.6)';
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.transform = 'translateY(0) scale(1)';
-      e.target.style.boxShadow = '0 8px 30px rgba(236,72,153,0.4)';
-    }}
-  >
-    <Gift size={24} />
-    🎁 Make This a Surprise
-  </button>
+        </div>
 
-  {/* ✓ Complete Date Button */}
-  <button
-    onClick={handleCompleteDateItinerary}
-    style={{
-      background: 'linear-gradient(135deg, #06D6A0 0%, #1B9AAA 100%)',
-      color: 'white',
-      fontWeight: '900',
-      fontSize: '1.1rem',
-      padding: '1.25rem 2.5rem',
-      borderRadius: '50px',
-      border: 'none',
-      cursor: 'pointer',
-      boxShadow: '0 8px 30px rgba(6,214,160,0.4)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.75rem',
-      transition: 'all 0.3s ease'
-    }}
-    onMouseEnter={(e) => {
-      e.target.style.transform = 'translateY(-4px) scale(1.05)';
-      e.target.style.boxShadow = '0 12px 40px rgba(6,214,160,0.6)';
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.transform = 'translateY(0) scale(1)';
-      e.target.style.boxShadow = '0 8px 30px rgba(6,214,160,0.4)';
-    }}
-  >
-    <CheckCircle size={24} />
-    Complete Date
-  </button>
-</div>
+        {/* 🎮 FLOATING BUTTONS */}
+        <div style={{ position: 'fixed', bottom: 'calc(1.5rem + env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '0.75rem', zIndex: 100 }}>
+          <button onClick={() => createSurpriseFromItinerary(itinerary)} style={{ background: 'linear-gradient(135deg, #ec4899, #f472b6)', color: 'white', fontWeight: '800', fontSize: '0.95rem', padding: '1rem 1.5rem', borderRadius: '50px', border: 'none', cursor: 'pointer', boxShadow: '0 8px 25px rgba(236,72,153,0.5)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Gift size={20} /> 🎁 Surprise
+          </button>
+          <button onClick={handleCompleteDateItinerary} style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', fontWeight: '800', fontSize: '0.95rem', padding: '1rem 1.5rem', borderRadius: '50px', border: 'none', cursor: 'pointer', boxShadow: '0 8px 25px rgba(16,185,129,0.5)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <CheckCircle size={20} /> Complete
+          </button>
         </div>
       </div>
-   {showPointsNotification && pointsNotificationData && (
-        <div style={{
-          position: 'fixed',
-          top: '100px',
-          right: '20px',
-          background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-          color: 'white',
-          padding: '1.5rem 2rem',
-          borderRadius: '16px',
-          boxShadow: '0 8px 30px rgba(255,215,0,0.5)',
-          zIndex: 10000,
-          animation: 'slideInRight 0.5s ease-out',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem'
-        }}>
+
+      {/* MODALS - Keep your existing ones */}
+      {showPointsNotification && pointsNotificationData && (
+        <div style={{ position: 'fixed', top: '100px', right: '20px', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: 'white', padding: '1.5rem 2rem', borderRadius: '16px', boxShadow: '0 8px 30px rgba(255,215,0,0.5)', zIndex: 10000, animation: 'slideInRight 0.5s ease-out', display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div style={{ fontSize: '2rem' }}>⚡</div>
           <div>
-            <p style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: '900',
-              margin: 0,
-              marginBottom: '0.25rem'
-            }}>
-              +{pointsNotificationData.points} XP
-            </p>
-            <p style={{ 
-              fontSize: '0.875rem',
-              margin: 0,
-              opacity: 0.9
-            }}>
-              {pointsNotificationData.message}
-            </p>
+            <p style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0, marginBottom: '0.25rem' }}>+{pointsNotificationData.points} XP</p>
+            <p style={{ fontSize: '0.875rem', margin: 0, opacity: 0.9 }}>{pointsNotificationData.message}</p>
           </div>
         </div>
       )}
 
       {showLevelUp && levelUpData && (
-        <LevelUpModal 
-          oldLevel={levelUpData.oldLevel}
-          newLevel={levelUpData.newLevel}
-          onClose={() => {
-            console.log('🚪 Level up closed');
-            setShowLevelUp(false);
-          }}
-        />
+        <LevelUpModal oldLevel={levelUpData.oldLevel} newLevel={levelUpData.newLevel} onClose={() => { console.log('🚪 Level up closed'); setShowLevelUp(false); }} />
       )}
 
       {showScrapbook && (
-        <DateMemoryScrapbook
-          currentUser={user}
-          mode={scrapbookMode}
-          dateToSave={dateToSave}
-          selectedMemory={selectedMemory}
-          onClose={closeScrapbook}
-        />
+        <DateMemoryScrapbook currentUser={user} mode={scrapbookMode} dateToSave={dateToSave} selectedMemory={selectedMemory} onClose={closeScrapbook} />
       )}
 
       {showShareModal && dateToShare ? (
-        <ShareDateModal 
-          user={user} 
-          dateData={dateToShare} 
-          onClose={() => {
-            setShowShareModal(false);
-            setDateToShare(null);
-            if (dateToShare.completedAt) {
-              setShowResults(false);
-              setItinerary(null);
-              setPlaces([]);
-            }
-          }} 
-        />
+        <ShareDateModal user={user} dateData={dateToShare} onClose={() => { setShowShareModal(false); setDateToShare(null); if (dateToShare.completedAt) { setShowResults(false); setItinerary(null); setPlaces([]); } }} />
       ) : null}
 
       {showSurpriseDate && (
-  <SurpriseDateMode
-    currentUser={user}
-    mode={surpriseMode}
-    activeSurprise={activeSurprise}
-    prefilledItinerary={activeSurprise?.itinerary || null}
-    onClose={closeSurpriseDate}
-  />
-)}
+        <SurpriseDateMode currentUser={user} mode={surpriseMode} activeSurprise={activeSurprise} prefilledItinerary={activeSurprise?.itinerary || null} onClose={closeSurpriseDate} />
+      )}
 
       {showStreaks && (
-        <DateStreaksGoals
-          currentUser={user}
-          streakData={userStreakData}
-          onClose={closeStreaks}
-        />
+        <DateStreaksGoals currentUser={user} streakData={userStreakData} onClose={closeStreaks} />
       )}
     </>
   );
-  }
+}
   
   
   
-  // Main input screen
-  return (
-    <>
-    
-      {/* ✅ RESPONSIVE HEADER */}
-      <div style={{ background: 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', padding: '1rem', paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-          
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '200px' }}>
-            <Heart style={{ color: 'white' }} size={32} fill="white" />
-            <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: 'white', textShadow: '0 2px 4px rgba(0,0,0,0.2)', margin: 0, whiteSpace: 'nowrap' }}>
-              DateMaker
-            </h1>
-          </div>
-          
-          {/* XP Bar (centered on large screens, full width on small) */}
-          {gameStats && (
-            <div style={{ 
-              flex: '1 1 auto', 
-              maxWidth: '400px', 
-              minWidth: '250px',
-              order: window.innerWidth < 768 ? 3 : 2 // Move to bottom on mobile
-            }}>
-              <XPBar 
-                level={calculateLevel(gameStats.xp || 0)}
-                progress={getProgressToNextLevel(gameStats.xp || 0)}
-                xp={gameStats.xp || 0}
-                onClick={() => navigate('/stats')}
-              />
-            </div>
-          )}
-          
-          {/* Right side: Language + Hamburger */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', order: 2 }}>
-            <LanguageSelector 
-              currentLanguage={language} 
-              onLanguageChange={handleLanguageChange} 
+  // Main input screen - REDESIGNED
+return (
+  <div style={{
+    minHeight: '100vh',
+    minHeight: '100dvh',
+    width: '100%'
+  }}>
+    {/* 🎨 GLOBAL STYLES FOR ANIMATIONS */}
+    <style>{`
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      @keyframes float {
+        0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+        50% { transform: translateY(-20px) rotate(10deg); opacity: 1; }
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+      @keyframes shimmer {
+        0% { background-position: -200% center; }
+        100% { background-position: 200% center; }
+      }
+      @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes heartBeat {
+        0%, 100% { transform: scale(1); }
+        25% { transform: scale(1.1); }
+        50% { transform: scale(1); }
+        75% { transform: scale(1.15); }
+      }
+      @keyframes slideInRight {
+        from { transform: translateX(400px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      .hover-lift {
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .hover-lift:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      }
+      .image-card {
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        cursor: pointer;
+      }
+      .image-card:hover {
+        transform: scale(1.08) rotate(2deg);
+        z-index: 10;
+      }
+      .image-card:hover img {
+        filter: brightness(1.1) saturate(1.2);
+      }
+      .glow-button {
+        position: relative;
+        overflow: hidden;
+      }
+      .glow-button::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+          45deg,
+          transparent,
+          rgba(255,255,255,0.1),
+          transparent
+        );
+        transform: rotate(45deg);
+        animation: shimmer 3s infinite;
+      }
+      html, body {
+        scroll-behavior: auto !important;
+      }
+    `}</style>
+
+    {/* 🌈 ANIMATED BACKGROUND */}
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: bgTheme.gradient,
+      backgroundSize: '400% 400%',
+      animation: 'gradientShift 15s ease infinite',
+      zIndex: -2
+    }} />
+
+    {/* ✨ FLOATING HEARTS */}
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
+      {[...Array(12)].map((_, i) => (
+        <div
+          key={i}
+          style={{
+            position: 'absolute',
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            fontSize: `${1 + Math.random() * 2}rem`,
+            animation: `float ${4 + Math.random() * 4}s ease-in-out infinite`,
+            animationDelay: `${Math.random() * 5}s`,
+            opacity: 0.3 + Math.random() * 0.4,
+            filter: 'blur(1px)'
+          }}
+        >
+          {['💕', '🥂', '💖', '🍾', '🌟','🍷', '🍺', '🍝', '🍣', '🍸', '🥘' ][Math.floor(Math.random() * 11)]}
+        </div>
+      ))}
+    </div>
+
+    {/* 📱 HEADER - Glassmorphism style */}
+<div style={{ 
+  position: 'relative', 
+  background: 'rgba(255,255,255,0.1)', 
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  borderBottom: '1px solid rgba(255,255,255,0.1)',
+  padding: '1rem', 
+  paddingTop: 'calc(1rem + env(safe-area-inset-top))',
+  zIndex: 100,
+  width: '100%',
+  boxSizing: 'border-box'
+}}>
+  <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', width: '100%', boxSizing: 'border-box' }}>
+        
+        {/* Logo with heartbeat animation */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: '200px' }}>
+          <Heart 
+            style={{ 
+              color: '#ff6b9d', 
+              animation: 'heartBeat 2s ease-in-out infinite',
+              filter: 'drop-shadow(0 0 10px rgba(255,107,157,0.5))'
+            }} 
+            size={36} 
+            fill="#ff6b9d" 
+          />
+          <h1 style={{ 
+            fontSize: '2rem', 
+            fontWeight: '800', 
+            color: 'white', 
+            margin: 0, 
+            whiteSpace: 'nowrap',
+            letterSpacing: '-0.02em'
+          }}>
+            DateMaker
+          </h1>
+        </div>
+        
+        {/* XP Bar */}
+        {gameStats && (
+          <div style={{ 
+            flex: '1 1 auto', 
+            maxWidth: '400px', 
+            minWidth: '250px',
+            order: window.innerWidth < 768 ? 3 : 2
+          }}>
+            <XPBar 
+              level={calculateLevel(gameStats.xp || 0)}
+              progress={getProgressToNextLevel(gameStats.xp || 0)}
+              xp={gameStats.xp || 0}
+              onClick={() => navigate('/stats')}
             />
-            
-           <HamburgerMenu
+          </div>
+        )}
+        
+        {/* Right side controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', order: 2 }}>
+          <LanguageSelector 
+            currentLanguage={language} 
+            onLanguageChange={handleLanguageChange} 
+          />
+          
+          <HamburgerMenu
   user={user}
   subscriptionStatus={subscriptionStatus}
   savedDatesCount={Math.max(0, savedDates.length - lastViewedSavedCount)}
   notificationCount={notificationCounts.total}
   surpriseCount={surpriseCount}
   isGuestMode={isGuestMode}
-  onNavigate={(destination) => {
-  if (destination === 'spin') setShowSpinningWheel(true);
-  if (destination === 'invite') setShowInviteFriends(true);
-  if (destination === 'stats') navigate('/stats');
-  if (destination === 'achievements') navigate('/achievements');  // ← ADD THIS
-  if (destination === 'social') {
-                  if (subscriptionStatus === 'free') {
-                    alert('Social is a premium feature!');
-                    setShowPremiumModal(true);
-                  } else {
-                    setShowSocial(true);
-                  }
+  bgTheme={bgTheme}
+  profilePhoto={profilePhoto}
+            onNavigate={(destination) => {
+              if (destination === 'spin') setShowSpinningWheel(true);
+              if (destination === 'invite') setShowInviteFriends(true);
+              if (destination === 'stats') navigate('/stats');
+              if (destination === 'achievements') navigate('/achievements');
+              if (destination === 'social') {
+                if (subscriptionStatus === 'free') {
+                  alert('Social is a premium feature!');
+                  setShowPremiumModal(true);
+                } else {
+                  setShowSocial(true);
                 }
-                if (destination === 'saved') handleOpenSaved();
-                
-                if (destination === 'scrapbook') openScrapbookMemories();
-    if (destination === 'surprise') openSurpriseDateTracker();
-    if (destination === 'streaks') openStreaksGoals();
-                
-                if (destination === 'profile') setShowProfile(true);
-              }}
-              onLogout={handleLogout}
-            />
+              }
+              if (destination === 'saved') handleOpenSaved();
+              if (destination === 'scrapbook') openScrapbookMemories();
+              if (destination === 'surprise') openSurpriseDateTracker();
+              if (destination === 'streaks') openStreaksGoals();
+              if (destination === 'profile') setShowProfile(true);
+            }}
+            onLogout={handleLogout}
+          />
+        </div>
+      </div>
+    </div>
+
+    {/* 🎯 MAIN CONTENT */}
+<div style={{ 
+  maxWidth: '1100px', 
+  margin: '0 auto', 
+  padding: '2rem 1.5rem', 
+  paddingBottom: '4rem',
+  position: 'relative',
+  width: '100%',
+  boxSizing: 'border-box',
+  overflowX: 'hidden'
+}}>
+      
+      {/* 🚀 HERO SECTION - Punchy & Bold */}
+      <div style={{ 
+        textAlign: 'center', 
+        marginBottom: '3rem',
+        animation: 'fadeInUp 0.8s ease-out'
+      }}>
+        {/* Small tag line */}
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          background: 'rgba(255,107,157,0.2)',
+          border: '1px solid rgba(255,107,157,0.3)',
+          borderRadius: '9999px',
+          padding: '0.5rem 1.25rem',
+          marginBottom: '1.5rem'
+        }}>
+          <Sparkles size={16} style={{ color: '#ff6b9d' }} />
+          <span style={{ color: bgTheme.accent , fontWeight: '600', fontSize: '0.9rem' }}>
+  {t('heroSubtitle')}
+</span>
+        </div>
+
+        {/* Main headline - BIG and BOLD */}
+        <h1 style={{ 
+          fontSize: 'clamp(2.5rem, 8vw, 5rem)', 
+          fontWeight: '900', 
+          lineHeight: '1.05',
+          marginBottom: '1.5rem',
+          letterSpacing: '-0.03em'
+        }}>
+          <span style={{ 
+  display: 'block',
+  color: '#1f2937'
+}}>
+ {t('heroTitle1')}
+</span>
+<span style={{ 
+  display: 'block',
+  background: 'linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #ff6b9d 100%)',
+  backgroundSize: '200% auto',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  animation: 'shimmer 3s linear infinite'
+}}>
+  {t('heroTitle2')}
+</span>
+        </h1>
+
+        {/* Subheadline */}
+        <p style={{ 
+          fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)', 
+          color: 'rgba(0,0,0,0.6)',
+          maxWidth: '600px', 
+          margin: '0 auto 2rem',
+          lineHeight: '1.6'
+        }}>
+          {t('heroDescription')}
+        </p>
+
+        {/* 📊 SOCIAL PROOF */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '3rem',
+          flexWrap: 'wrap',
+          marginBottom: '2rem'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+              fontSize: '2rem', 
+              fontWeight: '900', 
+              color: bgTheme.accent,
+              lineHeight: 1
+            }}>
+              10K+
+            </div>
+            <div style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.5)' }}>
+              {t('datesCreated')}
+            </div>
+          </div>
+          <div style={{ 
+            width: '1px', 
+            background: 'rgba(0,0,0,0.15)',
+            alignSelf: 'stretch'
+          }} />
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ 
+  fontSize: '2rem', 
+  fontWeight: '900', 
+  color: bgTheme.accent,
+  lineHeight: 1
+}}>
+  {t('allCities')}
+</div>
+<div style={{ fontSize: '0.85rem', color: 'rgba(0,0,0,0.5)' }}>
+  {t('citiesCovered')}
+</div>
           </div>
         </div>
       </div>
 
-      {/* Main content starts here */}
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '3rem 1.5rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <div style={{ background: 'linear-gradient(to right, #ec4899, #a855f7, #3b82f6)', borderRadius: '9999px', padding: '3rem 2rem', marginBottom: '2rem', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
-              <Sparkles style={{ color: 'white' }} size={28} />
-              <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'white', margin: 0 }}>
-                Complete Date Night Planning
-              </h2>
+      {/* 🖼️ IMAGE SHOWCASE - Interactive Grid */}
+<div style={{ 
+  display: 'grid', 
+  gridTemplateColumns: 'repeat(6, 1fr)',
+  width: '100%',
+  boxSizing: 'border-box',
+        gridTemplateRows: 'repeat(2, 140px)',
+        gap: '1rem',
+        marginBottom: '3rem',
+        animation: 'fadeInUp 0.8s ease-out',
+        animationDelay: '0.2s',
+        animationFillMode: 'both'
+      }}>
+        {/* Large featured image */}
+        <div className="image-card" style={{ 
+          gridColumn: 'span 2',
+          gridRow: 'span 2',
+          borderRadius: '20px', 
+          overflow: 'hidden', 
+          boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+          position: 'relative'
+        }}>
+          <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80" alt="Fine Dining" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'all 0.5s' }} />
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '1.5rem',
+            background: 'linear-gradient(transparent, rgba(0,0,0,0.8))'
+          }}>
+            <span style={{ color: 'white', fontWeight: '700', fontSize: '1.1rem' }}>🍽️ {t('fineDining')}</span>
+          </div>
+        </div>
+
+        {/* Other images */}
+        <div className="image-card" style={{ 
+          gridColumn: 'span 2',
+          borderRadius: '16px', 
+          overflow: 'hidden', 
+          boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
+          position: 'relative'
+        }}>
+          <img src="https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800&q=80" alt="Cocktails" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'all 0.5s' }} />
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '1rem',
+            background: 'linear-gradient(transparent, rgba(0,0,0,0.8))'
+          }}>
+            <span style={{ color: 'white', fontWeight: '600' }}>🍸 {t('cocktailsLabel')}</span>
+          </div>
+        </div>
+
+        <div className="image-card" style={{ 
+          gridColumn: 'span 2',
+          borderRadius: '16px', 
+          overflow: 'hidden', 
+          boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
+          position: 'relative'
+        }}>
+          <img src="https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&q=80" alt="Nightlife" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'all 0.5s' }} />
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '1rem',
+            background: 'linear-gradient(transparent, rgba(0,0,0,0.8))'
+          }}>
+            <span style={{ color: 'white', fontWeight: '600' }}>🎉 {t('nightlife')}</span>
+          </div>
+        </div>
+
+        <div className="image-card" style={{ 
+          gridColumn: 'span 2',
+          borderRadius: '16px', 
+          overflow: 'hidden', 
+          boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
+          position: 'relative'
+        }}>
+          <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&q=80" alt="Movies" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'all 0.5s' }} />
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '1rem',
+            background: 'linear-gradient(transparent, rgba(0,0,0,0.8))'
+          }}>
+            <span style={{ color: 'white', fontWeight: '600' }}>🎬 {t('movies')}</span>
+          </div>
+        </div>
+
+        <div className="image-card" style={{ 
+          gridColumn: 'span 2',
+          borderRadius: '16px', 
+          overflow: 'hidden', 
+          boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
+          position: 'relative'
+        }}>
+          <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80" alt="Adventure" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'all 0.5s' }} />
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '1rem',
+            background: 'linear-gradient(transparent, rgba(0,0,0,0.8))'
+          }}>
+            <span style={{ color: 'white', fontWeight: '600' }}>🏔️ {t('adventure')}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 💎 PREMIUM BANNER - For free users */}
+      {subscriptionStatus === 'free' && (
+        <div 
+          className="hover-lift"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,107,157,0.2) 0%, rgba(196,69,105,0.2) 100%)',
+            border: '1px solid rgba(255,107,157,0.3)',
+            backdropFilter: 'blur(10px)',
+            padding: '2rem',
+            borderRadius: '24px',
+            marginBottom: '2rem',
+            textAlign: 'center',
+            animation: 'fadeInUp 0.8s ease-out',
+            animationDelay: '0.4s',
+            animationFillMode: 'both'
+          }}
+        >
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>✨</div>
+          <h3 style={{
+            fontSize: '1.5rem',
+            fontWeight: '800',
+            color: 'white',
+            marginBottom: '0.5rem'
+          }}>
+            {Capacitor.isNativePlatform() ? t('unlockPremium') : t('startFreeTrial')}
+          </h3>
+          
+          <p style={{
+            color: 'rgba(255,255,255,0.7)',
+            marginBottom: '1.5rem',
+            fontSize: '1rem'
+          }}>
+            
+          </p>
+          
+          <button 
+            onClick={() => {
+              if (user?.email) {
+                localStorage.setItem('datemaker_prefill_email', user.email);
+              }
+              if (Capacitor.isNativePlatform()) {
+                setShowPremiumModal(true);
+              } else {
+                setShowSubscriptionModal(true);
+              }
+            }}
+            className="glow-button"
+            style={{ 
+              background: 'linear-gradient(135deg, #ff6b9d 0%, #c44569 100%)',
+              color: 'white', 
+              fontWeight: '700', 
+              padding: '1rem 2.5rem', 
+              borderRadius: '9999px', 
+              border: 'none', 
+              cursor: 'pointer',
+              fontSize: '1.1rem',
+              boxShadow: '0 8px 30px rgba(255,107,157,0.4)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 12px 40px rgba(255,107,157,0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 8px 30px rgba(255,107,157,0.4)';
+            }}
+          >
+            {Capacitor.isNativePlatform() ? t('getPremium') : t('startTrialButton')}
+          </button>
+        </div>
+      )}
+
+      {/* 📝 MAIN FORM - Glassmorphism Card */}
+      <div 
+        className="hover-lift"
+        style={{ 
+          background: 'rgba(255,255,255,0.08)', 
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderRadius: '32px', 
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+          padding: '2.5rem',
+          animation: 'fadeInUp 0.8s ease-out',
+          animationDelay: '0.6s',
+          animationFillMode: 'both'
+        }}
+      >
+        <h2 style={{ 
+          fontSize: '1.75rem', 
+          fontWeight: '800', 
+          marginBottom: '2rem', 
+          color: 'white',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem'
+        }}>
+          <span style={{ fontSize: '1.5rem' }}>💕</span>
+{t('planYourDate')}
+        </h2>
+        
+        {/* ⏰ TIME SECTION */}
+        <div style={{ 
+          marginBottom: '2rem', 
+          padding: '1.5rem', 
+          background: 'rgba(59, 130, 246, 0.1)', 
+          borderRadius: '20px', 
+          border: '1px solid rgba(59, 130, 246, 0.2)' 
+        }}>
+          <h3 style={{ 
+            fontSize: '1.1rem', 
+            fontWeight: '700', 
+            color: '#60a5fa', 
+            marginBottom: '1rem', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.5rem' 
+          }}>
+            <Clock size={20} />
+{t('whenHowLong')}
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+            <div>
+              <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginBottom: '0.5rem', display: 'block' }}>
+                {t('startTime')}
+              </label>
+              <select 
+                value={startTime} 
+                onChange={(e) => setStartTime(e.target.value)} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.875rem 1rem', 
+                  border: '1px solid rgba(255,255,255,0.2)', 
+                  borderRadius: '12px', 
+                  fontSize: '1rem', 
+                  fontWeight: '600', 
+                  color: 'white', 
+                  background: 'rgba(255,255,255,0.1)', 
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+              >
+                {['6:00 AM','7:00 AM','8:00 AM','9:00 AM','10:00 AM','11:00 AM','12:00 PM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM','6:00 PM','7:00 PM','8:00 PM','9:00 PM','10:00 PM','11:00 PM'].map(time => (
+                  <option key={time} value={time} style={{ background: '#1a1a2e', color: 'white' }}>{time}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginBottom: '0.5rem', display: 'block' }}>
+                {t('duration')}
+              </label>
+              <select 
+                value={duration} 
+                onChange={(e) => setDuration(e.target.value)} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.875rem 1rem', 
+                  border: '1px solid rgba(255,255,255,0.2)', 
+                  borderRadius: '12px', 
+                  fontSize: '1rem', 
+                  fontWeight: '600', 
+                  color: 'white', 
+                  background: 'rgba(255,255,255,0.1)', 
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+              >
+               {[2,3,4,5,6,7,8].map(h => (
+  <option key={h} value={h} style={{ background: '#1a1a2e', color: 'white' }}>{h} {t('hours')}</option>
+))}
+              </select>
             </div>
           </div>
-          <h1 style={{ fontSize: '4rem', fontWeight: '900', lineHeight: '1.1', marginBottom: '1.5rem' }}>
-            <div style={{ background: 'linear-gradient(to right, #ec4899, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              {t('heroTitle1')}
-            </div>
-            <div style={{ background: 'linear-gradient(to right, #a855f7, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              {t('heroTitle2')}
-            </div>
-          </h1>
-          <h2 style={{ fontSize: '3rem', fontWeight: '900', color: '#111827', marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
-            {t('heroSubtitle')}
-            <span style={{ fontSize: '3rem' }}>✨</span>
-          </h2>
-          <p style={{ fontSize: '1.5rem', color: '#374151', lineHeight: '1.8', maxWidth: '900px', margin: '0 auto' }}>
-            {t('heroDescription')}
+          <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.75rem' }}>
+            📅 {startTime} → {addHours(startTime, parseInt(duration))}
           </p>
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
-          <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 8px 20px rgba(0,0,0,0.15)', height: '200px' }}>
-            <img src="https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800&q=80" alt="Cocktails" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 8px 20px rgba(0,0,0,0.15)', height: '200px' }}>
-            <img src="https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&q=80" alt="Party" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 8px 20px rgba(0,0,0,0.15)', height: '200px' }}>
-            <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&q=80" alt="Cinema" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 8px 20px rgba(0,0,0,0.15)', height: '200px' }}>
-            <img src="https://images.unsplash.com/photo-1551632811-561732d1e306?w=800&q=80" alt="Adventure" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 8px 20px rgba(0,0,0,0.15)', height: '200px' }}>
-            <img src="https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=80" alt="Cooking" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <div style={{ borderRadius: '20px', overflow: 'hidden', boxShadow: '0 8px 20px rgba(0,0,0,0.15)', height: '200px' }}>
-            <img src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800&q=80" alt="Stadium" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
+        {/* 📍 LOCATION */}
+        <div style={{ marginBottom: '2rem' }}>
+          <label style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.5rem', 
+            fontSize: '1.1rem', 
+            fontWeight: '700', 
+            color: 'white', 
+            marginBottom: '0.75rem' 
+          }}>
+            <MapPin style={{ color: bgTheme.accent }} size={20} />
+{t('location')}
+          </label>
+          <input 
+            type="text" 
+            value={location} 
+            onChange={(e) => setLocation(e.target.value)} 
+            placeholder={t('locationPlaceholder')}
+            style={{ 
+              width: '100%', 
+              padding: '1rem 1.5rem', 
+              border: '1px solid rgba(255,255,255,0.2)', 
+              borderRadius: '16px', 
+              fontSize: '1.1rem', 
+              outline: 'none', 
+              boxSizing: 'border-box',
+              background: 'rgba(255,255,255,0.08)',
+              color: 'white',
+              transition: 'all 0.3s ease'
+            }} 
+            onFocus={(e) => {
+              e.target.style.border = '1px solid #ff6b9d';
+              e.target.style.boxShadow = '0 0 20px rgba(255,107,157,0.2)';
+            }} 
+            onBlur={(e) => {
+              e.target.style.border = '1px solid rgba(255,255,255,0.2)';
+              e.target.style.boxShadow = 'none';
+            }} 
+          />
         </div>
         
-       {subscriptionStatus === 'free' && (
-  <div style={{
-    background: 'linear-gradient(135deg, #ec4899 0%, #a855f7 100%)',
-    padding: '2rem',
-    borderRadius: '20px',
-    marginBottom: '2rem',
-    textAlign: 'center',
-    border: 'none',
-    boxShadow: '0 10px 30px rgba(236, 72, 153, 0.3)',
-    color: 'white'
-  }}>
-    <h3 style={{
-      fontSize: '1.75rem',
-      fontWeight: '900',
-      marginBottom: '0.75rem',
-      textShadow: '0 2px 10px rgba(0,0,0,0.2)'
-    }}>
-      {Capacitor.isNativePlatform() ? '🎉 Premium Features Available!' : '🎉 Start Your 7-Day FREE Trial!'}
-    </h3>
-    
-    <p style={{
-      marginBottom: '1.25rem',
-      fontSize: '1.05rem',
-      opacity: 0.95
-    }}>
-      {Capacitor.isNativePlatform() 
-        ? 'Unlock everything DateMaker has to offer'
-        : 'Enter your card now - won\'t be charged until trial ends'}
-    </p>
-    
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      gap: '1.5rem',
-      flexWrap: 'wrap',
-      marginBottom: '1.5rem',
-      fontSize: '0.95rem'
-    }}>
-      <span>✨ Unlimited dates</span>
-      <span>📅 Complete itineraries</span>
-      <span>👥 Social features</span>
-    </div>
-    
-    <button 
-  onClick={() => {
-    console.log('🎉 Main feed banner clicked');
-    
-    // Save email to localStorage if user is logged in
-    if (user?.email) {
-      localStorage.setItem('datemaker_prefill_email', user.email);
-      console.log('📧 Saved email for pre-fill:', user.email);
-    }
-    
-    if (Capacitor.isNativePlatform()) {
-      setShowPremiumModal(true);
-    } else {
-      setShowSubscriptionModal(true);
-    }
-  }}
-      style={{ 
-        background: 'white',
-        color: '#ec4899', 
-        fontWeight: '800', 
-        padding: '1rem 2.5rem', 
-        borderRadius: '9999px', 
-        border: 'none', 
-        cursor: 'pointer',
-        fontSize: '1.1rem',
-        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.2)',
-        transition: 'all 0.3s ease'
-      }}
-    >
-      {Capacitor.isNativePlatform() ? '✨ Sign In With Premium' : 'Start FREE Trial →'}
-    </button>
-    
-    {/* iOS: NO text about websites. Web: Keep payment info */}
-    {!Capacitor.isNativePlatform() && (
-      <p style={{ marginTop: '1rem', fontSize: '0.875rem', opacity: 0.9 }}>
-        💳 Cancel anytime • 🔒 Secure payment • ⏰ $9.99/mo after trial
-      </p>
-    )}
-  </div>
-)}
-
-        <div style={{ background: 'white', borderRadius: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', padding: '3rem' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem', background: 'linear-gradient(to right, #ec4899, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            💕 {t('heroSubtitle')}
-          </h2>
+        {/* ✨ ACTIVITIES INPUT */}
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ 
+            fontSize: '1.1rem', 
+            fontWeight: '700', 
+            color: 'white', 
+            marginBottom: '0.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <Sparkles size={20} style={{ color: '#a855f7' }} />
+{t('activities')}
+          </h3>
           
-          <div style={{ marginBottom: '2rem', padding: '1.5rem', background: '#f0f9ff', borderRadius: '16px', border: '2px solid #bae6fd' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#0c4a6e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Clock size={24} style={{ color: '#0369a1' }} />
-              When & How Long
-            </h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              <div>
-                <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#0c4a6e', marginBottom: '0.5rem', display: 'block' }}>
-                  Start Time
-                </label>
-                <select value={startTime} onChange={(e) => setStartTime(e.target.value)} style={{ width: '100%', padding: '0.75rem', border: '2px solid #bae6fd', borderRadius: '12px', fontSize: '1rem', fontWeight: '600', color: '#0c4a6e', background: 'white', cursor: 'pointer' }}>
-                  <option value="6:00 AM">6:00 AM</option>
-                  <option value="7:00 AM">7:00 AM</option>
-                  <option value="8:00 AM">8:00 AM</option>
-                  <option value="9:00 AM">9:00 AM</option>
-                  <option value="10:00 AM">10:00 AM</option>
-                  <option value="11:00 AM">11:00 AM</option>
-                  <option value="12:00 PM">12:00 PM</option>
-                  <option value="1:00 PM">1:00 PM</option>
-                  <option value="2:00 PM">2:00 PM</option>
-                  <option value="3:00 PM">3:00 PM</option>
-                  <option value="4:00 PM">4:00 PM</option>
-                  <option value="5:00 PM">5:00 PM</option>
-                  <option value="6:00 PM">6:00 PM</option>
-                  <option value="7:00 PM">7:00 PM</option>
-                  <option value="8:00 PM">8:00 PM</option>
-                  <option value="9:00 PM">9:00 PM</option>
-                  <option value="10:00 PM">10:00 PM</option>
-                  <option value="11:00 PM">11:00 PM</option>
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#0c4a6e', marginBottom: '0.5rem', display: 'block' }}>
-                  Duration (Hours)
-                </label>
-                <select value={duration} onChange={(e) => setDuration(e.target.value)} style={{ width: '100%', padding: '0.75rem', border: '2px solid #bae6fd', borderRadius: '12px', fontSize: '1rem', fontWeight: '600', color: '#0c4a6e', background: 'white', cursor: 'pointer' }}>
-                  <option value="2">2 hours</option>
-                  <option value="3">3 hours</option>
-                  <option value="4">4 hours</option>
-                  <option value="5">5 hours</option>
-                  <option value="6">6 hours</option>
-                  <option value="7">7 hours</option>
-                  <option value="8">8 hours</option>
-                </select>
-              </div>
-            </div>
-            <p style={{ fontSize: '0.875rem', color: '#075985', marginTop: '0.75rem', fontWeight: '500' }}>
-              📅 Your date will run from {startTime} to {addHours(startTime, parseInt(duration))}
-            </p>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <input 
+              type="text" 
+              value={customActivityInput} 
+              onChange={(e) => setCustomActivityInput(e.target.value)} 
+              onKeyPress={handleKeyPress} 
+              placeholder={t('customActivityPlaceholder')}
+              style={{ 
+                flex: 1, 
+                padding: '1rem 1.5rem', 
+                border: '1px solid rgba(255,255,255,0.2)', 
+                borderRadius: '16px', 
+                fontSize: '1rem', 
+                outline: 'none', 
+                boxSizing: 'border-box',
+                background: 'rgba(255,255,255,0.08)',
+                color: 'white',
+                transition: 'all 0.3s ease'
+              }} 
+              onFocus={(e) => {
+                e.target.style.border = '1px solid #a855f7';
+                e.target.style.boxShadow = '0 0 20px rgba(168,85,247,0.2)';
+              }} 
+              onBlur={(e) => {
+                e.target.style.border = '1px solid rgba(255,255,255,0.2)';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+            <button 
+              onClick={handleAddCustomActivity} 
+              style={{ 
+                padding: '1rem 1.75rem', 
+                background: 'linear-gradient(135deg, #a855f7, #7c3aed)', 
+                color: 'white', 
+                fontWeight: '600', 
+                borderRadius: '16px', 
+                border: 'none', 
+                cursor: 'pointer', 
+                whiteSpace: 'nowrap',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 8px 20px rgba(168,85,247,0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = 'none';
+              }}
+            >
+  {t('add')}
+</button>
           </div>
           
-          <div style={{ marginBottom: '2rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.5rem', fontWeight: 'bold', color: '#111827', marginBottom: '1rem' }}>
-              <MapPin style={{ color: '#ec4899' }} size={24} />
-              {t('location')}
-            </label>
-            <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder={t('locationPlaceholder')} style={{ width: '100%', padding: '1rem 1.5rem', border: '2px solid #fbcfe8', borderRadius: '9999px', fontSize: '1.125rem', outline: 'none', boxSizing: 'border-box' }} onFocus={(e) => e.target.style.border = '2px solid #ec4899'} onBlur={(e) => e.target.style.border = '2px solid #fbcfe8'} />
-          </div>
-          
-          <div style={{ marginBottom: '2rem' }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827', marginBottom: '1rem' }}>
-              ✨ Start planning your date!
-            </h3>
-            
-            <div style={{ marginTop: '1.5rem' }}>
-              <label style={{ fontSize: '1rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem', display: 'block' }}>
-                {t('addCustomActivity')}
-              </label>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <input type="text" value={customActivityInput} onChange={(e) => setCustomActivityInput(e.target.value)} onKeyPress={handleKeyPress} placeholder={t('customActivityPlaceholder')} style={{ flex: 1, padding: '0.875rem 1.25rem', border: '2px solid #fbcfe8', borderRadius: '9999px', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }} onFocus={(e) => e.target.style.border = '2px solid #ec4899'} onBlur={(e) => e.target.style.border = '2px solid #fbcfe8'} />
-                <button onClick={handleAddCustomActivity} style={{ padding: '0.875rem 1.5rem', background: 'linear-gradient(to right, #ec4899, #a855f7)', color: 'white', fontWeight: '600', borderRadius: '9999px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  {t('add')}
-                </button>
-              </div>
-              
-              {customActivities.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '1rem' }}>
-                  {customActivities.map((activity, index) => (
-                    <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', borderRadius: '9999px', background: 'linear-gradient(to right, #3b82f6, #2563eb)', color: 'white', fontWeight: '600', boxShadow: '0 4px 6px rgba(59,130,246,0.3)' }}>
-                      {activity}
-                      <button onClick={() => handleRemoveCustomActivity(activity)} style={{ background: 'rgba(255,255,255,0.3)', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'white', fontWeight: 'bold', fontSize: '0.875rem' }}>
-                        ×
-                      </button>
-                    </div>
-                  ))}
+          {/* Activity Tags */}
+          {customActivities.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '1rem' }}>
+              {customActivities.map((activity, index) => (
+                <div 
+                  key={index} 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.5rem', 
+                    padding: '0.75rem 1.25rem', 
+                    borderRadius: '9999px', 
+                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)', 
+                    color: 'white', 
+                    fontWeight: '600', 
+                    boxShadow: '0 4px 15px rgba(59,130,246,0.3)',
+                    animation: 'fadeInUp 0.3s ease-out'
+                  }}
+                >
+                  {activity}
+                  <button 
+                    onClick={() => handleRemoveCustomActivity(activity)} 
+                    style={{ 
+                      background: 'rgba(255,255,255,0.2)', 
+                      border: 'none', 
+                      borderRadius: '50%', 
+                      width: '22px', 
+                      height: '22px', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      cursor: 'pointer', 
+                      color: 'white', 
+                      fontWeight: 'bold', 
+                      fontSize: '0.9rem',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.4)'}
+                    onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
+                  >
+                    ×
+                  </button>
                 </div>
-              )}
-            </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', background: '#eff6ff', borderRadius: '12px', border: '2px solid #bfdbfe', marginTop: '1.5rem' }}>
-              <input type="checkbox" id="includeEvents" checked={includeEvents} onChange={(e) => setIncludeEvents(e.target.checked)} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#3b82f6' }} />
-              <label htmlFor="includeEvents" style={{ fontSize: '1rem', fontWeight: '600', color: '#1e40af', cursor: 'pointer', userSelect: 'none', margin: 0 }}>
-                🎉 {t('includeEvents')}
-              </label>
-            </div>
-            
-            {includeEvents && (
-              <div style={{ marginTop: '1.5rem', padding: '1.5rem', background: '#fdf4ff', borderRadius: '16px', border: '2px solid #f0abfc' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#86198f', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  📅 {t('whenLookingForEvents')}
-                </h3>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <button onClick={() => { setDateRange('anytime'); setSelectedDate(''); }} style={{ padding: '0.75rem 1.5rem', borderRadius: '9999px', fontWeight: '600', border: dateRange === 'anytime' ? 'none' : '2px solid #f0abfc', background: dateRange === 'anytime' ? 'linear-gradient(to right, #a855f7, #9333ea)' : 'white', color: dateRange === 'anytime' ? 'white' : '#86198f', cursor: 'pointer', transition: 'all 0.2s' }}>
-                      {t('anytime')}
-                    </button>
-                    <button onClick={() => setDateRange('today')} style={{ padding: '0.75rem 1.5rem', borderRadius: '9999px', fontWeight: '600', border: dateRange === 'today' ? 'none' : '2px solid #f0abfc', background: dateRange === 'today' ? 'linear-gradient(to right, #a855f7, #9333ea)' : 'white', color: dateRange === 'today' ? 'white' : '#86198f', cursor: 'pointer', transition: 'all 0.2s' }}>
-                      {t('today')}
-                    </button>
-                    <button onClick={() => setDateRange('thisweek')} style={{ padding: '0.75rem 1.5rem', borderRadius: '9999px', fontWeight: '600', border: dateRange === 'thisweek' ? 'none' : '2px solid #f0abfc', background: dateRange === 'thisweek' ? 'linear-gradient(to right, #a855f7, #9333ea)' : 'white', color: dateRange === 'thisweek' ? 'white' : '#86198f', cursor: 'pointer', transition: 'all 0.2s' }}>
-                      {t('thisWeek')}
-                    </button>
-                    <button onClick={() => setDateRange('thismonth')} style={{ padding: '0.75rem 1.5rem', borderRadius: '9999px', fontWeight: '600', border: dateRange === 'thismonth' ? 'none' : '2px solid #f0abfc', background: dateRange === 'thismonth' ? 'linear-gradient(to right, #a855f7, #9333ea)' : 'white', color: dateRange === 'thismonth' ? 'white' : '#86198f', cursor: 'pointer', transition: 'all 0.2s' }}>
-                      {t('thisMonth')}
-                    </button>
-                    <button onClick={() => setDateRange('custom')} style={{ padding: '0.75rem 1.5rem', borderRadius: '9999px', fontWeight: '600', border: dateRange === 'custom' ? 'none' : '2px solid #f0abfc', background: dateRange === 'custom' ? 'linear-gradient(to right, #a855f7, #9333ea)' : 'white', color: dateRange === 'custom' ? 'white' : '#86198f', cursor: 'pointer', transition: 'all 0.2s' }}>
-                      {t('pickDate')}
-                    </button>
-                  </div>
-                  {dateRange === 'custom' && (
-                    <div>
-                      <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#86198f', marginBottom: '0.5rem', display: 'block' }}>
-                        {t('selectDate')}
-                      </label>
-                      <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} min={new Date().toISOString().split('T')[0]} style={{ width: '100%', padding: '0.875rem 1rem', border: '2px solid #f0abfc', borderRadius: '12px', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }} />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-          
-          {error && (
-            <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#fef2f2', border: '2px solid #fecaca', borderRadius: '16px', color: '#b91c1c', fontWeight: '600', textAlign: 'center' }}>
-              {error}
+              ))}
             </div>
           )}
-          
-          <button onClick={() => handleGenerateDate(false)} disabled={searchLoading} style={{ width: '100%', background: searchLoading ? '#d1d5db' : 'linear-gradient(to right, #ec4899, #a855f7, #3b82f6)', color: 'white', fontWeight: 'bold', fontSize: '1.25rem', padding: '1.5rem 2rem', borderRadius: '9999px', border: 'none', cursor: searchLoading ? 'not-allowed' : 'pointer', boxShadow: '0 10px 20px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
-            {searchLoading ? (
-              <>
-                <div style={{ width: '24px', height: '24px', border: '4px solid white', borderTop: '4px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                {t('creating')}
-              </>
-            ) : (
-              <>
-                <Sparkles size={24} />
-                {t('generateDate')}
-              </>
+        </div>
+        
+        {/* 🎉 EVENTS TOGGLE */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '0.75rem', 
+          padding: '1rem 1.25rem', 
+          background: 'rgba(16, 185, 129, 0.1)', 
+          borderRadius: '16px', 
+          border: '1px solid rgba(16, 185, 129, 0.2)', 
+          marginBottom: '1.5rem',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease'
+        }}
+        onClick={() => setIncludeEvents(!includeEvents)}
+        >
+          <input 
+            type="checkbox" 
+            checked={includeEvents} 
+            onChange={(e) => setIncludeEvents(e.target.checked)} 
+            style={{ 
+              width: '22px', 
+              height: '22px', 
+              cursor: 'pointer', 
+              accentColor: '#10b981' 
+            }} 
+          />
+          <label style={{ 
+            fontSize: '1rem', 
+            fontWeight: '600', 
+            color: '#34d399', 
+            cursor: 'pointer', 
+            userSelect: 'none', 
+            margin: 0 
+          }}>
+            🎉 {t('includeEvents')}
+          </label>
+        </div>
+        
+        {/* Events Date Range (if enabled) */}
+        {includeEvents && (
+          <div style={{ 
+            marginBottom: '2rem', 
+            padding: '1.5rem', 
+            background: 'rgba(168, 85, 247, 0.1)', 
+            borderRadius: '20px', 
+            border: '1px solid rgba(168, 85, 247, 0.2)',
+            animation: 'fadeInUp 0.3s ease-out'
+          }}>
+            <h3 style={{ 
+              fontSize: '1rem', 
+              fontWeight: '700', 
+              color: '#c084fc', 
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              📅 {t('whenLookingForEvents')}
+            </h3>
+            
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: dateRange === 'custom' ? '1rem' : 0 }}>
+              {[
+  { value: 'anytime', label: t('anytime') },
+  { value: 'today', label: t('today') },
+  { value: 'thisweek', label: t('thisWeek') },
+  { value: 'thismonth', label: t('thisMonth') },
+  { value: 'custom', label: t('pickDate') }
+].map(option => (
+                <button 
+                  key={option.value}
+                  onClick={() => { setDateRange(option.value); if(option.value !== 'custom') setSelectedDate(''); }} 
+                  style={{ 
+                    padding: '0.6rem 1.25rem', 
+                    borderRadius: '9999px', 
+                    fontWeight: '600', 
+                    fontSize: '0.9rem',
+                    border: dateRange === option.value ? 'none' : '1px solid rgba(168, 85, 247, 0.3)', 
+                    background: dateRange === option.value ? 'linear-gradient(135deg, #a855f7, #7c3aed)' : 'transparent', 
+                    color: dateRange === option.value ? 'white' : '#c084fc', 
+                    cursor: 'pointer', 
+                    transition: 'all 0.2s' 
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            
+            {dateRange === 'custom' && (
+              <input 
+                type="date" 
+                value={selectedDate} 
+                onChange={(e) => setSelectedDate(e.target.value)} 
+                min={new Date().toISOString().split('T')[0]} 
+                style={{ 
+                  width: '100%', 
+                  padding: '0.875rem 1rem', 
+                  border: '1px solid rgba(168, 85, 247, 0.3)', 
+                  borderRadius: '12px', 
+                  fontSize: '1rem', 
+                  outline: 'none', 
+                  boxSizing: 'border-box',
+                  background: 'rgba(255,255,255,0.08)',
+                  color: 'white'
+                }} 
+              />
             )}
-          </button>
+          </div>
+        )}
+        
+        {/* ❌ ERROR MESSAGE */}
+        {error && (
+          <div style={{ 
+            marginBottom: '1.5rem', 
+            padding: '1rem 1.5rem', 
+            background: 'rgba(239, 68, 68, 0.15)', 
+            border: '1px solid rgba(239, 68, 68, 0.3)', 
+            borderRadius: '16px', 
+            color: '#fca5a5', 
+            fontWeight: '600', 
+            textAlign: 'center' 
+          }}>
+            {error}
+          </div>
+        )}
+        
+        {/* 🚀 GENERATE BUTTON */}
+        <button 
+          onClick={() => handleGenerateDate(false)} 
+          disabled={searchLoading} 
+          className="glow-button"
+          style={{ 
+            width: '100%', 
+            background: searchLoading ? 'rgba(255,255,255,0.1)' : 'linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #a855f7 100%)', 
+            color: 'white', 
+            fontWeight: '800', 
+            fontSize: '1.3rem', 
+            padding: '1.25rem 2rem', 
+            borderRadius: '16px', 
+            border: 'none', 
+            cursor: searchLoading ? 'not-allowed' : 'pointer', 
+            boxShadow: searchLoading ? 'none' : '0 10px 40px rgba(255,107,157,0.4)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: '0.75rem',
+            transition: 'all 0.3s ease',
+            letterSpacing: '-0.01em'
+          }}
+          onMouseEnter={(e) => {
+            if (!searchLoading) {
+              e.target.style.transform = 'translateY(-3px)';
+              e.target.style.boxShadow = '0 15px 50px rgba(255,107,157,0.5)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = searchLoading ? 'none' : '0 10px 40px rgba(255,107,157,0.4)';
+          }}
+        >
+          {searchLoading ? (
+            <>
+              <div style={{ 
+                width: '24px', 
+                height: '24px', 
+                border: '3px solid rgba(255,255,255,0.3)', 
+                borderTop: '3px solid white', 
+                borderRadius: '50%', 
+                animation: 'spin 1s linear infinite' 
+              }} />
+              {t('creating')}
+            </>
+          ) : (
+            <>
+              <Sparkles size={24} />
+{t('generateDate')}
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* 💬 TESTIMONIAL */}
+      <div style={{
+        marginTop: '3rem',
+        padding: '2rem',
+        background: 'rgba(255,255,255,0.6)',
+        borderRadius: '24px',
+        border: '1px solid rgba(0,0,0,0.1)',
+        textAlign: 'center',
+        animation: 'fadeInUp 0.8s ease-out',
+        animationDelay: '0.8s',
+        animationFillMode: 'both'
+      }}>
+        <div style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>💕</div>
+        <p style={{ 
+          fontSize: '1.1rem', 
+          color: 'rgba(0,0,0,0.7)', 
+          fontStyle: 'italic',
+          lineHeight: '1.6',
+          maxWidth: '600px',
+          margin: '0 auto 1rem'
+        }}>
+          "I used to spend 30 minutes deciding where to go. Now DateMaker does it in seconds and the suggestions are always perfect!"
+        </p>
+        <p style={{ color: bgTheme.accent, fontWeight: '700' }}>
+          — Jude Gander
+        </p>
+      </div>
+    </div>
+
+    {/* ==================== */}
+    {/* MODALS (keep existing) */}
+    {/* ==================== */}
+    
+    {showSubscriptionModal && (
+      Capacitor.getPlatform() === 'ios' ? (
+        <AppleSubscriptionModal 
+          onClose={() => setShowSubscriptionModal(false)}
+          onPurchaseSuccess={() => {
+            if (user) {
+              fetchUserData();
+            }
+          }}
+        />
+      ) : (
+        <SubscriptionModal user={user} onClose={() => setShowSubscriptionModal(false)} />
+      )
+    )}
+
+    {showShareModal && dateToShare ? (
+      <ShareDateModal 
+        user={user} 
+        dateData={dateToShare} 
+        onClose={() => {
+          setShowShareModal(false);
+          setDateToShare(null);
+          if (dateToShare.completedAt) {
+            setShowResults(false);
+            setItinerary(null);
+            setPlaces([]);
+          }
+        }} 
+      />
+    ) : null}
+    
+    {showPointsNotification && pointsNotificationData && (
+      <div style={{
+        position: 'fixed',
+        top: '100px',
+        right: '20px',
+        background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+        color: 'white',
+        padding: '1.5rem 2rem',
+        borderRadius: '16px',
+        boxShadow: '0 8px 30px rgba(255,215,0,0.5)',
+        zIndex: 10000,
+        animation: 'slideInRight 0.5s ease-out',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem'
+      }}>
+        <div style={{ fontSize: '2rem' }}>⚡</div>
+        <div>
+          <p style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0, marginBottom: '0.25rem' }}>
+            +{pointsNotificationData.points} XP
+          </p>
+          <p style={{ fontSize: '0.875rem', margin: 0, opacity: 0.9 }}>
+            {pointsNotificationData.message}
+          </p>
         </div>
       </div>
+    )}
     
-     {showSubscriptionModal && (
-  Capacitor.getPlatform() === 'ios' ? (
-    <AppleSubscriptionModal 
-      onClose={() => setShowSubscriptionModal(false)}
-      onPurchaseSuccess={() => {
-        if (user) {
-          fetchUserData();
-        }
-      }}
-    />
-  ) : (
-    <SubscriptionModal user={user} onClose={() => setShowSubscriptionModal(false)} />
-  )
-)}
+    {showLevelUp && levelUpData && (
+      <LevelUpModal 
+        oldLevel={levelUpData.oldLevel}
+        newLevel={levelUpData.newLevel}
+        onClose={() => {
+          setShowLevelUp(false);
+        }}
+      />
+    )}
 
-{showShareModal && dateToShare ? (
-  <ShareDateModal 
-    user={user} 
-    dateData={dateToShare} 
-    onClose={() => {
-      setShowShareModal(false);
-      setDateToShare(null);
-      if (dateToShare.completedAt) {
-        setShowResults(false);
-        setItinerary(null);
-        setPlaces([]);
-      }
-    }} 
-  />
-) : null}
-      
-      {showPointsNotification && pointsNotificationData && (
-        <div style={{
-          position: 'fixed',
-          top: '100px',
-          right: '20px',
-          background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-          color: 'white',
-          padding: '1.5rem 2rem',
-          borderRadius: '16px',
-          boxShadow: '0 8px 30px rgba(255,215,0,0.5)',
-          zIndex: 10000,
-          animation: 'slideInRight 0.5s ease-out',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem'
-        }}>
-          <div style={{ fontSize: '2rem' }}>⚡</div>
-          <div>
-            <p style={{ 
-              fontSize: '1.5rem', 
-              fontWeight: '900',
-              margin: 0,
-              marginBottom: '0.25rem'
-            }}>
-              +{pointsNotificationData.points} XP
-            </p>
-            <p style={{ 
-              fontSize: '0.875rem',
-              margin: 0,
-              opacity: 0.9
-            }}>
-              {pointsNotificationData.message}
-            </p>
-          </div>
-        </div>
-      )}
-      
-      {showLevelUp && levelUpData && (
-  <LevelUpModal 
-    oldLevel={levelUpData.oldLevel}
-    newLevel={levelUpData.newLevel}
-    onClose={() => {
-      console.log('🚪 Level up closed');
-      setShowLevelUp(false);
-      // useEffect will open scrapbook automatically since dateToSave is already set
-    }}
-  />
-)}
+    {showSpinningWheel && (
+      <SpinningWheel 
+        onClose={() => setShowSpinningWheel(false)}
+        onSelectActivity={handleWheelSelection}
+        language={language}
+      />
+    )}
 
-      {showSpinningWheel && (
-        <SpinningWheel 
-          onClose={() => setShowSpinningWheel(false)}
-          onSelectActivity={handleWheelSelection}
-          language={language}
-        />
-      )}
+    {showScrapbook && (
+      <DateMemoryScrapbook
+        currentUser={user}
+        mode={scrapbookMode}
+        dateToSave={dateToSave}
+        selectedMemory={selectedMemory}
+        onClose={closeScrapbook}
+      />
+    )}
 
-{showScrapbook && (
-        <DateMemoryScrapbook
-          currentUser={user}
-          mode={scrapbookMode}
-          dateToSave={dateToSave}
-          selectedMemory={selectedMemory}
-          onClose={closeScrapbook}
-        />
-      )}
+    {showSurpriseDate && (
+      <SurpriseDateMode
+        currentUser={user}
+        mode={surpriseMode}
+        activeSurprise={activeSurprise}
+        onClose={closeSurpriseDate}
+      />
+    )}
 
-      {showSurpriseDate && (
-        <SurpriseDateMode
-          currentUser={user}
-          mode={surpriseMode}
-          activeSurprise={activeSurprise}
-          onClose={closeSurpriseDate}
-        />
-      )}
+    {showStreaks && (
+      <DateStreaksGoals
+        currentUser={user}
+        streakData={userStreakData}
+        onClose={closeStreaks}
+      />
+    )}
 
-      {showStreaks && (
-        <DateStreaksGoals
-          currentUser={user}
-          streakData={userStreakData}
-          onClose={closeStreaks}
-        />
-      )}
+    {showInviteFriends && (
+      <InviteFriendsModal
+        user={user}
+        onClose={() => setShowInviteFriends(false)}
+      />
+    )}
 
-      {showInviteFriends && (
-        <InviteFriendsModal
-          user={user}
-          onClose={() => setShowInviteFriends(false)}
-        />
-      )}
+    {showPremiumModal && (
+      <PremiumFeatureModal
+        onClose={() => setShowPremiumModal(false)}
+        onUpgrade={() => {
+          setShowPremiumModal(false);
+          setTimeout(() => {
+            setShowSubscriptionModal(true);
+          }, 300);
+        }}
+      />
+    )}
 
-{showPremiumModal && (
-  <PremiumFeatureModal
-    onClose={() => {
-      setShowPremiumModal(false);
-    }}
-    onUpgrade={() => {
-      // NEW: Open Apple IAP directly
-      setShowPremiumModal(false);
-      setTimeout(() => {
-        setShowSubscriptionModal(true); // This will show AppleSubscriptionModal on iOS
-      }, 300);
-    }}
-  />
-)}
+    {showSubscriptionManager && (
+      <SubscriptionManager
+        user={user}
+        userData={userData}
+        onClose={() => setShowSubscriptionManager(false)}
+        onShowTerms={() => setShowTerms(true)}
+        onShowPrivacy={() => setShowPrivacy(true)}
+      />
+    )}
 
-      {/* 💳 Subscription Manager Modal */}
-{showSubscriptionManager && (
-  <SubscriptionManager
-    user={user}
-    userData={userData}
-    onClose={() => setShowSubscriptionManager(false)}
-    onShowTerms={() => setShowTerms(true)}
-    onShowPrivacy={() => setShowPrivacy(true)}
-  />
-)}
-
-
-      {/* 📄 Terms and Privacy Modals */}
-      {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
-      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
-
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slideInRight {
-          from {
-            transform: translateX(400px);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        html, body {
-          scroll-behavior: auto !important;
-        }
-      `}</style>
-    </>
-  );
-}// Build trigger
+    {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
+    {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+  </div>
+);
+}

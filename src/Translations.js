@@ -18,10 +18,10 @@ export const translations = {
     premiumPlan: 'Premium',
     
     // Main Hero Section
-    heroTitle1: 'Unforgettable',
-    heroTitle2: 'Dates',
-    heroSubtitle: 'Start Here',
-    heroDescription: 'Get a complete itinerary with custom timing: Dinner → Drinks → Entertainment. We\'ll plan your whole night!',
+    heroTitle1: 'Planning.',
+    heroTitle2: 'Done Right.',
+    heroSubtitle: 'Adventure Awaits!',
+    heroDescription: 'Tell us what you love. We\'ll create a complete date night itinerary with restaurants, activities, and perfect timing.',
     
     // Upgrade Section
     upgradeTitle: 'Upgrade to Premium',
@@ -167,11 +167,24 @@ export const translations = {
     citiesCovered: 'Cities Covered',
     
     // Time
-    hours: 'hours',
-    hour: 'hour',
-    
-    // Notifications
-    dateSaved: 'Date saved!',
+hours: 'hours',
+hour: 'hour',
+
+// Image Cards
+allCities: 'All of them',
+fineDining: 'Fine Dining',
+cocktailsLabel: 'Cocktails',
+nightlife: 'Nightlife',
+movies: 'Movies',
+adventure: 'Adventure',
+
+// Premium Banner
+startFreeTrial: 'Start Your 7-Day FREE Trial',
+startTrialButton: 'Start FREE Trial →',
+getPremium: 'Get Premium →',
+
+// Notifications
+dateSaved: 'Date saved!',
     itinerarySaved: 'Complete itinerary saved!',
     alreadySaved: 'Already saved!',
   },
@@ -190,10 +203,10 @@ export const translations = {
     freePlan: 'Plan Gratis',
     premiumPlan: 'Premium',
     
-    heroTitle1: 'Citas',
-    heroTitle2: 'Inolvidables',
-    heroSubtitle: 'Comienza Aquí',
-    heroDescription: '¡Obtén un itinerario completo con horarios personalizados: Cena → Bebidas → Entretenimiento. Planificaremos toda tu noche!',
+    heroTitle1: 'Planificación.',
+    heroTitle2: 'Bien Hecha.',
+    heroSubtitle: '¡La Aventura Te Espera!',
+    heroDescription: 'Dinos lo que te gusta. Crearemos un itinerario completo para tu cita con restaurantes, actividades y horarios perfectos.',
     
     upgradeTitle: 'Actualizar a Premium',
     upgradeDescription: '¡Desbloquea generación ilimitada de citas con itinerarios completos y horarios personalizados!',
@@ -327,10 +340,23 @@ export const translations = {
     premiumMembers: 'Miembros Premium',
     citiesCovered: 'Ciudades Cubiertas',
     
-    hours: 'horas',
-    hour: 'hora',
-    
-    dateSaved: '¡Cita guardada!',
+   hours: 'horas',
+hour: 'hora',
+
+// Image Cards
+allCities: 'Todas',
+fineDining: 'Alta Cocina',
+cocktailsLabel: 'Cócteles',
+nightlife: 'Vida Nocturna',
+movies: 'Películas',
+adventure: 'Aventura',
+
+// Premium Banner
+startFreeTrial: 'Comienza Tu Prueba GRATIS de 7 Días',
+startTrialButton: 'Comenzar Prueba GRATIS →',
+getPremium: 'Obtener Premium →',
+
+dateSaved: '¡Cita guardada!',
     itinerarySaved: '¡Itinerario completo guardado!',
     alreadySaved: '¡Ya guardado!',
   },
@@ -349,10 +375,10 @@ export const translations = {
     freePlan: 'Plan Gratuit',
     premiumPlan: 'Premium',
     
-    heroTitle1: 'Rendez-vous',
-    heroTitle2: 'Inoubliables',
-    heroSubtitle: 'Commencez Ici',
-    heroDescription: 'Obtenez un itinéraire complet avec horaires personnalisés : Dîner → Boissons → Divertissement. Nous planifierons toute votre soirée !',
+    heroTitle1: 'Planification.',
+    heroTitle2: 'Bien Faite.',
+    heroSubtitle: 'L\'Aventure Vous Attend!',
+    heroDescription: 'Dites-nous ce que vous aimez. Nous créerons un itinéraire complet pour votre rendez-vous avec restaurants, activités et timing parfait.',
     
     upgradeTitle: 'Passer à Premium',
     upgradeDescription: 'Débloquez la génération illimitée de rendez-vous avec des itinéraires complets et des horaires personnalisés !',
@@ -487,9 +513,22 @@ export const translations = {
     citiesCovered: 'Villes Couvertes',
     
     hours: 'heures',
-    hour: 'heure',
-    
-    dateSaved: 'Rendez-vous enregistré !',
+hour: 'heure',
+
+// Image Cards
+allCities: 'Toutes',
+fineDining: 'Gastronomie',
+cocktailsLabel: 'Cocktails',
+nightlife: 'Vie Nocturne',
+movies: 'Cinéma',
+adventure: 'Aventure',
+
+// Premium Banner
+startFreeTrial: 'Commencez Votre Essai GRATUIT de 7 Jours',
+startTrialButton: 'Essai GRATUIT →',
+getPremium: 'Obtenir Premium →',
+
+dateSaved: 'Rendez-vous enregistré !',
     itinerarySaved: 'Itinéraire complet enregistré !',
     alreadySaved: 'Déjà enregistré !',
   },
@@ -508,10 +547,10 @@ export const translations = {
     freePlan: 'Kostenloser Plan',
     premiumPlan: 'Premium',
     
-    heroTitle1: 'Unvergessliche',
-    heroTitle2: 'Dates',
-    heroSubtitle: 'Hier Beginnen',
-    heroDescription: 'Erhalten Sie einen vollständigen Reiseplan mit individuellen Zeiten: Abendessen → Drinks → Unterhaltung. Wir planen Ihren ganzen Abend!',
+    heroTitle1: 'Planung.',
+    heroTitle2: 'Richtig Gemacht.',
+    heroSubtitle: 'Abenteuer Wartet!',
+    heroDescription: 'Sagen Sie uns, was Sie lieben. Wir erstellen einen kompletten Date-Abend mit Restaurants, Aktivitäten und perfektem Timing.',
     
     upgradeTitle: 'Auf Premium Upgraden',
     upgradeDescription: 'Schalten Sie unbegrenzte Date-Generierung mit vollständigen Reiseplänen und individuellen Zeiten frei!',
@@ -580,9 +619,25 @@ export const translations = {
     locationNotFound: 'Standort nicht gefunden. Versuchen Sie, das Land hinzuzufügen.',
     noPlacesFound: 'Keine Orte gefunden. Probieren Sie andere Aktivitäten oder Standorte aus.',
     
-    dateSaved: 'Date gespeichert!',
-    itinerarySaved: 'Vollständiger Reiseplan gespeichert!',
-    alreadySaved: 'Bereits gespeichert!',
+    datesCreated: 'Dates Erstellt',
+    citiesCovered: 'Städte Abgedeckt',
+    
+    // Image Cards
+allCities: 'Alle',
+fineDining: 'Feine Küche',
+cocktailsLabel: 'Cocktails',
+nightlife: 'Nachtleben',
+movies: 'Filme',
+adventure: 'Abenteuer',
+
+// Premium Banner
+startFreeTrial: 'Starten Sie Ihre 7-Tage GRATIS Testphase',
+startTrialButton: 'GRATIS Testen →',
+getPremium: 'Premium Holen →',
+
+dateSaved: 'Date gespeichert!',
+itinerarySaved: 'Vollständiger Reiseplan gespeichert!',
+alreadySaved: 'Bereits gespeichert!',
   },
   
   it: {
@@ -599,10 +654,10 @@ export const translations = {
     freePlan: 'Piano Gratuito',
     premiumPlan: 'Premium',
     
-    heroTitle1: 'Appuntamenti',
-    heroTitle2: 'Indimenticabili',
-    heroSubtitle: 'Inizia Qui',
-    heroDescription: 'Ottieni un itinerario completo con orari personalizzati: Cena → Drink → Intrattenimento. Pianificheremo tutta la tua serata!',
+    heroTitle1: 'Pianificazione.',
+    heroTitle2: 'Fatta Bene.',
+    heroSubtitle: 'L\'Avventura Ti Aspetta!',
+    heroDescription: 'Dicci cosa ti piace. Creeremo un itinerario completo per il tuo appuntamento con ristoranti, attività e tempismo perfetto.',
     
     upgradeTitle: 'Passa a Premium',
     upgradeDescription: 'Sblocca la generazione illimitata di appuntamenti con itinerari completi e orari personalizzati!',
@@ -618,6 +673,21 @@ export const translations = {
     
     mySavedDates: 'I Miei Appuntamenti Salvati',
     
+    datesCreated: 'Appuntamenti Creati',
+    citiesCovered: 'Città Coperte',
+    hours: 'ore',
+hour: 'ora',
+
+allCities: 'Tutte',
+fineDining: 'Alta Cucina',
+cocktailsLabel: 'Cocktail',
+nightlife: 'Vita Notturna',
+movies: 'Film',
+adventure: 'Avventura',
+startFreeTrial: 'Inizia la Tua Prova GRATUITA di 7 Giorni',
+startTrialButton: 'Prova GRATUITA →',
+getPremium: 'Ottieni Premium →',
+planYourDate: 'Pianifica il Tuo Appuntamento Perfetto',
     dateSaved: 'Appuntamento salvato!',
   },
   
@@ -635,10 +705,10 @@ export const translations = {
     freePlan: 'Plano Grátis',
     premiumPlan: 'Premium',
     
-    heroTitle1: 'Encontros',
-    heroTitle2: 'Inesquecíveis',
-    heroSubtitle: 'Comece Aqui',
-    heroDescription: 'Obtenha um itinerário completo com horários personalizados: Jantar → Bebidas → Entretenimento. Planejamos sua noite inteira!',
+    heroTitle1: 'Planejamento.',
+    heroTitle2: 'Bem Feito.',
+    heroSubtitle: 'A Aventura Te Espera!',
+    heroDescription: 'Diga-nos o que você ama. Criaremos um itinerário completo para seu encontro com restaurantes, atividades e timing perfeito.',
     
     upgradeTitle: 'Atualizar para Premium',
     upgradeDescription: 'Desbloqueie geração ilimitada de encontros com itinerários completos e horários personalizados!',
@@ -653,6 +723,21 @@ export const translations = {
     generateDate: 'Gerar Meu Encontro Perfeito',
     
     mySavedDates: 'Meus Encontros Salvos',
+    hours: 'horas',
+hour: 'hora',
+
+allCities: 'Todas',
+fineDining: 'Alta Gastronomia',
+cocktailsLabel: 'Coquetéis',
+nightlife: 'Vida Noturna',
+movies: 'Filmes',
+adventure: 'Aventura',
+startFreeTrial: 'Comece Seu Teste GRÁTIS de 7 Dias',
+startTrialButton: 'Teste GRÁTIS →',
+getPremium: 'Obter Premium →',
+planYourDate: 'Planeje Seu Encontro Perfeito',
+    datesCreated: 'Encontros Criados',
+    citiesCovered: 'Cidades Cobertas',
     
     dateSaved: 'Encontro salvo!',
   },
@@ -671,10 +756,10 @@ export const translations = {
     freePlan: '無料プラン',
     premiumPlan: 'プレミアム',
     
-    heroTitle1: '忘れられない',
-    heroTitle2: 'デート',
-    heroSubtitle: 'ここから始める',
-    heroDescription: 'カスタムタイミングで完全な旅程を取得：ディナー → ドリンク → エンターテイメント。あなたの夜全体を計画します！',
+    heroTitle1: '計画。',
+    heroTitle2: '完璧に。',
+    heroSubtitle: '冒険が待っています！',
+    heroDescription: 'あなたの好みを教えてください。レストラン、アクティビティ、完璧なタイミングで、完全なデートプランを作成します。',
     
     location: 'どこにいますか？',
     locationPlaceholder: '例：東京、大阪、京都',
@@ -686,6 +771,21 @@ export const translations = {
     
     mySavedDates: '保存されたデート',
     
+    datesCreated: '作成されたデート',
+    citiesCovered: '対応都市',
+    hours: '時間',
+hour: '時間',
+
+allCities: 'すべて',
+fineDining: '高級料理',
+cocktailsLabel: 'カクテル',
+nightlife: 'ナイトライフ',
+movies: '映画',
+adventure: 'アドベンチャー',
+startFreeTrial: '7日間無料トライアルを開始',
+startTrialButton: '無料トライアル →',
+getPremium: 'プレミアムを取得 →',
+planYourDate: '完璧なデートを計画',
     dateSaved: 'デートが保存されました！',
   },
   
@@ -703,10 +803,10 @@ export const translations = {
     freePlan: '免费计划',
     premiumPlan: '高级会员',
     
-    heroTitle1: '难忘的',
-    heroTitle2: '约会',
-    heroSubtitle: '从这里开始',
-    heroDescription: '获取完整的行程和自定义时间：晚餐 → 饮品 → 娱乐。我们将计划您的整个夜晚！',
+    heroTitle1: '规划。',
+    heroTitle2: '做得好。',
+    heroSubtitle: '冒险在等着你！',
+    heroDescription: '告诉我们你喜欢什么。我们将为您创建完整的约会行程，包括餐厅、活动和完美的时间安排。',
     
     location: '您在哪里？',
     locationPlaceholder: '例如：北京、上海、深圳',
@@ -718,13 +818,28 @@ export const translations = {
     
     mySavedDates: '我保存的约会',
     
+    datesCreated: '已创建约会',
+    citiesCovered: '覆盖城市',
+    hours: '小时',
+hour: '小时',
+
+allCities: '所有',
+fineDining: '高级餐饮',
+cocktailsLabel: '鸡尾酒',
+nightlife: '夜生活',
+movies: '电影',
+adventure: '冒险',
+startFreeTrial: '开始您的7天免费试用',
+startTrialButton: '免费试用 →',
+getPremium: '获取高级版 →',
+planYourDate: '计划您的完美约会',
     dateSaved: '约会已保存！',
   },
   
   ar: {
     flag: '🇸🇦',
     name: 'العربية',
-    dir: 'rtl', // Right-to-left
+    dir: 'rtl',
     
     appName: 'DateMaker',
     social: 'الاجتماعي',
@@ -736,10 +851,10 @@ export const translations = {
     freePlan: 'خطة مجانية',
     premiumPlan: 'بريميوم',
     
-    heroTitle1: 'مواعيد',
-    heroTitle2: 'لا تُنسى',
-    heroSubtitle: 'ابدأ من هنا',
-    heroDescription: 'احصل على مسار كامل مع توقيت مخصص: عشاء ← مشروبات ← ترفيه. سنخطط لليلتك بأكملها!',
+    heroTitle1: 'تخطيط.',
+    heroTitle2: 'بشكل صحيح.',
+    heroSubtitle: 'المغامرة في انتظارك!',
+    heroDescription: 'أخبرنا بما تحب. سنقوم بإنشاء جدول مواعيد كامل مع المطاعم والأنشطة والتوقيت المثالي.',
     
     location: 'أين موقعك؟',
     locationPlaceholder: 'مثال: دبي، الرياض، القاهرة',
@@ -751,6 +866,21 @@ export const translations = {
     
     mySavedDates: 'مواعيدي المحفوظة',
     
+    datesCreated: 'المواعيد المنشأة',
+    citiesCovered: 'المدن المغطاة',
+    hours: 'ساعات',
+hour: 'ساعة',
+
+allCities: 'الكل',
+fineDining: 'المطاعم الفاخرة',
+cocktailsLabel: 'كوكتيلات',
+nightlife: 'الحياة الليلية',
+movies: 'أفلام',
+adventure: 'مغامرة',
+startFreeTrial: 'ابدأ تجربتك المجانية لمدة 7 أيام',
+startTrialButton: 'تجربة مجانية →',
+getPremium: 'احصل على بريميوم →',
+planYourDate: 'خطط لموعدك المثالي',
     dateSaved: 'تم حفظ الموعد!',
   },
   
@@ -768,10 +898,10 @@ export const translations = {
     freePlan: 'Бесплатный План',
     premiumPlan: 'Премиум',
     
-    heroTitle1: 'Незабываемые',
-    heroTitle2: 'Свидания',
-    heroSubtitle: 'Начните Здесь',
-    heroDescription: 'Получите полный маршрут с индивидуальным временем: Ужин → Напитки → Развлечения. Мы спланируем весь ваш вечер!',
+    heroTitle1: 'Планирование.',
+    heroTitle2: 'Сделано Правильно.',
+    heroSubtitle: 'Приключение Ждёт!',
+    heroDescription: 'Расскажите нам, что вам нравится. Мы создадим полный маршрут свидания с ресторанами, развлечениями и идеальным временем.',
     
     location: 'Где вы находитесь?',
     locationPlaceholder: 'например, Москва, Санкт-Петербург, Казань',
@@ -783,6 +913,21 @@ export const translations = {
     
     mySavedDates: 'Мои Сохраненные Свидания',
     
+    datesCreated: 'Свиданий Создано',
+    citiesCovered: 'Городов Охвачено',
+    hours: 'часов',
+hour: 'час',
+
+allCities: 'Все',
+fineDining: 'Высокая Кухня',
+cocktailsLabel: 'Коктейли',
+nightlife: 'Ночная Жизнь',
+movies: 'Кино',
+adventure: 'Приключения',
+startFreeTrial: 'Начните 7-Дневную БЕСПЛАТНУЮ Пробную Версию',
+startTrialButton: 'Бесплатная Пробная →',
+getPremium: 'Получить Премиум →',
+planYourDate: 'Спланируйте Идеальное Свидание',
     dateSaved: 'Свидание сохранено!',
   },
   
@@ -800,10 +945,10 @@ export const translations = {
     freePlan: 'Gratis Plan',
     premiumPlan: 'Premium',
     
-    heroTitle1: 'Onvergetelijke',
-    heroTitle2: 'Dates',
-    heroSubtitle: 'Begin Hier',
-    heroDescription: 'Krijg een compleet reisschema met aangepaste tijden: Diner → Drankjes → Entertainment. We plannen je hele avond!',
+    heroTitle1: 'Planning.',
+    heroTitle2: 'Goed Gedaan.',
+    heroSubtitle: 'Avontuur Wacht!',
+    heroDescription: 'Vertel ons wat je leuk vindt. We maken een compleet date-programma met restaurants, activiteiten en perfecte timing.',
     
     location: 'Waar bevind je je?',
     locationPlaceholder: 'bijv., Amsterdam, Rotterdam, Utrecht',
@@ -815,6 +960,21 @@ export const translations = {
     
     mySavedDates: 'Mijn Opgeslagen Dates',
     
+    datesCreated: 'Dates Gemaakt',
+    citiesCovered: 'Steden Gedekt',
+    hours: 'uur',
+hour: 'uur',
+
+allCities: 'Allemaal',
+fineDining: 'Fine Dining',
+cocktailsLabel: 'Cocktails',
+nightlife: 'Nachtleven',
+movies: 'Films',
+adventure: 'Avontuur',
+startFreeTrial: 'Start Je 7-Daagse GRATIS Proefperiode',
+startTrialButton: 'GRATIS Proberen →',
+getPremium: 'Krijg Premium →',
+planYourDate: 'Plan Je Perfecte Date',
     dateSaved: 'Date opgeslagen!',
   },
   
@@ -832,10 +992,10 @@ export const translations = {
     freePlan: 'Gratis Plan',
     premiumPlan: 'Premium',
     
-    heroTitle1: 'Oförglömliga',
-    heroTitle2: 'Dejter',
-    heroSubtitle: 'Börja Här',
-    heroDescription: 'Få en komplett resplan med anpassade tider: Middag → Drinkar → Underhållning. Vi planerar hela din kväll!',
+    heroTitle1: 'Planering.',
+    heroTitle2: 'Gjort Rätt.',
+    heroSubtitle: 'Äventyret Väntar!',
+    heroDescription: 'Berätta vad du gillar. Vi skapar ett komplett dejtschema med restauranger, aktiviteter och perfekt timing.',
     
     location: 'Var befinner du dig?',
     locationPlaceholder: 't.ex., Stockholm, Göteborg, Malmö',
@@ -847,6 +1007,21 @@ export const translations = {
     
     mySavedDates: 'Mina Sparade Dejter',
     
+    datesCreated: 'Dejter Skapade',
+    citiesCovered: 'Städer Täckta',
+    hours: 'timmar',
+hour: 'timme',
+
+allCities: 'Alla',
+fineDining: 'Finare Mat',
+cocktailsLabel: 'Cocktails',
+nightlife: 'Nattliv',
+movies: 'Film',
+adventure: 'Äventyr',
+startFreeTrial: 'Starta Din 7-Dagars GRATIS Provperiod',
+startTrialButton: 'GRATIS Prov →',
+getPremium: 'Skaffa Premium →',
+planYourDate: 'Planera Din Perfekta Dejt',
     dateSaved: 'Dejt sparad!',
   },
   
@@ -864,10 +1039,10 @@ export const translations = {
     freePlan: 'Darmowy Plan',
     premiumPlan: 'Premium',
     
-    heroTitle1: 'Niezapomniane',
-    heroTitle2: 'Randki',
-    heroSubtitle: 'Zacznij Tutaj',
-    heroDescription: 'Uzyskaj pełen plan z niestandardowymi godzinami: Kolacja → Drinki → Rozrywka. Zaplanujemy cały twój wieczór!',
+    heroTitle1: 'Planowanie.',
+    heroTitle2: 'Zrobione Dobrze.',
+    heroSubtitle: 'Przygoda Czeka!',
+    heroDescription: 'Powiedz nam, co lubisz. Stworzymy kompletny plan randki z restauracjami, aktywnościami i idealnym czasem.',
     
     location: 'Gdzie się znajdujesz?',
     locationPlaceholder: 'np., Warszawa, Kraków, Wrocław',
@@ -879,6 +1054,21 @@ export const translations = {
     
     mySavedDates: 'Moje Zapisane Randki',
     
+    datesCreated: 'Randek Utworzonych',
+    citiesCovered: 'Miast Objętych',
+    hours: 'godzin',
+hour: 'godzina',
+
+allCities: 'Wszystkie',
+fineDining: 'Wykwintna Kuchnia',
+cocktailsLabel: 'Koktajle',
+nightlife: 'Życie Nocne',
+movies: 'Filmy',
+adventure: 'Przygoda',
+startFreeTrial: 'Rozpocznij 7-Dniowy DARMOWY Okres Próbny',
+startTrialButton: 'DARMOWA Próba →',
+getPremium: 'Zdobądź Premium →',
+planYourDate: 'Zaplanuj Swoją Idealną Randkę',
     dateSaved: 'Randka zapisana!',
   },
   
@@ -896,10 +1086,10 @@ export const translations = {
     freePlan: 'Ücretsiz Plan',
     premiumPlan: 'Premium',
     
-    heroTitle1: 'Unutulmaz',
-    heroTitle2: 'Randevular',
-    heroSubtitle: 'Buradan Başla',
-    heroDescription: 'Özel zamanlamayla tam bir güzergah alın: Akşam Yemeği → İçkiler → Eğlence. Tüm gecenizi planlayacağız!',
+    heroTitle1: 'Planlama.',
+    heroTitle2: 'Doğru Yapıldı.',
+    heroSubtitle: 'Macera Seni Bekliyor!',
+    heroDescription: 'Bize ne sevdiğinizi söyleyin. Restoranlar, aktiviteler ve mükemmel zamanlama ile eksiksiz bir randevu programı oluşturacağız.',
     
     location: 'Neredesiniz?',
     locationPlaceholder: 'örn., İstanbul, Ankara, İzmir',
@@ -911,6 +1101,21 @@ export const translations = {
     
     mySavedDates: 'Kayıtlı Randevularım',
     
+    datesCreated: 'Oluşturulan Randevular',
+    citiesCovered: 'Kapsanan Şehirler',
+    hours: 'saat',
+hour: 'saat',
+
+allCities: 'Hepsi',
+fineDining: 'Lüks Yemek',
+cocktailsLabel: 'Kokteyller',
+nightlife: 'Gece Hayatı',
+movies: 'Filmler',
+adventure: 'Macera',
+startFreeTrial: '7 Günlük ÜCRETSİZ Denemenizi Başlatın',
+startTrialButton: 'ÜCRETSİZ Dene →',
+getPremium: 'Premium Al →',
+planYourDate: 'Mükemmel Randevunuzu Planlayın',
     dateSaved: 'Randevu kaydedildi!',
   },
   
@@ -928,10 +1133,10 @@ export const translations = {
     freePlan: '무료 플랜',
     premiumPlan: '프리미엄',
     
-    heroTitle1: '잊을 수 없는',
-    heroTitle2: '데이트',
-    heroSubtitle: '여기서 시작',
-    heroDescription: '맞춤 시간으로 완전한 일정을 받아보세요: 저녁식사 → 음료 → 엔터테인먼트. 당신의 밤 전체를 계획해드립니다!',
+    heroTitle1: '계획.',
+    heroTitle2: '제대로.',
+    heroSubtitle: '모험이 기다립니다!',
+    heroDescription: '좋아하는 것을 알려주세요. 레스토랑, 활동, 완벽한 타이밍으로 완벽한 데이트 일정을 만들어 드립니다.',
     
     location: '어디에 계신가요?',
     locationPlaceholder: '예: 서울, 부산, 제주',
@@ -943,6 +1148,21 @@ export const translations = {
     
     mySavedDates: '저장된 데이트',
     
+    datesCreated: '생성된 데이트',
+    citiesCovered: '지원 도시',
+    hours: '시간',
+hour: '시간',
+
+allCities: '모든',
+fineDining: '파인 다이닝',
+cocktailsLabel: '칵테일',
+nightlife: '나이트라이프',
+movies: '영화',
+adventure: '모험',
+startFreeTrial: '7일 무료 체험 시작',
+startTrialButton: '무료 체험 →',
+getPremium: '프리미엄 받기 →',
+planYourDate: '완벽한 데이트 계획하기',
     dateSaved: '데이트가 저장되었습니다!',
   },
   
@@ -960,10 +1180,10 @@ export const translations = {
     freePlan: 'मुफ्त योजना',
     premiumPlan: 'प्रीमियम',
     
-    heroTitle1: 'अविस्मरणीय',
-    heroTitle2: 'डेट्स',
-    heroSubtitle: 'यहाँ से शुरू करें',
-    heroDescription: 'कस्टम समय के साथ पूर्ण यात्रा कार्यक्रम प्राप्त करें: रात का खाना → ड्रिंक्स → मनोरंजन। हम आपकी पूरी रात की योजना बनाएंगे!',
+    heroTitle1: 'योजना।',
+    heroTitle2: 'सही तरीके से।',
+    heroSubtitle: 'रोमांच आपका इंतज़ार कर रहा है!',
+    heroDescription: 'हमें बताएं कि आपको क्या पसंद है। हम रेस्तरां, गतिविधियों और सही समय के साथ एक पूर्ण डेट कार्यक्रम बनाएंगे।',
     
     location: 'आप कहाँ स्थित हैं?',
     locationPlaceholder: 'उदा., मुंबई, दिल्ली, बैंगलोर',
@@ -975,6 +1195,21 @@ export const translations = {
     
     mySavedDates: 'मेरी सहेजी गई डेट्स',
     
+    datesCreated: 'बनाई गई डेट्स',
+    citiesCovered: 'शामिल शहर',
+    hours: 'घंटे',
+hour: 'घंटा',
+
+allCities: 'सभी',
+fineDining: 'फाइन डाइनिंग',
+cocktailsLabel: 'कॉकटेल',
+nightlife: 'नाइटलाइफ',
+movies: 'फिल्में',
+adventure: 'एडवेंचर',
+startFreeTrial: 'अपना 7-दिन का मुफ्त ट्रायल शुरू करें',
+startTrialButton: 'मुफ्त ट्रायल →',
+getPremium: 'प्रीमियम पाएं →',
+planYourDate: 'अपनी परफेक्ट डेट प्लान करें',
     dateSaved: 'डेट सहेजी गई!',
   }
 };

@@ -240,11 +240,11 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
 
   const getStatusBadge = (surprise) => {
     if (surprise.revealed) {
-      return { text: '✓ Revealed', color: '#10b981' };
+      return { text: '✓ Revealed', color: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' };
     } else if (surprise.accepted) {
-      return { text: '👀 Accepted', color: '#3b82f6' };
+      return { text: '👀 Accepted', color: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' };
     } else {
-      return { text: '📬 Pending', color: '#f59e0b' };
+      return { text: '📬 Pending', color: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' };
     }
   };
 
@@ -270,82 +270,118 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
       overflowY: 'auto',
       WebkitOverflowScrolling: 'touch',
       zIndex: 10000
     }}>
+      {/* Animated background elements */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              fontSize: `${1.5 + Math.random() * 2}rem`,
+              opacity: 0.1,
+              animation: `float ${4 + Math.random() * 4}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 5}s`
+            }}
+          >
+            {['🎁', '💕', '✨', '🎉', '💖', '🌟', '🎀', '💝'][Math.floor(Math.random() * 8)]}
+          </div>
+        ))}
+      </div>
+
       {/* Header */}
-<div style={{
-  position: 'sticky',
-  top: 0,
-  background: 'rgba(236, 72, 153, 0.95)',
-  backdropFilter: 'blur(10px)',
-  padding: '1.5rem',
-  paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
-  borderRadius: '0 0 30px 30px',
-  boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-  zIndex: 100,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between'
-}}>
-  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-    <Gift size={32} color="white" />
-    <h2 style={{ color: 'white', fontSize: '1.8rem', fontWeight: '900', margin: 0 }}>
-      Surprise Date Mode
-    </h2>
-  </div>
-  <button
-    onClick={onClose}
-    style={{
-      background: 'white',
-      borderRadius: '50%',
-      width: '44px',
-      height: '44px',
-      border: 'none',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-      fontSize: '24px',
-      fontWeight: '900',
-      color: '#ec4899',
-      lineHeight: 1
-    }}
-  >
-    ✕
-  </button>
-</div>
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+        padding: '1.5rem',
+        paddingTop: 'calc(1.5rem + env(safe-area-inset-top))',
+        borderRadius: '0 0 32px 32px',
+        boxShadow: '0 10px 40px rgba(236, 72, 153, 0.4)',
+        zIndex: 100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            background: 'rgba(255,255,255,0.2)',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Gift size={28} color="white" />
+          </div>
+          <h2 style={{ 
+            color: 'white', 
+            fontSize: '1.5rem', 
+            fontWeight: '800', 
+            margin: 0,
+            textShadow: '0 2px 10px rgba(0,0,0,0.2)'
+          }}>
+            Surprise Date Mode
+          </h2>
+        </div>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'rgba(255,255,255,0.2)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '50%',
+            width: '44px',
+            height: '44px',
+            border: '1px solid rgba(255,255,255,0.3)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontSize: '1.5rem',
+            fontWeight: 'bold'
+          }}
+        >
+          ×
+        </button>
+      </div>
 
       {/* Tab Navigation */}
-      <div style={{ padding: '2rem 1.5rem' }}>
+      <div style={{ padding: '1.5rem 1.5rem 1rem', position: 'relative', zIndex: 1 }}>
         <div style={{
-          background: 'white',
+          background: 'rgba(255,255,255,0.1)',
+          backdropFilter: 'blur(20px)',
           borderRadius: '20px',
           padding: '0.5rem',
           display: 'flex',
           gap: '0.5rem',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
+          border: '1px solid rgba(255,255,255,0.15)'
         }}>
           <button
             onClick={() => setActiveTab('create')}
             style={{
               flex: 1,
               padding: '1rem',
-              borderRadius: '15px',
+              borderRadius: '16px',
               border: 'none',
-              background: activeTab === 'create' ? 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)' : 'transparent',
-              color: activeTab === 'create' ? 'white' : '#666',
-              fontWeight: '900',
+              background: activeTab === 'create' ? 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)' : 'transparent',
+              color: 'white',
+              fontWeight: '700',
               fontSize: '1rem',
               cursor: 'pointer',
               transition: 'all 0.3s ease',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0.5rem'
+              gap: '0.5rem',
+              boxShadow: activeTab === 'create' ? '0 8px 20px rgba(236, 72, 153, 0.4)' : 'none'
             }}
           >
             <Plus size={20} />
@@ -356,11 +392,11 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
             style={{
               flex: 1,
               padding: '1rem',
-              borderRadius: '15px',
+              borderRadius: '16px',
               border: 'none',
-              background: activeTab === 'track' ? 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)' : 'transparent',
-              color: activeTab === 'track' ? 'white' : '#666',
-              fontWeight: '900',
+              background: activeTab === 'track' ? 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)' : 'transparent',
+              color: 'white',
+              fontWeight: '700',
               fontSize: '1rem',
               cursor: 'pointer',
               transition: 'all 0.3s ease',
@@ -368,7 +404,8 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
               alignItems: 'center',
               justifyContent: 'center',
               gap: '0.5rem',
-              position: 'relative'
+              position: 'relative',
+              boxShadow: activeTab === 'track' ? '0 8px 20px rgba(236, 72, 153, 0.4)' : 'none'
             }}
           >
             <Eye size={20} />
@@ -376,18 +413,19 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
             {unacceptedCount > 0 && (
               <span style={{
                 position: 'absolute',
-                top: '0.5rem',
+                top: '0.25rem',
                 right: '0.5rem',
                 background: '#ef4444',
                 color: 'white',
                 borderRadius: '50%',
-                width: '24px',
-                height: '24px',
+                width: '22px',
+                height: '22px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '0.75rem',
-                fontWeight: '900'
+                fontWeight: '800',
+                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)'
               }}>
                 {unacceptedCount}
               </span>
@@ -397,41 +435,52 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
       </div>
 
       {/* Content */}
-      <div style={{ padding: '0 1.5rem 2rem' }}>
+      <div style={{ padding: '0.5rem 1.5rem 2rem', position: 'relative', zIndex: 1 }}>
         {activeTab === 'create' ? (
           <div style={{
-            background: 'white',
-            borderRadius: '30px',
+            background: 'rgba(255,255,255,0.95)',
+            borderRadius: '28px',
             padding: '2rem',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
           }}>
             <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Sparkles size={28} color="#ec4899" />
-              <h3 style={{ fontSize: '1.5rem', fontWeight: '900', margin: 0 }}>
-                {itinerary ? '🎁 Share Itinerary as Surprise' : 'Plan a Surprise'}
+              <div style={{
+                width: '48px',
+                height: '48px',
+                background: 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
+                borderRadius: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Sparkles size={26} color="#ec4899" />
+              </div>
+              <h3 style={{ fontSize: '1.4rem', fontWeight: '800', margin: 0, color: '#1f2937' }}>
+                {itinerary ? '🎁 Share as Surprise' : 'Plan a Surprise'}
               </h3>
             </div>
 
             {/* ✅ FIXED: Show itinerary preview if provided - use getStopCount */}
             {itinerary && (
               <div style={{
-                background: 'linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%)',
+                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
                 borderRadius: '20px',
                 padding: '1.5rem',
                 marginBottom: '2rem',
-                border: '2px solid #fbbf24'
+                border: '2px solid #fbbf24',
+                boxShadow: '0 8px 20px rgba(251, 191, 36, 0.2)'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
                   <MapPin size={24} color="#f59e0b" />
-                  <h4 style={{ fontSize: '1.2rem', fontWeight: '900', margin: 0, color: '#92400e' }}>
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0, color: '#92400e' }}>
                     Full Date Itinerary Attached
                   </h4>
                 </div>
-                <p style={{ margin: '0.5rem 0', fontSize: '0.95rem', color: '#78350f' }}>
+                <p style={{ margin: '0.5rem 0', fontSize: '0.95rem', color: '#78350f', fontWeight: '600' }}>
                   <strong>{getStopCount(itinerary)} stops</strong> planned
                 </p>
-                <p style={{ margin: '0.5rem 0', fontSize: '0.9rem', color: '#92400e' }}>
-                  Your partner will see the full itinerary when they reveal the surprise!
+                <p style={{ margin: '0.5rem 0 0', fontSize: '0.875rem', color: '#92400e' }}>
+                  Your partner will see the full itinerary when revealed!
                 </p>
               </div>
             )}
@@ -443,11 +492,11 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                 alignItems: 'center',
                 gap: '0.5rem',
                 fontSize: '1rem',
-                fontWeight: '900',
+                fontWeight: '700',
                 marginBottom: '0.75rem',
-                color: '#333'
+                color: '#374151'
               }}>
-                <UserPlus size={20} />
+                <UserPlus size={20} color="#ec4899" />
                 Partner's Email <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <input
@@ -457,14 +506,16 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                 placeholder="partner@example.com"
                 style={{
                   width: '100%',
-                  padding: '1rem',
-                  borderRadius: '15px',
+                  padding: '1rem 1.25rem',
+                  borderRadius: '14px',
                   border: '2px solid #e5e7eb',
                   fontSize: '1rem',
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s ease',
+                  outline: 'none'
                 }}
               />
-              <p style={{ fontSize: '0.85rem', color: '#666', margin: '0.5rem 0 0 0' }}>
+              <p style={{ fontSize: '0.85rem', color: '#6b7280', margin: '0.5rem 0 0 0' }}>
                 They'll receive a surprise invitation
               </p>
             </div>
@@ -473,10 +524,10 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{
                 fontSize: '1rem',
-                fontWeight: '900',
+                fontWeight: '700',
                 marginBottom: '0.75rem',
                 display: 'block',
-                color: '#333'
+                color: '#374151'
               }}>
                 Surprise Title <span style={{ color: '#ef4444' }}>*</span>
               </label>
@@ -487,11 +538,12 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                 placeholder="e.g., Anniversary Adventure"
                 style={{
                   width: '100%',
-                  padding: '1rem',
-                  borderRadius: '15px',
+                  padding: '1rem 1.25rem',
+                  borderRadius: '14px',
                   border: '2px solid #e5e7eb',
                   fontSize: '1rem',
-                  boxSizing: 'border-box'
+                  boxSizing: 'border-box',
+                  outline: 'none'
                 }}
               />
             </div>
@@ -503,11 +555,11 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                 alignItems: 'center',
                 gap: '0.5rem',
                 fontSize: '1rem',
-                fontWeight: '900',
+                fontWeight: '700',
                 marginBottom: '0.75rem',
-                color: '#333'
+                color: '#374151'
               }}>
-                <Lock size={18} />
+                <Lock size={18} color="#ec4899" />
                 Your Secret Plan (Only you can see this)
               </label>
               <textarea
@@ -517,90 +569,87 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                 rows={4}
                 style={{
                   width: '100%',
-                  padding: '1rem',
-                  borderRadius: '15px',
+                  padding: '1rem 1.25rem',
+                  borderRadius: '14px',
                   border: '2px solid #e5e7eb',
                   fontSize: '1rem',
                   resize: 'vertical',
                   boxSizing: 'border-box',
-                  fontFamily: 'inherit'
+                  fontFamily: 'inherit',
+                  outline: 'none'
                 }}
               />
             </div>
 
             {/* Date and Time */}
-<div style={{ marginBottom: '1.5rem' }}>
-  <label style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    fontSize: '1rem',
-    fontWeight: '900',
-    marginBottom: '0.75rem',
-    color: '#333'
-  }}>
-    <Calendar size={18} />
-    Date
-  </label>
-  <div style={{ 
-    width: '100%',
-    overflow: 'hidden'
-  }}>
-    <input
-      type="date"
-      value={scheduledDate}
-      onChange={(e) => setScheduledDate(e.target.value)}
-      style={{
-        width: '100%',
-        maxWidth: '100%',
-        padding: '1rem',
-        borderRadius: '15px',
-        border: '2px solid #e5e7eb',
-        fontSize: '1rem',
-        boxSizing: 'border-box',
-        marginBottom: '1rem',
-        WebkitAppearance: 'none',
-        MozAppearance: 'none',
-        appearance: 'none'
-      }}
-    />
-  </div>
-  
-  <label style={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    fontSize: '1rem',
-    fontWeight: '900',
-    marginBottom: '0.75rem',
-    color: '#333'
-  }}>
-    <Clock size={18} />
-    Time
-  </label>
-  <div style={{ 
-    width: '100%',
-    overflow: 'hidden'
-  }}>
-    <input
-      type="time"
-      value={scheduledTime}
-      onChange={(e) => setScheduledTime(e.target.value)}
-      style={{
-        width: '100%',
-        maxWidth: '100%',
-        padding: '1rem',
-        borderRadius: '15px',
-        border: '2px solid #e5e7eb',
-        fontSize: '1rem',
-        boxSizing: 'border-box',
-        WebkitAppearance: 'none',
-        MozAppearance: 'none',
-        appearance: 'none'
-      }}
-    />
-  </div>
-</div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '1rem',
+                fontWeight: '700',
+                marginBottom: '0.75rem',
+                color: '#374151'
+              }}>
+                <Calendar size={18} color="#ec4899" />
+                Date
+              </label>
+              <div style={{ width: '100%', overflow: 'hidden' }}>
+                <input
+                  type="date"
+                  value={scheduledDate}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    maxWidth: '100%',
+                    padding: '1rem 1.25rem',
+                    borderRadius: '14px',
+                    border: '2px solid #e5e7eb',
+                    fontSize: '1rem',
+                    boxSizing: 'border-box',
+                    marginBottom: '1rem',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                    appearance: 'none',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+              
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '1rem',
+                fontWeight: '700',
+                marginBottom: '0.75rem',
+                color: '#374151'
+              }}>
+                <Clock size={18} color="#ec4899" />
+                Time
+              </label>
+              <div style={{ width: '100%', overflow: 'hidden' }}>
+                <input
+                  type="time"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  style={{
+                    width: '100%',
+                    maxWidth: '100%',
+                    padding: '1rem 1.25rem',
+                    borderRadius: '14px',
+                    border: '2px solid #e5e7eb',
+                    fontSize: '1rem',
+                    boxSizing: 'border-box',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                    appearance: 'none',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+            </div>
 
             {/* Hints */}
             <div style={{ marginBottom: '2rem' }}>
@@ -609,13 +658,13 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                 alignItems: 'center',
                 gap: '0.5rem',
                 fontSize: '1rem',
-                fontWeight: '900',
+                fontWeight: '700',
                 marginBottom: '0.5rem',
-                color: '#333'
+                color: '#374151'
               }}>
                 💡 Hints for your partner (optional)
               </label>
-              <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '1rem' }}>
+              <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '1rem' }}>
                 Your partner can unlock these hints one by one
               </p>
               
@@ -628,23 +677,25 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                     placeholder={`Hint ${index + 1}`}
                     style={{
                       flex: 1,
-                      padding: '1rem',
-                      borderRadius: '15px',
+                      padding: '1rem 1.25rem',
+                      borderRadius: '14px',
                       border: '2px solid #e5e7eb',
-                      fontSize: '1rem'
+                      fontSize: '1rem',
+                      outline: 'none'
                     }}
                   />
                   {hints.length > 1 && (
                     <button
                       onClick={() => removeHint(index)}
                       style={{
-                        padding: '1rem',
-                        borderRadius: '15px',
+                        padding: '1rem 1.25rem',
+                        borderRadius: '14px',
                         border: 'none',
-                        background: '#fee2e2',
+                        background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
                         color: '#dc2626',
                         cursor: 'pointer',
-                        fontSize: '1rem'
+                        fontSize: '1rem',
+                        fontWeight: '700'
                       }}
                     >
                       ×
@@ -657,15 +708,16 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                 <button
                   onClick={addHint}
                   style={{
-                    padding: '0.75rem 1.5rem',
-                    borderRadius: '15px',
+                    padding: '0.875rem 1.5rem',
+                    borderRadius: '14px',
                     border: '2px dashed #d1d5db',
                     background: 'transparent',
-                    color: '#666',
+                    color: '#6b7280',
                     cursor: 'pointer',
                     fontSize: '1rem',
                     fontWeight: '700',
-                    width: '100%'
+                    width: '100%',
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   + Add Hint
@@ -680,18 +732,19 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
               style={{
                 width: '100%',
                 padding: '1.25rem',
-                borderRadius: '20px',
+                borderRadius: '18px',
                 border: 'none',
-                background: creating ? '#d1d5db' : 'linear-gradient(135deg, #ec4899 0%, #f472b6 100%)',
+                background: creating ? '#d1d5db' : 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
                 color: 'white',
-                fontSize: '1.2rem',
-                fontWeight: '900',
+                fontSize: '1.1rem',
+                fontWeight: '800',
                 cursor: creating ? 'not-allowed' : 'pointer',
-                boxShadow: '0 10px 30px rgba(236,72,153,0.4)',
+                boxShadow: creating ? 'none' : '0 10px 30px rgba(236,72,153,0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.75rem'
+                gap: '0.75rem',
+                transition: 'all 0.3s ease'
               }}
             >
               <Gift size={24} />
@@ -700,19 +753,43 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
           </div>
         ) : (
           <div>
+            {/* Loading State */}
+            {loading && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '4rem 2rem'
+              }}>
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  border: '4px solid rgba(255,255,255,0.1)',
+                  borderTop: '4px solid #ec4899',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }} />
+                <p style={{ color: 'rgba(255,255,255,0.7)', marginTop: '1.5rem', fontWeight: '600' }}>
+                  Loading surprises...
+                </p>
+              </div>
+            )}
+
             {/* Surprises for You */}
-            {receivedSurprises.length > 0 && (
+            {!loading && receivedSurprises.length > 0 && (
               <div style={{ marginBottom: '2rem' }}>
                 <h3 style={{
                   color: 'white',
-                  fontSize: '1.5rem',
-                  fontWeight: '900',
-                  marginBottom: '1rem',
+                  fontSize: '1.35rem',
+                  fontWeight: '800',
+                  marginBottom: '1.25rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.75rem'
+                  gap: '0.75rem',
+                  textShadow: '0 2px 10px rgba(0,0,0,0.3)'
                 }}>
-                  <Gift size={28} />
+                  <Gift size={26} />
                   Surprises for You
                 </h3>
                 
@@ -727,28 +804,44 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                       key={surprise.id}
                       style={{
                         background: isRevealed 
-                          ? 'linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%)'
+                          ? 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)'
                           : 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
-                        borderRadius: '25px',
+                        borderRadius: '24px',
                         padding: '2rem',
                         marginBottom: '1.5rem',
                         boxShadow: '0 15px 40px rgba(0,0,0,0.2)',
-                        border: isRevealed ? '3px solid #fbbf24' : '3px solid #ec4899'
+                        border: isRevealed ? '3px solid #fbbf24' : '3px solid #f472b6'
                       }}
                     >
                       {/* Lock/Unlock Icon */}
                       <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                        {isRevealed ? (
-                          <Unlock size={48} color="#f59e0b" strokeWidth={3} />
-                        ) : (
-                          <Lock size={48} color="#ec4899" strokeWidth={3} />
-                        )}
+                        <div style={{
+                          width: '80px',
+                          height: '80px',
+                          background: isRevealed 
+                            ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
+                            : 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          margin: '0 auto',
+                          boxShadow: isRevealed 
+                            ? '0 10px 30px rgba(251, 191, 36, 0.4)'
+                            : '0 10px 30px rgba(236, 72, 153, 0.4)'
+                        }}>
+                          {isRevealed ? (
+                            <Unlock size={40} color="white" strokeWidth={2.5} />
+                          ) : (
+                            <Lock size={40} color="white" strokeWidth={2.5} />
+                          )}
+                        </div>
                       </div>
 
                       {/* Title */}
                       <h4 style={{
-                        fontSize: '1.8rem',
-                        fontWeight: '900',
+                        fontSize: '1.75rem',
+                        fontWeight: '800',
                         margin: '0 0 0.5rem 0',
                         color: isRevealed ? '#92400e' : '#831843',
                         textAlign: 'center'
@@ -769,17 +862,24 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                       {/* Countdown */}
                       {countdown && !isRevealed && (
                         <div style={{
-                          background: 'rgba(255,255,255,0.7)',
+                          background: 'rgba(255,255,255,0.8)',
                           borderRadius: '20px',
                           padding: '1.5rem',
                           textAlign: 'center',
-                          marginBottom: '1.5rem'
+                          marginBottom: '1.5rem',
+                          boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
                         }}>
-                          <div style={{ fontSize: '3rem', fontWeight: '900', color: '#ec4899' }}>
+                          <div style={{ 
+                            fontSize: '3rem', 
+                            fontWeight: '900', 
+                            background: 'linear-gradient(135deg, #ec4899, #db2777)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent'
+                          }}>
                             {countdown}
                           </div>
                           {surprise.scheduledDate && (
-                            <div style={{ fontSize: '1rem', color: '#831843', marginTop: '0.5rem' }}>
+                            <div style={{ fontSize: '1rem', color: '#831843', marginTop: '0.5rem', fontWeight: '600' }}>
                               {formatDate(surprise.scheduledDate)}
                               {surprise.scheduledTime && ` at ${surprise.scheduledTime}`}
                             </div>
@@ -790,14 +890,14 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                       {/* Revealed Date */}
                       {isRevealed && surprise.scheduledDate && (
                         <div style={{
-                          background: 'rgba(255,255,255,0.7)',
-                          borderRadius: '20px',
+                          background: 'rgba(255,255,255,0.8)',
+                          borderRadius: '16px',
                           padding: '1rem',
                           textAlign: 'center',
                           marginBottom: '1.5rem'
                         }}>
-                          <div style={{ fontSize: '1.2rem', fontWeight: '900', color: '#92400e' }}>
-                            {formatDate(surprise.scheduledDate)}
+                          <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#92400e' }}>
+                            📅 {formatDate(surprise.scheduledDate)}
                             {surprise.scheduledTime && ` at ${surprise.scheduledTime}`}
                           </div>
                         </div>
@@ -807,8 +907,8 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                       {surprise.hints && surprise.hints.length > 0 && (
                         <div style={{ marginBottom: '1.5rem' }}>
                           <h5 style={{
-                            fontSize: '1.1rem',
-                            fontWeight: '900',
+                            fontSize: '1.05rem',
+                            fontWeight: '800',
                             marginBottom: '0.75rem',
                             color: isRevealed ? '#92400e' : '#831843'
                           }}>
@@ -821,7 +921,7 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                                 key={index}
                                 style={{
                                   background: isUnlocked ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.5)',
-                                  borderRadius: '15px',
+                                  borderRadius: '14px',
                                   padding: '1rem',
                                   marginBottom: '0.75rem',
                                   display: 'flex',
@@ -831,21 +931,22 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                                 }}
                               >
                                 {isUnlocked ? (
-                                  <span style={{ flex: 1, color: '#333' }}>{hint}</span>
+                                  <span style={{ flex: 1, color: '#374151', fontWeight: '500' }}>{hint}</span>
                                 ) : (
                                   <>
-                                    <span style={{ flex: 1, color: '#999' }}>🔒 Hint {index + 1}</span>
+                                    <span style={{ flex: 1, color: '#9ca3af', fontWeight: '500' }}>🔒 Hint {index + 1}</span>
                                     <button
                                       onClick={() => unlockHint(surprise.id, index)}
                                       style={{
                                         padding: '0.5rem 1rem',
                                         borderRadius: '10px',
                                         border: 'none',
-                                        background: '#ec4899',
+                                        background: 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
                                         color: 'white',
-                                        fontSize: '0.9rem',
+                                        fontSize: '0.875rem',
                                         fontWeight: '700',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)'
                                       }}
                                     >
                                       Unlock
@@ -862,14 +963,14 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                       {isRevealed && surprise.description && (
                         <div style={{
                           background: 'rgba(255,255,255,0.9)',
-                          borderRadius: '20px',
+                          borderRadius: '18px',
                           padding: '1.5rem',
                           marginBottom: '1.5rem',
                           border: '2px solid #fbbf24'
                         }}>
                           <h5 style={{
-                            fontSize: '1.1rem',
-                            fontWeight: '900',
+                            fontSize: '1.05rem',
+                            fontWeight: '800',
                             marginBottom: '0.75rem',
                             color: '#92400e',
                             display: 'flex',
@@ -889,14 +990,14 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                       {isRevealed && stops.length > 0 && (
                         <div style={{
                           background: 'rgba(255,255,255,0.9)',
-                          borderRadius: '20px',
+                          borderRadius: '18px',
                           padding: '1.5rem',
                           marginBottom: '1.5rem',
                           border: '2px solid #fbbf24'
                         }}>
                           <h5 style={{
-                            fontSize: '1.2rem',
-                            fontWeight: '900',
+                            fontSize: '1.15rem',
+                            fontWeight: '800',
                             marginBottom: '1rem',
                             color: '#92400e',
                             display: 'flex',
@@ -912,11 +1013,11 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                               key={index}
                               style={{
                                 background: 'white',
-                                borderRadius: '15px',
+                                borderRadius: '14px',
                                 padding: '1.25rem',
                                 marginBottom: '1rem',
-                                border: '2px solid #fbbf24',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                border: '2px solid #fcd34d',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
                               }}
                             >
                               <div style={{
@@ -926,10 +1027,10 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                                 marginBottom: '0.75rem'
                               }}>
                                 <div style={{
-                                  background: '#fef3c7',
+                                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
                                   borderRadius: '50%',
-                                  width: '40px',
-                                  height: '40px',
+                                  width: '44px',
+                                  height: '44px',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
@@ -941,8 +1042,8 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                                 </div>
                                 <div style={{ flex: 1 }}>
                                   <h6 style={{
-                                    fontSize: '1.1rem',
-                                    fontWeight: '900',
+                                    fontSize: '1.05rem',
+                                    fontWeight: '800',
                                     margin: '0 0 0.25rem 0',
                                     color: '#92400e'
                                   }}>
@@ -982,11 +1083,11 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                                     alignItems: 'center',
                                     gap: '0.5rem',
                                     padding: '0.5rem 1rem',
-                                    background: '#fef3c7',
+                                    background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
                                     color: '#92400e',
                                     borderRadius: '10px',
                                     textDecoration: 'none',
-                                    fontSize: '0.9rem',
+                                    fontSize: '0.875rem',
                                     fontWeight: '700',
                                     marginTop: '0.75rem'
                                   }}
@@ -1008,12 +1109,12 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                           style={{
                             width: '100%',
                             padding: '1.25rem',
-                            borderRadius: '20px',
+                            borderRadius: '18px',
                             border: 'none',
                             background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                             color: 'white',
-                            fontSize: '1.2rem',
-                            fontWeight: '900',
+                            fontSize: '1.1rem',
+                            fontWeight: '800',
                             cursor: 'pointer',
                             boxShadow: '0 8px 25px rgba(16,185,129,0.4)',
                             display: 'flex',
@@ -1033,12 +1134,12 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                           style={{
                             width: '100%',
                             padding: '1.25rem',
-                            borderRadius: '20px',
+                            borderRadius: '18px',
                             border: 'none',
                             background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
                             color: 'white',
-                            fontSize: '1.2rem',
-                            fontWeight: '900',
+                            fontSize: '1.1rem',
+                            fontWeight: '800',
                             cursor: 'pointer',
                             boxShadow: '0 8px 25px rgba(245,158,11,0.4)',
                             display: 'flex',
@@ -1058,18 +1159,19 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
             )}
 
             {/* My Surprises */}
-            {mySurprises.length > 0 && (
+            {!loading && mySurprises.length > 0 && (
               <div>
                 <h3 style={{
                   color: 'white',
-                  fontSize: '1.5rem',
-                  fontWeight: '900',
-                  marginBottom: '1rem',
+                  fontSize: '1.35rem',
+                  fontWeight: '800',
+                  marginBottom: '1.25rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.75rem'
+                  gap: '0.75rem',
+                  textShadow: '0 2px 10px rgba(0,0,0,0.3)'
                 }}>
-                  <Eye size={28} />
+                  <Eye size={26} />
                   My Surprises
                 </h3>
                 
@@ -1081,8 +1183,8 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                     <div
                       key={surprise.id}
                       style={{
-                        background: 'white',
-                        borderRadius: '25px',
+                        background: 'rgba(255,255,255,0.95)',
+                        borderRadius: '24px',
                         padding: '1.75rem',
                         marginBottom: '1.5rem',
                         boxShadow: '0 15px 40px rgba(0,0,0,0.2)'
@@ -1093,12 +1195,13 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                         style={{
                           display: 'inline-block',
                           padding: '0.5rem 1rem',
-                          borderRadius: '20px',
+                          borderRadius: '12px',
                           background: status.color,
                           color: 'white',
-                          fontSize: '0.9rem',
-                          fontWeight: '900',
-                          marginBottom: '1rem'
+                          fontSize: '0.875rem',
+                          fontWeight: '700',
+                          marginBottom: '1rem',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                         }}
                       >
                         {status.text}
@@ -1106,22 +1209,22 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
 
                       {/* Title */}
                       <h4 style={{
-                        fontSize: '1.5rem',
-                        fontWeight: '900',
+                        fontSize: '1.4rem',
+                        fontWeight: '800',
                         margin: '0 0 1rem 0',
-                        color: '#333'
+                        color: '#1f2937'
                       }}>
                         {surprise.title}
                       </h4>
 
                       {/* Partner Email */}
-                      <p style={{ margin: '0.5rem 0', color: '#666' }}>
+                      <p style={{ margin: '0.5rem 0', color: '#6b7280', fontWeight: '500' }}>
                         <strong>Partner:</strong> {surprise.partnerEmail}
                       </p>
 
                       {/* Date/Time */}
                       {surprise.scheduledDate && (
-                        <p style={{ margin: '0.5rem 0', color: '#666' }}>
+                        <p style={{ margin: '0.5rem 0', color: '#6b7280', fontWeight: '500' }}>
                           <strong>Date:</strong> {formatDate(surprise.scheduledDate)}
                           {surprise.scheduledTime && ` at ${surprise.scheduledTime}`}
                         </p>
@@ -1130,8 +1233,8 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                       {/* Secret Description */}
                       {surprise.description && (
                         <div style={{
-                          background: '#fef3c7',
-                          borderRadius: '15px',
+                          background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                          borderRadius: '14px',
                           padding: '1rem',
                           margin: '1rem 0',
                           border: '2px solid #fbbf24'
@@ -1142,7 +1245,8 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                             color: '#78350f',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.5rem'
+                            gap: '0.5rem',
+                            fontWeight: '500'
                           }}>
                             <Lock size={16} />
                             <strong>Your secret:</strong> {surprise.description}
@@ -1153,19 +1257,20 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                       {/* ✅ FIXED: Show itinerary if attached - use getStopCount */}
                       {stops.length > 0 && (
                         <div style={{
-                          background: '#f0fdf4',
-                          borderRadius: '15px',
+                          background: 'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+                          borderRadius: '14px',
                           padding: '1rem',
                           margin: '1rem 0',
-                          border: '2px solid #86efac'
+                          border: '2px solid #6ee7b7'
                         }}>
                           <p style={{
                             margin: 0,
                             fontSize: '0.9rem',
-                            color: '#166534',
+                            color: '#065f46',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '0.5rem'
+                            gap: '0.5rem',
+                            fontWeight: '600'
                           }}>
                             <MapPin size={16} />
                             <strong>Full itinerary attached:</strong> {stops.length} stops
@@ -1179,7 +1284,7 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                           <p style={{
                             fontSize: '0.9rem',
                             fontWeight: '700',
-                            color: '#666',
+                            color: '#6b7280',
                             marginBottom: '0.5rem'
                           }}>
                             Hints you provided:
@@ -1190,10 +1295,11 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                               style={{
                                 background: '#f3f4f6',
                                 borderRadius: '10px',
-                                padding: '0.75rem',
+                                padding: '0.75rem 1rem',
                                 marginBottom: '0.5rem',
                                 fontSize: '0.9rem',
-                                color: '#666'
+                                color: '#4b5563',
+                                fontWeight: '500'
                               }}
                             >
                               {index + 1}. {hint}
@@ -1208,9 +1314,9 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
                         style={{
                           marginTop: '1rem',
                           padding: '0.75rem 1.5rem',
-                          borderRadius: '15px',
+                          borderRadius: '12px',
                           border: 'none',
-                          background: '#fee2e2',
+                          background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
                           color: '#dc2626',
                           fontSize: '0.95rem',
                           fontWeight: '700',
@@ -1230,19 +1336,37 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
             )}
 
             {/* Empty States */}
-            {receivedSurprises.length === 0 && mySurprises.length === 0 && !loading && (
+            {!loading && receivedSurprises.length === 0 && mySurprises.length === 0 && (
               <div style={{
-                background: 'white',
-                borderRadius: '25px',
-                padding: '3rem 2rem',
+                background: 'rgba(255,255,255,0.95)',
+                borderRadius: '28px',
+                padding: '4rem 2rem',
                 textAlign: 'center',
-                boxShadow: '0 15px 40px rgba(0,0,0,0.2)'
+                boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
               }}>
-                <Gift size={64} color="#d1d5db" style={{ marginBottom: '1rem' }} />
-                <h4 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#666', marginBottom: '0.5rem' }}>
+                <div style={{
+                  width: '100px',
+                  height: '100px',
+                  background: 'linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 1.5rem'
+                }}>
+                  <Gift size={48} color="#ec4899" />
+                </div>
+                <h4 style={{ 
+                  fontSize: '1.4rem', 
+                  fontWeight: '800', 
+                  marginBottom: '0.75rem',
+                  background: 'linear-gradient(135deg, #ec4899, #db2777)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}>
                   No Surprises Yet
                 </h4>
-                <p style={{ color: '#999', fontSize: '1rem' }}>
+                <p style={{ color: '#6b7280', fontSize: '1rem' }}>
                   Create your first surprise date or wait for one to arrive!
                 </p>
               </div>
@@ -1250,6 +1374,16 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
           </div>
         )}
       </div>
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.1; }
+          50% { transform: translateY(-20px) rotate(10deg); opacity: 0.2; }
+        }
+      `}</style>
     </div>
   );
 }
