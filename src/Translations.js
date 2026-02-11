@@ -57,7 +57,7 @@ export const translations = {
     selectDate: 'Select specific date:',
     
     // Buttons
-    generateDate: "Let's Do It! 🚀",
+    generateDate: 'Generate My Perfect Date',
     creating: 'Creating Your Perfect Itinerary...',
     refresh: 'Refresh',
     loading: 'Loading...',

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { Gift, Plus, Eye, EyeOff, Trash2, Calendar, Clock, X, Heart, Sparkles, Lock, Unlock, UserPlus, MapPin, ExternalLink } from 'lucide-react';
-import { trackAction, ACTION_TYPES } from './ActivityTracker';
 
 export default function SurpriseDateMode({ currentUser, onClose, prefilledItinerary = null }) {
   const [activeTab, setActiveTab] = useState('create');
@@ -128,7 +127,6 @@ export default function SurpriseDateMode({ currentUser, onClose, prefilledItiner
       };
 
       await addDoc(collection(db, 'surpriseDates'), surpriseData);
-      trackAction(ACTION_TYPES.PLAN_SURPRISE);
       
       // Reset form
       setTitle('');

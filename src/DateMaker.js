@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { MapPin, Heart, Navigation, ExternalLink, Star, Sparkles, BookmarkPlus, BookmarkCheck, RefreshCw, User, Users, Clock, ArrowRight, MessageCircle, Share2, CheckCircle, Gift, ChevronRight } from 'lucide-react';
+import { MapPin, Heart, Navigation, ExternalLink, Star, Sparkles, BookmarkPlus, BookmarkCheck, RefreshCw, User, Clock, ArrowRight, MessageCircle, Share2, CheckCircle, Gift, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { onAuthStateChanged, signOut, sendEmailVerification } from 'firebase/auth';
 import { collection, query, where, onSnapshot, getDocs, writeBatch, doc, getDoc, setDoc, serverTimestamp, orderBy, limit, updateDoc } from 'firebase/firestore';
@@ -21,8 +21,6 @@ import LevelUpModal from './LevelUpModal';
 import XPBar from './XPBar';
 import SpinningWheel from './SpinningWheel';
 import HamburgerMenu from './HamBurgerMenu';
-import { SipAndSpillBanner, TopVenuesSection, UpcomingEventsSection } from './FeaturedSection';
-import { EventsExplorer, VenuesExplorer } from './ExploreScreen';
 import DateMemoryScrapbook from './DateMemoryScrapbook';
 import SurpriseDateMode from './SurpriseDateMode';
 import DateStreaksGoals from './DateStreaksGoals';
@@ -37,43 +35,9 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { Capacitor } from '@capacitor/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import InviteFriendsModal from './InviteFriendsModal';
-import { SipAndSpillHomeBanner, SipAndSpillCard, SipAndSpillDateSuggestion, openSipAndSpill } from './SipAndSpillPartner';
 import AppleSubscriptionModal from './AppleSubscriptionModal';
 import IAPManager from './IAPManager';
 import PushNotificationService from './PushNotificationService';
-import { isAdmin, hasPremiumAccess } from './adminConfig';
-import HumanCopy from './HumanCopy';
-import HapticService from './HapticService';
-import FloatingSocialButton from './FloatingSocialButton';
-import './PremiumEffects.css';
-import DailyChallenges from './DailyChallenges';
-import MonthlyRecap from './MonthlyRecap';
-import { trackAction, ACTION_TYPES } from './ActivityTracker';
-import NotificationSettings from './NotificationSettings';
-import FreeDateMode from './FreeDateMode';
-import LongDistanceMode from './LongDistanceMode';
-import Shop from './Shop';
-import MusicSelector, { getPlaylistForCategory } from './DateMusicService';
-import AppRatingService from './AppRatingService';
-import { DateModeSelector, DateMusicButton } from './DateMakerAddOns';
-import { 
-  getTodaysChallenges, 
-  getStreakBonus, 
-  checkMysteryBonus,
-  CHALLENGE_CATEGORIES
-} from './DailyChallengesData';
-import { 
-  ACHIEVEMENTS, 
-  checkForNewAchievements,
-  checkAchievementProgress 
-} from './NewAchievements';
-import {
-  initializeEngagementNotifications,
-  sendStreakRiskNotification,
-  sendStreakMilestoneNotification,
-  sendAchievementNotification,
-  checkStreakStatus
-} from './EngagementNotifications';
 export default function DateMaker() {
   const navigate = useNavigate(); 
 
@@ -122,29 +86,8 @@ const [showPrivacy, setShowPrivacy] = useState(false);
   const abortControllerRef = useRef(null);
 const [showInviteFriends, setShowInviteFriends] = useState(false);
 const [showPremiumModal, setShowPremiumModal] = useState(false);
-const [loadingMessage, setLoadingMessage] = useState('');
-  const [showDailyChallenges, setShowDailyChallenges] = useState(false);
-const [showMonthlyRecap, setShowMonthlyRecap] = useState(false);
-const [showNotificationSettings, setShowNotificationSettings] = useState(false);
-const [todaysChallenges, setTodaysChallenges] = useState([]);
-const [completedChallenges, setCompletedChallenges] = useState([]);
-const [mysteryBonusActive, setMysteryBonusActive] = useState(null);
-const [newAchievementUnlocked, setNewAchievementUnlocked] = useState(null);
-const [streakBonus, setStreakBonus] = useState({ multiplier: 1, badge: null });
-const [showFreeDateMode, setShowFreeDateMode] = useState(false);
-const [showLongDistanceMode, setShowLongDistanceMode] = useState(false);
-const [showMusicSelector, setShowMusicSelector] = useState(false);
-const [showShop, setShowShop] = useState(false);
-const [userPurchases, setUserPurchases] = useState({
-  badges: ['sparkle'],
-  confetti: ['classic'],
-  selectedBadge: 'sparkle',
-  selectedConfetti: 'classic'
-});
-const [showEventsExplorer, setShowEventsExplorer] = useState(false);
-const [showVenuesExplorer, setShowVenuesExplorer] = useState(false);
 
-// Date generation states
+  // Date generation states
   const [location, setLocation] = useState('');
   const [selectedHobbies, setSelectedHobbies] = useState([]);
   const [selectedActivities, setSelectedActivities] = useState([]);
@@ -152,8 +95,8 @@ const [showVenuesExplorer, setShowVenuesExplorer] = useState(false);
   const [customActivityInput, setCustomActivityInput] = useState('');
   const [places, setPlaces] = useState([]);
   const [itinerary, setItinerary] = useState(null);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [error, setError] = useState('');
+ const [searchLoading, setSearchLoading] = useState(false);
+const [error, setError] = useState('');
 const [showResults, setShowResults] = useState(false);
 const [isGenerating, setIsGenerating] = useState(false);        
 const [initialLoading, setInitialLoading] = useState(true);    
@@ -192,6 +135,7 @@ const [expandedTips, setExpandedTips] = useState({});
 
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpData, setLevelUpData] = useState(null);
+  const [completedChallenges, setCompletedChallenges] = useState([]);
   const [activeMode, setActiveMode] = useState('normal');
   const [showPointsNotification, setShowPointsNotification] = useState(false);
   const [pointsNotificationData, setPointsNotificationData] = useState(null);
@@ -230,33 +174,10 @@ const fetchUserData = async () => {
     if (userDoc.exists()) {
       const data = userDoc.data();
       setUserData(data);
-      // Check if admin - admins get premium for free
-      if (isAdmin(user.email)) {
-        setSubscriptionStatus('premium');
-        console.log('👑 Admin detected - granting premium access');
-      } else {
-        setSubscriptionStatus(data.subscriptionStatus || 'free');
-      }
+      setSubscriptionStatus(data.subscriptionStatus || 'free');
       setSavedDates(data.savedDates || []);
       setProfilePhoto(data.profilePhoto || '');
       setLastViewedSavedCount(data.lastViewedSavedCount || 0);
-      
-      // Load user purchases from Firestore
-      try {
-        const purchasesDoc = await getDoc(doc(db, 'userPurchases', user.uid));
-        if (purchasesDoc.exists()) {
-          const purchaseData = purchasesDoc.data();
-          setUserPurchases({
-            badges: purchaseData.badges || ['sparkle'],
-            confetti: purchaseData.confetti || ['classic'],
-            selectedBadge: purchaseData.selectedBadge !== undefined ? purchaseData.selectedBadge : 'sparkle',
-            selectedConfetti: purchaseData.selectedConfetti !== undefined ? purchaseData.selectedConfetti : 'classic'
-          });
-          console.log('✅ Loaded user purchases:', purchaseData);
-        }
-      } catch (err) {
-        console.log('No purchases found, using defaults');
-      }
      // 🍎 Initialize IAP for iOS after user data loaded
   if (Capacitor.getPlatform() === 'ios') {
     console.log('🚀 Initializing IAP for iOS...');
@@ -311,12 +232,6 @@ useEffect(() => {
     PushNotificationService.initialize(user.uid);
   }
 }, [user?.uid]);
-
-// ⭐ APP RATING - Initialize on app load
-useEffect(() => {
-  AppRatingService.initialize();
-}, []);
-
 // Load saved language preference on mount
 useEffect(() => {
   const savedLanguage = localStorage.getItem('datemaker_language') || 'en';
@@ -330,8 +245,6 @@ useLayoutEffect(() => {
     if (root) {
       root.scrollTop = 0;
     }
-    
-    
     // Also try standard methods as fallbacks
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
@@ -376,14 +289,8 @@ useEffect(() => {
           const data = userDoc.data();
           const newStatus = data.subscriptionStatus || 'free';
           
-          // Don't overwrite admin premium status
-          if (isAdmin(user?.email)) {
-            console.log('👑 Admin detected - keeping premium access');
-            setSubscriptionStatus('premium');
-          } else {
-            console.log('✅ New subscription status:', newStatus);
-            setSubscriptionStatus(newStatus);
-          }
+          console.log('✅ New subscription status:', newStatus);
+          setSubscriptionStatus(newStatus);
           setUserData(data);
           
           if (newStatus === 'trial' || newStatus === 'premium') {
@@ -425,126 +332,6 @@ useEffect(() => {
   });
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
-
-// Load daily challenges and check for mystery bonus
-useEffect(() => {
-  // Get today's challenges
-  const challenges = getTodaysChallenges(3);
-  setTodaysChallenges(challenges);
-  
-  // Check for mystery bonus day
-  const bonus = checkMysteryBonus();
-  if (bonus) {
-    setMysteryBonusActive(bonus);
-    console.log('🎰 Mystery Bonus Active:', bonus.title);
-  }
-  
-  // Get streak bonus
-  if (gameStats?.currentStreak) {
-    const bonus = getStreakBonus(gameStats.currentStreak);
-    setStreakBonus(bonus);
-  }
-}, [gameStats?.currentStreak]);
-
-// Initialize engagement notifications
-useEffect(() => {
-  const initNotifications = async () => {
-    if (!user?.uid) return;
-    
-    try {
-      const isPremium = subscriptionStatus !== 'free';
-      await initializeEngagementNotifications(user.uid, isPremium);
-      
-      // Check streak status and warn if at risk
-      const streakStatus = await checkStreakStatus(user.uid);
-      if (streakStatus?.atRisk) {
-        const today = new Date().toDateString();
-        const lastWarning = localStorage.getItem('lastStreakWarning');
-        
-        if (lastWarning !== today) {
-          await sendStreakRiskNotification(streakStatus.streak, streakStatus.daysUntilLoss);
-          localStorage.setItem('lastStreakWarning', today);
-        }
-      }
-      
-      console.log('✅ Engagement notifications initialized');
-    } catch (error) {
-      console.error('Error initializing notifications:', error);
-    }
-  };
-  
-  initNotifications();
-}, [user?.uid, subscriptionStatus]);
-
-// Check for new achievements when stats change
-useEffect(() => {
-  if (!gameStats || !user?.uid) return;
-  
-  const checkAchievements = async () => {
-    const earnedIds = gameStats.achievements || [];
-    const newAchievements = checkForNewAchievements(gameStats, earnedIds);
-    
-    if (newAchievements.length > 0) {
-      const achievement = newAchievements[0];
-      setNewAchievementUnlocked(achievement);
-      
-      // Send notification
-      await sendAchievementNotification(achievement.title, achievement.xp);
-      
-      // Save to Firebase
-      try {
-        const userDocRef = doc(db, 'users', user.uid);
-        const newEarnedIds = [...earnedIds, achievement.id];
-        const newXP = (gameStats.xp || 0) + achievement.xp;
-        
-        await setDoc(userDocRef, {
-          gameStats: {
-            ...gameStats,
-            achievements: newEarnedIds,
-            xp: newXP
-          }
-        }, { merge: true });
-        
-        setGameStats(prev => ({
-          ...prev,
-          achievements: newEarnedIds,
-          xp: newXP
-        }));
-        
-        console.log('🏆 Achievement unlocked:', achievement.title);
-      } catch (error) {
-        console.error('Error saving achievement:', error);
-      }
-    }
-  };
-  
-  checkAchievements();
-}, [gameStats?.datesCompleted, gameStats?.challengesCompleted, gameStats?.currentStreak, gameStats?.placesVisited]);
-
-// 📝 Rotate loading messages during generation
-useEffect(() => {
-  let interval;
-  if (searchLoading) {
-    const messages = HumanCopy.getLoadingMessages('dates');
-    setLoadingMessage(messages[0]);
-    
-    interval = setInterval(() => {
-      setLoadingMessage(prev => {
-        const msgs = HumanCopy.getLoadingMessages('dates');
-        const currentIdx = msgs.indexOf(prev);
-        const nextIdx = (currentIdx + 1) % msgs.length;
-        return msgs[nextIdx];
-      });
-    }, 2000); // Change every 2 seconds
-  } else {
-    setLoadingMessage('');
-  }
-  
-  return () => {
-    if (interval) clearInterval(interval);
-  };
-}, [searchLoading]);
-
 // Auto-open subscription modal if coming from iOS app
 useEffect(() => {
   const shouldOpenSubscribe = sessionStorage.getItem('openSubscribeAfterLogin');
@@ -582,32 +369,6 @@ useEffect(() => {
     'Movie Theater', 'Concerts', 'Sports Events', 'Karaoke', 'Escape Rooms'
   ];
   
-// Handle XP with streak and mystery bonuses
-const handleBonusXP = (baseXP, reason) => {
-  if (!user || !gameStats) return baseXP;
-  
-  let finalXP = baseXP;
-  
-  // Apply streak bonus
-  if (streakBonus.multiplier > 1) {
-    finalXP = Math.round(finalXP * streakBonus.multiplier);
-  }
-  
-  // Apply mystery bonus if active
-  if (mysteryBonusActive?.multiplier) {
-    finalXP = Math.round(finalXP * mysteryBonusActive.multiplier);
-  }
-  
-  // Award the points using your existing function
-  if (typeof awardPoints === 'function') {
-    awardPoints(finalXP, reason);
-  }
-  
-  console.log(`⚡ XP: ${baseXP} → ${finalXP} (streak: ${streakBonus.multiplier}x${mysteryBonusActive ? `, mystery: ${mysteryBonusActive.multiplier}x` : ''})`);
-  
-  return finalXP;
-};
-
   const calculateEndTime = (start, dur) => {
   // Handle both string and number durations
   let hours;
@@ -1319,7 +1080,6 @@ const markDateCompleted = async (itinerary) => {
     }
     
     openScrapbookForDate(itinerary);
-    trackAction(ACTION_TYPES.COMPLETE_DATE);
     
   } catch (error) {
     console.error('Error marking date completed:', error);
@@ -1366,13 +1126,7 @@ const getWeekNumber = (date) => {
            if (userDoc.exists()) {
   const data = userDoc.data();
   setUserData(data);
-  // Check if admin - admins get premium for free
-  if (isAdmin(currentUser.email)) {
-    setSubscriptionStatus('premium');
-    console.log('👑 Admin detected - granting premium access');
-  } else {
-    setSubscriptionStatus(data.subscriptionStatus || 'free');
-  }
+  setSubscriptionStatus(data.subscriptionStatus || 'free');
   setSavedDates(data.savedDates || []);
   setProfilePhoto(data.profilePhoto || '');
   setLastViewedSavedCount(data.lastViewedSavedCount || 0);
@@ -1407,7 +1161,6 @@ const getWeekNumber = (date) => {
         }
       }
     } catch (err) {
-      HapticService.notifyError();
       console.error('Auth error:', err);
       setInitError(err.message);
     } finally {
@@ -1678,7 +1431,6 @@ useEffect(() => {
     try {
       await IAPManager.syncSubscriptionStatus();
     } catch (err) {
-      HapticService.notifyError();
       console.log("RevenueCat sync skipped:", err.message);
     }
     
@@ -1693,14 +1445,8 @@ useEffect(() => {
         const newStatus = data.subscriptionStatus || 'free';
         
         if (newStatus !== subscriptionStatus) {
-          // Don't overwrite admin premium status
-          if (isAdmin(user?.email)) {
-            console.log('👑 Admin detected - keeping premium access');
-            setSubscriptionStatus('premium');
-          } else {
-            console.log('✅ Subscription updated:', newStatus);
-            setSubscriptionStatus(newStatus);
-          }
+          console.log('✅ Subscription updated:', newStatus);
+          setSubscriptionStatus(newStatus);
         }
       }
     } catch (error) {
@@ -1775,9 +1521,6 @@ const handleContinueAsGuest = () => {
       }, { merge: true });
     }
     
-    // 🆕 Clean up push notifications
-    await PushNotificationService.cleanup();
-    
     await signOut(auth);
     
     // Clear all UI states
@@ -1801,7 +1544,6 @@ const handleContinueAsGuest = () => {
     setDuration('4');
     
   } catch (err) {
-    HapticService.notifyError();
     console.error('Logout error:', err);
   }
 };
@@ -1847,7 +1589,6 @@ const handleOpenSaved = async () => {
       setProfileError('');
       alert('✨ Profile photo updated!');
     } catch (err) {
-      HapticService.notifyError();
       if (!err.message?.includes('cancel')) {
         console.error('Upload error:', err);
         setProfileError('Failed to upload photo');
@@ -1885,7 +1626,6 @@ const handleOpenSaved = async () => {
     setProfileError('');
     alert('✨ Profile photo updated!');
   } catch (err) {
-    HapticService.notifyError();
     console.error('Upload error:', err);
     setProfileError(`Failed to upload: ${err.message}`);
   }
@@ -1898,7 +1638,6 @@ const handleChangePassword = async () => {
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
-      HapticService.notifyError();
       console.error('Password change error:', err);
       if (err.code === 'auth/requires-recent-login') {
         setProfileError('Please log out and log back in to change your password.');
@@ -1961,7 +1700,6 @@ const handleChangePassword = async () => {
     setAuthScreen('login');
     
   } catch (err) {
-    HapticService.notifyError();
     console.error('Delete account error:', err);
     if (err.code === 'auth/requires-recent-login') {
       setProfileError('For security, please log out and log back in before deleting your account.');
@@ -2241,17 +1979,9 @@ const handleChangePassword = async () => {
       
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, { savedDates: newSavedDates }, { merge: true });
-
-      // ⭐ Track for App Store rating
-      AppRatingService.trackDateCompleted();
-      setTimeout(() => {
-        AppRatingService.requestRating();
-      }, 2000);
-      trackAction(ACTION_TYPES.SAVE_DATE);
       
       alert(t('dateSaved'));
     } catch (err) {
-      HapticService.notifyError();
       console.error('Save error:', err);
     } finally {
       setSavingDate(false);
@@ -2288,18 +2018,9 @@ const handleChangePassword = async () => {
       
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, { savedDates: newSavedDates }, { merge: true });
-
-      // ⭐ Track for App Store rating
-      AppRatingService.trackDateCompleted();
-      setTimeout(() => {
-        AppRatingService.requestRating();
-      }, 2000);
       
-      // After successful save:
-HapticService.notifySuccess();
-alert(t('itinerarySaved'));
+      alert(t('itinerarySaved'));
     } catch (err) {
-      HapticService.notifyError();
       console.error('Save itinerary error:', err);
     } finally {
       setSavingItinerary(false);
@@ -2313,12 +2034,6 @@ alert(t('itinerarySaved'));
       
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, { savedDates: newSavedDates }, { merge: true });
-
-      // ⭐ Track for App Store rating
-      AppRatingService.trackDateCompleted();
-      setTimeout(() => {
-        AppRatingService.requestRating();
-      }, 2000);
     } catch (err) {
       console.error('Remove error:', err);
     }
@@ -2372,7 +2087,6 @@ alert(t('itinerarySaved'));
 
   console.log('✅ Cleaned data for sharing:', cleanedDateData);
   console.log('🟢 About to set dateToShare and showShareModal');
-  trackAction(ACTION_TYPES.SHARE_DATE);
   
   // ⭐ THIS IS THE KEY CHANGE - Use setTimeout ⭐
   setTimeout(() => {
@@ -2394,17 +2108,15 @@ alert(t('itinerarySaved'));
   }
 };
   const handleAddCustomActivity = () => {
-  if (customActivityInput.trim() && !customActivities.includes(customActivityInput.trim())) {
-    HapticService.tapLight();
-    setCustomActivities([...customActivities, customActivityInput.trim()]);
-    setCustomActivityInput('');
-  }
-};
+    if (customActivityInput.trim() && !customActivities.includes(customActivityInput.trim())) {
+      setCustomActivities([...customActivities, customActivityInput.trim()]);
+      setCustomActivityInput('');
+    }
+  };
   
   const handleRemoveCustomActivity = (activity) => {
-  HapticService.tapLight();
-  setCustomActivities(customActivities.filter(a => a !== activity));
-};
+    setCustomActivities(customActivities.filter(a => a !== activity));
+  };
   
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') handleAddCustomActivity();
@@ -2604,7 +2316,7 @@ alert(t('itinerarySaved'));
       
      // Pass isRefresh flag to createItinerary
 const generatedItinerary = createItinerary(uniqueResults, keywords, isRefresh);
-      
+      setItinerary(generatedItinerary);
       
       const allPlaces = [
         ...generatedItinerary.stops.map(s => s.place),
@@ -2633,18 +2345,8 @@ setTimeout(() => {
   document.body.scrollTop = 0;
   
   setItinerary(generatedItinerary);
-      trackAction(ACTION_TYPES.BROWSE_DATE);
-      trackAction(ACTION_TYPES.GENERATE_DATE);
   setShowResults(true);
-  
-  // 🎉 Celebration confetti!
-  // After date is generated successfully:
-setShowConfetti(true);
-HapticService.celebrate();
-  setTimeout(() => setShowConfetti(false), 5000);
-  });
-  
- 
+}, 50);
       
 
       
@@ -2657,7 +2359,6 @@ HapticService.celebrate();
     }
     
   } catch (err) {
-    HapticService.notifyError();
     // If request was cancelled, don't show error
     if (err.name === 'AbortError') {
       console.log('Request cancelled by user');
@@ -3007,7 +2708,6 @@ if (category === 'nightlife') {
   return (
     <Social 
       user={user} 
-      userPurchases={userPurchases}
       onBack={() => setShowSocial(false)}
     />
   );
@@ -3207,44 +2907,12 @@ if (category === 'nightlife') {
           </div>
           <div style={{ background: 'white', borderRadius: '24px', padding: '2rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid #e5e7eb' }}>
-              <div style={{ position: 'relative', marginBottom: '1rem' }}>
-                <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', border: '4px solid #ec4899' }}>
-                  {profilePhoto ? (
-                    <img src={profilePhoto} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(to bottom right, #ec4899, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '3rem', fontWeight: 'bold' }}>
-                      {user.email.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                {/* Badge Display */}
-                {userPurchases?.selectedBadge && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '-5px',
-                    right: '-5px',
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '10px',
-                    background: userPurchases.selectedBadge === 'crown' ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' :
-                                userPurchases.selectedBadge === 'expert' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' :
-                                userPurchases.selectedBadge === 'adventurer' ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' :
-                                userPurchases.selectedBadge === 'globe' ? 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)' :
-                                userPurchases.selectedBadge === 'flame' ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' :
-                                'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                    border: '2px solid white'
-                  }}>
-                    <span style={{ fontSize: '1.25rem' }}>
-                      {userPurchases.selectedBadge === 'crown' ? '👑' :
-                       userPurchases.selectedBadge === 'expert' ? '❤️' :
-                       userPurchases.selectedBadge === 'adventurer' ? '🚀' :
-                       userPurchases.selectedBadge === 'globe' ? '🌍' :
-                       userPurchases.selectedBadge === 'flame' ? '🔥' : '✨'}
-                    </span>
+              <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', marginBottom: '1rem', border: '4px solid #ec4899' }}>
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', background: 'linear-gradient(to bottom right, #ec4899, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '3rem', fontWeight: 'bold' }}>
+                    {user.email.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
@@ -3743,78 +3411,6 @@ if (category === 'nightlife') {
                       </div>
                     </div>
                   );
-                }
-                
-                // Handle Free Dates (no geometry)
-                if (savedItem.isFreeDate) {
-                  return (
-                    <div key={savedItem.place_id} style={{ background: 'white', borderRadius: '24px', padding: '2rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                        <span style={{ fontSize: '2rem' }}>{savedItem.categoryIcon || '💸'}</span>
-                        <span style={{ background: '#22c55e', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '700' }}>FREE DATE</span>
-                      </div>
-                      <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{savedItem.name}</h3>
-                      <p style={{ color: '#6b7280', marginBottom: '1rem', lineHeight: 1.5 }}>{savedItem.vicinity}</p>
-                      {savedItem.duration && <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '0.5rem' }}>⏱️ {savedItem.duration}</p>}
-                      {savedItem.bestTime && <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1rem' }}>🌟 Best time: {savedItem.bestTime}</p>}
-                      {savedItem.tips && savedItem.tips.length > 0 && (
-                        <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: '12px', marginBottom: '1rem' }}>
-                          <p style={{ fontWeight: '600', marginBottom: '0.5rem', color: '#166534' }}>Tips:</p>
-                          {savedItem.tips.map((tip, i) => (
-                            <p key={i} style={{ color: '#166534', fontSize: '0.875rem', marginBottom: '0.25rem' }}>• {tip}</p>
-                          ))}
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        {savedItem.spotifyPlaylist && (
-                          <button onClick={() => window.open(savedItem.spotifyPlaylist, '_blank')} style={{ flex: 1, background: '#1DB954', color: 'white', fontWeight: 'bold', padding: '1rem', borderRadius: '999px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                            🎵 Playlist
-                          </button>
-                        )}
-                        <button onClick={() => handleRemoveSavedDate(savedItem.place_id)} style={{ background: '#fef2f2', color: '#dc2626', fontWeight: 'bold', padding: '1rem 1.5rem', borderRadius: '999px', border: '2px solid #fecaca', cursor: 'pointer' }}>
-                          {t('remove')}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                }
-                
-                // Handle Long Distance Dates (no geometry)
-                if (savedItem.isLongDistance) {
-                  return (
-                    <div key={savedItem.place_id} style={{ background: 'white', borderRadius: '24px', padding: '2rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                        <span style={{ fontSize: '2rem' }}>{savedItem.categoryIcon || '💜'}</span>
-                        <span style={{ background: 'linear-gradient(135deg, #8b5cf6, #ec4899)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '700' }}>LONG DISTANCE</span>
-                      </div>
-                      <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{savedItem.name}</h3>
-                      <p style={{ color: '#6b7280', marginBottom: '1rem', lineHeight: 1.5 }}>{savedItem.vicinity}</p>
-                      {savedItem.duration && <p style={{ color: '#6b7280', fontSize: '0.875rem', marginBottom: '1rem' }}>⏱️ {savedItem.duration}</p>}
-                      {savedItem.tools && savedItem.tools.length > 0 && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
-                          {savedItem.tools.map((tool, i) => (
-                            <span key={i} style={{ background: '#f3e8ff', color: '#7c3aed', padding: '0.35rem 0.75rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: '600' }}>{tool}</span>
-                          ))}
-                        </div>
-                      )}
-                      {savedItem.tips && savedItem.tips.length > 0 && (
-                        <div style={{ background: '#faf5ff', padding: '1rem', borderRadius: '12px', marginBottom: '1rem' }}>
-                          <p style={{ fontWeight: '600', marginBottom: '0.5rem', color: '#6b21a8' }}>Tips:</p>
-                          {savedItem.tips.map((tip, i) => (
-                            <p key={i} style={{ color: '#6b21a8', fontSize: '0.875rem', marginBottom: '0.25rem' }}>• {tip}</p>
-                          ))}
-                        </div>
-                      )}
-                      <button onClick={() => handleRemoveSavedDate(savedItem.place_id)} style={{ background: '#fef2f2', color: '#dc2626', fontWeight: 'bold', padding: '1rem 1.5rem', borderRadius: '999px', border: '2px solid #fecaca', cursor: 'pointer' }}>
-                        {t('remove')}
-                      </button>
-                    </div>
-                  );
-                }
-                
-                // Regular dates with geometry
-                if (!savedItem.geometry?.location) {
-                  return null; // Skip items without geometry that aren't handled above
                 }
                 
                 const { lat, lng } = savedItem.geometry.location;
@@ -4600,40 +4196,26 @@ if (showResults && itinerary) {
         html, body, #root { background: #0f0f23 !important; }
       `}</style>
 
-      {/* 🎊 CONFETTI - Uses selected confetti style */}
-      {showConfetti && (() => {
-        // Confetti color schemes
-        const confettiStyles = {
-          classic: ['#ff6b6b', '#4ecdc4', '#ffe66d', '#95e1d3', '#f38181', '#a855f7', '#ec4899'],
-          hearts: ['#ff6b6b', '#ee5a5a', '#ff8787', '#ffa8a8', '#ffc9c9', '#ec4899', '#f472b6'],
-          stars: ['#fbbf24', '#f59e0b', '#fcd34d', '#fde68a', '#fef3c7', '#fbbf24', '#d97706'],
-          sparkle: ['#a855f7', '#8b5cf6', '#c084fc', '#d8b4fe', '#e9d5ff', '#ec4899', '#f472b6'],
-          gold: ['#fbbf24', '#f59e0b', '#d97706', '#92400e', '#fcd34d', '#fde68a', '#fef3c7']
-        };
-        const selectedStyle = userPurchases?.selectedConfetti || 'classic';
-        const colors = confettiStyles[selectedStyle] || confettiStyles.classic;
-        
-        return (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 10000, overflow: 'hidden' }}>
-            {[...Array(60)].map((_, i) => (
-              <div
-                key={i}
-                className="confetti-piece"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  background: colors[Math.floor(Math.random() * colors.length)],
-                  borderRadius: selectedStyle === 'hearts' ? '50% 50% 0 50%' : selectedStyle === 'stars' ? '2px' : Math.random() > 0.5 ? '50%' : '2px',
-                  width: `${6 + Math.random() * 8}px`,
-                  height: `${6 + Math.random() * 8}px`,
-                  animationDelay: `${Math.random() * 0.5}s`,
-                  animationDuration: `${2 + Math.random() * 2}s`,
-                  transform: selectedStyle === 'hearts' ? 'rotate(-45deg)' : 'none'
-                }}
-              />
-            ))}
-          </div>
-        );
-      })()}
+      {/* 🎊 CONFETTI */}
+      {showConfetti && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 10000, overflow: 'hidden' }}>
+          {[...Array(60)].map((_, i) => (
+            <div
+              key={i}
+              className="confetti-piece"
+              style={{
+                left: `${Math.random() * 100}%`,
+                background: ['#FFD700', '#FF6B6B', '#4ECDC4', '#A855F7', '#EC4899', '#10B981', '#3B82F6'][Math.floor(Math.random() * 7)],
+                borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+                width: `${6 + Math.random() * 8}px`,
+                height: `${6 + Math.random() * 8}px`,
+                animationDelay: `${Math.random() * 0.5}s`,
+                animationDuration: `${2 + Math.random() * 2}s`
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       {/* 🎰 WILDCARD MODAL */}
       {activeWildcard && (
@@ -4772,10 +4354,7 @@ if (showResults && itinerary) {
               
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button 
-                  onClick={() => {
-                    HapticService.tapLight();
-                    handleGenerateDate(true);
-                  }}
+                  onClick={() => handleGenerateDate(true)}
                   disabled={searchLoading}
                   style={{ background: 'linear-gradient(135deg, #3b82f6, #2563eb)', border: 'none', borderRadius: '12px', padding: '0.6rem 1.25rem', color: 'white', fontWeight: '600', cursor: searchLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: searchLoading ? 0.6 : 1, fontSize: '0.9rem' }}
                 >
@@ -4884,42 +4463,6 @@ if (showResults && itinerary) {
                 💬 Talk Prompt
               </button>
             </div>
-            
-            {/* 🍷 Sip & Spill Partner */}
-            <button className="neon-glow-pink" 
-              onClick={() => window.open('https://www.sipandspill.co.uk/gamedeck', '_blank')}
-              style={{ 
-                width: '100%',
-                padding: '1rem',
-                marginTop: '0.75rem',
-                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(245, 158, 11, 0.15))',
-                border: '2px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '16px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem'
-              }}
-            >
-              <span style={{ fontSize: '1.75rem' }}>🍷</span>
-              <div style={{ flex: 1, textAlign: 'left' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ color: 'white', fontWeight: '700', fontSize: '0.95rem' }}>Play Sip & Spill</span>
-                  <span style={{
-                    background: 'linear-gradient(135deg, #ef4444, #f59e0b)',
-                    color: 'white',
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: '6px',
-                    fontSize: '0.6rem',
-                    fontWeight: '700'
-                  }}>⭐ PARTNER</span>
-                </div>
-                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', margin: '0.25rem 0 0 0' }}>
-                  Couples drinking games for your date! 🔥
-                </p>
-              </div>
-              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '1.25rem' }}>→</span>
-            </button>
           </div>
 
           {/* 🎯 STAGE CARDS */}
@@ -5017,7 +4560,7 @@ if (showResults && itinerary) {
                       {/* Timing Tip */}
                       {timingTip && (
                         <div style={{ background: 'rgba(59,130,246,0.2)', borderRadius: '9999px', padding: '0.35rem 0.75rem' }}>
-                          <span style={{ color: '#1e4d3a', fontSize: '0.75rem', fontWeight: '600' }}>{timingTip}</span>
+                          <span style={{ color: '#60a5fa', fontSize: '0.75rem', fontWeight: '600' }}>{timingTip}</span>
                         </div>
                       )}
                     </div>
@@ -5321,14 +4864,6 @@ return (
         from { opacity: 0; transform: translateY(30px); }
         to { opacity: 1; transform: translateY(0); }
       }
-        @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes scaleIn {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
       @keyframes heartBeat {
         0%, 100% { transform: scale(1); }
         25% { transform: scale(1.1); }
@@ -5452,27 +4987,6 @@ return (
           }}>
             DateMaker
           </h1>
-          {user && (
-  <div style={{ 
-    background: 'rgba(0,0,0,0.3)',
-    backdropFilter: 'blur(10px)',
-    WebkitBackdropFilter: 'blur(10px)',
-    padding: '0.4rem 1rem',
-    borderRadius: '9999px',
-    marginLeft: '0.75rem',
-    border: '1px solid rgba(255,255,255,0.15)'
-  }}>
-    <span style={{ 
-      fontSize: '0.95rem', 
-      color: 'white',
-      fontWeight: '600',
-      textShadow: '0 1px 2px rgba(0,0,0,0.3)'
-    }}>
-      {HumanCopy.getShortGreeting()}
-    </span>
-  </div>
-)}
-
         </div>
         
         {/* XP Bar */}
@@ -5499,53 +5013,6 @@ return (
             onLanguageChange={handleLanguageChange} 
           />
           
-{/* Social Button - Next to hamburger menu */}
-{!isGuestMode && (
-  <button
-    onClick={() => {
-      if (subscriptionStatus === 'free') {
-        setShowPremiumModal(true);
-      } else {
-        setShowSocial(true);
-      }
-    }}
-    style={{
-      width: '48px',
-      height: '48px',
-      borderRadius: '50%',
-      background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
-      border: 'none',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      position: 'relative',
-      boxShadow: '0 2px 10px rgba(236, 72, 153, 0.3)'
-    }}
-  >
-    <Users size={22} color="white" />
-    {notificationCounts.total > 0 && (
-      <span style={{
-        position: 'absolute',
-        top: '-4px',
-        right: '-4px',
-        minWidth: '18px',
-        height: '18px',
-        borderRadius: '9px',
-        background: '#ef4444',
-        color: 'white',
-        fontSize: '0.65rem',
-        fontWeight: '800',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0 4px'
-      }}>
-        {notificationCounts.total > 99 ? '99+' : notificationCounts.total}
-      </span>
-    )}
-  </button>
-)}
           <HamburgerMenu
   user={user}
   subscriptionStatus={subscriptionStatus}
@@ -5555,46 +5022,25 @@ return (
   isGuestMode={isGuestMode}
   bgTheme={bgTheme}
   profilePhoto={profilePhoto}
-  // 🆕 Phase 3 props
-  completedChallenges={completedChallenges}
-  mysteryBonusActive={mysteryBonusActive}
-  currentStreak={gameStats?.currentStreak || 0}
             onNavigate={(destination) => {
-  if (destination === 'spin') { setShowSpinningWheel(true); trackAction(ACTION_TYPES.SPIN_WHEEL); }
-  if (destination === 'invite') setShowInviteFriends(true);
-  if (destination === 'stats') navigate('/stats');
-  if (destination === 'achievements') navigate('/achievements');
-  if (destination === 'challenges') {
-    if (subscriptionStatus === 'free') {
-      setShowPremiumModal(true);
-    } else {
-      setShowDailyChallenges(true);
-    }
-  }
-  if (destination === 'recap') {
-    if (subscriptionStatus === 'free') {
-      setShowPremiumModal(true);
-    } else {
-      setShowMonthlyRecap(true);
-    }
-  }
-  if (destination === 'notifications') {
-    setShowNotificationSettings(true);
-  }
-  if (destination === 'social') {
-    if (subscriptionStatus === 'free') {
-      alert('Social is a premium feature!');
-      setShowPremiumModal(true);
-    } else {
-      setShowSocial(true);
-    }
-  }
-  if (destination === 'saved') handleOpenSaved();
-  if (destination === 'scrapbook') openScrapbookMemories();
-  if (destination === 'surprise') openSurpriseDateTracker();
-  if (destination === 'streaks') openStreaksGoals();
-  if (destination === 'profile') { setShowProfile(true); trackAction(ACTION_TYPES.VIEW_PROFILE); }
-}}
+              if (destination === 'spin') setShowSpinningWheel(true);
+              if (destination === 'invite') setShowInviteFriends(true);
+              if (destination === 'stats') navigate('/stats');
+              if (destination === 'achievements') navigate('/achievements');
+              if (destination === 'social') {
+                if (subscriptionStatus === 'free') {
+                  alert('Social is a premium feature!');
+                  setShowPremiumModal(true);
+                } else {
+                  setShowSocial(true);
+                }
+              }
+              if (destination === 'saved') handleOpenSaved();
+              if (destination === 'scrapbook') openScrapbookMemories();
+              if (destination === 'surprise') openSurpriseDateTracker();
+              if (destination === 'streaks') openStreaksGoals();
+              if (destination === 'profile') setShowProfile(true);
+            }}
             onLogout={handleLogout}
           />
         </div>
@@ -5905,46 +5351,6 @@ return (
         </div>
       )}
 
-      {/* 🎯 DATE MODE SELECTOR - New Features */}
-      <DateModeSelector
-        onSelectFreeDate={() => setShowFreeDateMode(true)}
-        onSelectLongDistance={() => setShowLongDistanceMode(true)}
-        onSelectMusic={() => setShowMusicSelector(true)}
-        onSelectShop={() => setShowShop(true)}
-        isPremium={subscriptionStatus !== 'free'}
-      />
-
-      {/* 🍷 SIP & SPILL PARTNER BANNER */}
-      <SipAndSpillBanner variant="full" />
-
-      {/* 🏆 TOP VENUES OF THE WEEK */}
-      <TopVenuesSection 
-        onVenueClick={(venue) => console.log('Venue clicked:', venue)}
-        onSeeAll={() => setShowVenuesExplorer(true)}
-      />
-
-      {/* 🎫 UPCOMING EVENTS (TICKETMASTER) */}
-      <UpcomingEventsSection 
-        ticketmasterApiKey={process.env.REACT_APP_TICKETMASTER_KEY}
-        onEventClick={(event) => window.open(event.url, '_blank')}
-        onSeeAll={() => setShowEventsExplorer(true)}
-      />
-
-{/* 🎫 EVENTS EXPLORER */}
-      {showEventsExplorer && (
-        <EventsExplorer 
-          onClose={() => setShowEventsExplorer(false)}
-          ticketmasterApiKey={process.env.REACT_APP_TICKETMASTER_KEY}
-        />
-      )}
-
-      {/* 🏆 VENUES EXPLORER */}
-      {showVenuesExplorer && (
-        <VenuesExplorer 
-          onClose={() => setShowVenuesExplorer(false)}
-        />
-      )}
-
       {/* 📝 MAIN FORM - Glassmorphism Card */}
       <div 
         className="hover-lift"
@@ -5965,7 +5371,7 @@ return (
           fontSize: '1.75rem', 
           fontWeight: '800', 
           marginBottom: '2rem', 
-          color: '#1e3a5f',
+          color: 'white',
           display: 'flex',
           alignItems: 'center',
           gap: '0.75rem'
@@ -5985,7 +5391,7 @@ return (
           <h3 style={{ 
             fontSize: '1.1rem', 
             fontWeight: '700', 
-            color: '#1e4d3a', 
+            color: '#60a5fa', 
             marginBottom: '1rem', 
             display: 'flex', 
             alignItems: 'center', 
@@ -5996,7 +5402,7 @@ return (
           </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
             <div>
-              <label style={{ fontSize: '0.85rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem', display: 'block' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginBottom: '0.5rem', display: 'block' }}>
                 {t('startTime')}
               </label>
               <select 
@@ -6009,8 +5415,8 @@ return (
                   borderRadius: '12px', 
                   fontSize: '1rem', 
                   fontWeight: '600', 
-                  color: '#1f2937', 
-                  background: 'rgba(255,255,255,0.5)', 
+                  color: 'white', 
+                  background: 'rgba(255,255,255,0.1)', 
                   cursor: 'pointer',
                   outline: 'none'
                 }}
@@ -6021,7 +5427,7 @@ return (
               </select>
             </div>
             <div>
-              <label style={{ fontSize: '0.85rem', fontWeight: '600', color: '#374151', marginBottom: '0.5rem', display: 'block' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginBottom: '0.5rem', display: 'block' }}>
                 {t('duration')}
               </label>
               <select 
@@ -6034,8 +5440,8 @@ return (
                   borderRadius: '12px', 
                   fontSize: '1rem', 
                   fontWeight: '600', 
-                  color: '#1f2937', 
-                  background: 'rgba(255,255,255,0.5)', 
+                  color: 'white', 
+                  background: 'rgba(255,255,255,0.1)', 
                   cursor: 'pointer',
                   outline: 'none'
                 }}
@@ -6046,7 +5452,7 @@ return (
               </select>
             </div>
           </div>
-          <p style={{ fontSize: '0.85rem', color: '#4b5563', marginTop: '0.75rem' }}>
+          <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.75rem' }}>
             📅 {startTime} → {addHours(startTime, parseInt(duration))}
           </p>
         </div>
@@ -6059,7 +5465,7 @@ return (
             gap: '0.5rem', 
             fontSize: '1.1rem', 
             fontWeight: '700', 
-            color: '#1e3a5f', 
+            color: 'white', 
             marginBottom: '0.75rem' 
           }}>
             <MapPin style={{ color: bgTheme.accent }} size={20} />
@@ -6078,8 +5484,8 @@ return (
               fontSize: '1.1rem', 
               outline: 'none', 
               boxSizing: 'border-box',
-              background: 'rgba(255,255,255,0.5)',
-              color: '#1f2937',
+              background: 'rgba(255,255,255,0.08)',
+              color: 'white',
               transition: 'all 0.3s ease'
             }} 
             onFocus={(e) => {
@@ -6098,7 +5504,7 @@ return (
           <h3 style={{ 
             fontSize: '1.1rem', 
             fontWeight: '700', 
-            color: '#1e3a5f', 
+            color: 'white', 
             marginBottom: '0.75rem',
             display: 'flex',
             alignItems: 'center',
@@ -6123,8 +5529,8 @@ return (
                 fontSize: '1rem', 
                 outline: 'none', 
                 boxSizing: 'border-box',
-                background: 'rgba(255,255,255,0.5)',
-                color: '#1f2937',
+                background: 'rgba(255,255,255,0.08)',
+                color: 'white',
                 transition: 'all 0.3s ease'
               }} 
               onFocus={(e) => {
@@ -6223,10 +5629,7 @@ return (
           cursor: 'pointer',
           transition: 'all 0.3s ease'
         }}
-        onClick={() => {
-  HapticService.selectionChanged();
-  setIncludeEvents(!includeEvents);
-}}
+        onClick={() => setIncludeEvents(!includeEvents)}
         >
           <input 
             type="checkbox" 
@@ -6283,11 +5686,7 @@ return (
 ].map(option => (
                 <button 
                   key={option.value}
-                  onClick={() => { 
-  HapticService.selectionChanged();
-  setDateRange(option.value); 
-  if(option.value !== 'custom') setSelectedDate(''); 
-}}
+                  onClick={() => { setDateRange(option.value); if(option.value !== 'custom') setSelectedDate(''); }} 
                   style={{ 
                     padding: '0.6rem 1.25rem', 
                     borderRadius: '9999px', 
@@ -6345,10 +5744,7 @@ return (
         
         {/* 🚀 GENERATE BUTTON */}
         <button 
-          onClick={() => {
-            HapticService.tapMedium();
-            handleGenerateDate(false);
-          }}
+          onClick={() => handleGenerateDate(false)} 
           disabled={searchLoading} 
           className="glow-button"
           style={{ 
@@ -6381,18 +5777,18 @@ return (
           }}
         >
           {searchLoading ? (
-  <>
-    <div style={{ 
-      width: '24px', 
-      height: '24px', 
-      border: '3px solid rgba(255,255,255,0.3)', 
-      borderTop: '3px solid white', 
-      borderRadius: '50%', 
-      animation: 'spin 1s linear infinite' 
-    }} />
-    {loadingMessage || t('creating')}
-  </>
-) : (
+            <>
+              <div style={{ 
+                width: '24px', 
+                height: '24px', 
+                border: '3px solid rgba(255,255,255,0.3)', 
+                borderTop: '3px solid white', 
+                borderRadius: '50%', 
+                animation: 'spin 1s linear infinite' 
+              }} />
+              {t('creating')}
+            </>
+          ) : (
             <>
               <Sparkles size={24} />
 {t('generateDate')}
@@ -6423,6 +5819,9 @@ return (
           margin: '0 auto 1rem'
         }}>
           "I used to spend 30 minutes deciding where to go. Now DateMaker does it in seconds and the suggestions are always perfect!"
+        </p>
+        <p style={{ color: bgTheme.accent, fontWeight: '700' }}>
+          — Jude Gander
         </p>
       </div>
     </div>
@@ -6566,188 +5965,6 @@ return (
 
     {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
     {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
-
-    {/* ============================================ */}
-    {/* 🎯 PHASE 3: MODALS */}
-    {/* ============================================ */}
-
-    {/* Daily Challenges Modal */}
-    {showDailyChallenges && (
-      <DailyChallenges
-        user={user}
-        onClose={() => setShowDailyChallenges(false)}
-        onXPEarned={(xp, reason) => handleBonusXP(xp, reason)}
-        gameStats={gameStats}
-      />
-    )}
-
-    {/* Monthly Recap Modal */}
-    {showMonthlyRecap && (
-      <MonthlyRecap
-        user={user}
-        onClose={() => setShowMonthlyRecap(false)}
-        onShare={(data) => {
-          console.log('Share recap:', data);
-        }}
-      />
-    )}
-
-    {/* Notification Settings Modal */}
-    {showNotificationSettings && (
-      <NotificationSettings
-        user={user}
-        isPremium={subscriptionStatus !== 'free'}
-        onClose={() => setShowNotificationSettings(false)}
-      />
-    )}
-
-    {/* Achievement Unlocked Popup */}
-    {newAchievementUnlocked && (
-      <div 
-        style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.9)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10002,
-          padding: '1rem',
-          animation: 'fadeIn 0.3s ease-out'
-        }}
-        onClick={() => setNewAchievementUnlocked(null)}
-      >
-        <div 
-          style={{
-            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-            borderRadius: '24px',
-            padding: '2.5rem',
-            maxWidth: '350px',
-            width: '100%',
-            textAlign: 'center',
-            border: '2px solid rgba(255,215,0,0.5)',
-            boxShadow: '0 0 60px rgba(255,215,0,0.3)',
-            animation: 'scaleIn 0.3s ease-out'
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏆</div>
-          <h2 style={{ 
-            color: '#FFD700', 
-            fontSize: '1.25rem', 
-            fontWeight: '800', 
-            margin: '0 0 0.5rem 0',
-            textTransform: 'uppercase',
-            letterSpacing: '1px'
-          }}>
-            Achievement Unlocked!
-          </h2>
-          <div style={{ fontSize: '3rem', margin: '1rem 0' }}>
-            {newAchievementUnlocked.icon}
-          </div>
-          <h3 style={{ 
-            color: 'white', 
-            fontSize: '1.5rem', 
-            fontWeight: '700', 
-            margin: '0 0 0.5rem 0' 
-          }}>
-            {newAchievementUnlocked.hidden 
-              ? newAchievementUnlocked.revealedTitle 
-              : newAchievementUnlocked.title}
-          </h3>
-          <p style={{ 
-            color: 'rgba(255,255,255,0.7)', 
-            fontSize: '1rem', 
-            margin: '0 0 1.5rem 0' 
-          }}>
-            {newAchievementUnlocked.hidden 
-              ? newAchievementUnlocked.revealedDescription 
-              : newAchievementUnlocked.description}
-          </p>
-          <div style={{
-            background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-            borderRadius: '12px',
-            padding: '0.75rem 1.5rem',
-            display: 'inline-block'
-          }}>
-            <span style={{ color: '#1a1a2e', fontWeight: '800', fontSize: '1.25rem' }}>
-              +{newAchievementUnlocked.xp} XP
-            </span>
-          </div>
-          <button
-            onClick={() => setNewAchievementUnlocked(null)}
-            style={{
-              display: 'block',
-              width: '100%',
-              marginTop: '1.5rem',
-              padding: '0.75rem',
-              background: 'rgba(255,255,255,0.1)',
-              border: 'none',
-              borderRadius: '12px',
-              color: 'white',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
-          >
-            Awesome!
-          </button>
-        </div>
-      </div>
-    )}
-
-{/* Free Date Mode */}
-    {showFreeDateMode && (
-  <FreeDateMode
-    user={user}
-    onClose={() => setShowFreeDateMode(false)}
-    savedDates={savedDates}
-    setSavedDates={setSavedDates}
-    isPremium={subscriptionStatus !== 'free'}
-  />
-)}
-
-    {/* Long Distance Mode */}
-    {showLongDistanceMode && (
-  <LongDistanceMode
-    user={user}
-    onClose={() => setShowLongDistanceMode(false)}
-    savedDates={savedDates}
-    setSavedDates={setSavedDates}
-    isPremium={subscriptionStatus !== 'free'}
-  />
-)}
-
-    {/* Music Selector */}
-    {showMusicSelector && (
-      <MusicSelector
-        isPremium={subscriptionStatus !== 'free'}
-        onClose={() => setShowMusicSelector(false)}
-        onUpgrade={() => {
-          setShowMusicSelector(false);
-          setShowPremiumModal(true);
-        }}
-      />
-    )}
-
-    {/* Shop */}
-    {showShop && (
-      <Shop
-        user={user}
-        userPurchases={userPurchases}
-        setUserPurchases={setUserPurchases}
-        userLevel={userData?.level || 1}
-        isPremium={subscriptionStatus !== 'free'}
-        onClose={() => setShowShop(false)}
-        onPurchase={async (item) => {
-          console.log('Purchase item:', item);
-        }}
-        onUpgradePremium={() => {
-          setShowShop(false);
-          setShowPremiumModal(true);
-        }}
-      />
-    )}
   </div>
 );
 }

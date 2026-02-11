@@ -206,7 +206,7 @@ export default function AppleSubscriptionModal({ onClose, onPurchaseSuccess }) {
 
             <div style={{ marginBottom: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                <span style={{ fontSize: '2.5rem', fontWeight: '900' }}>$4.99</span>
+                <span style={{ fontSize: '2.5rem', fontWeight: '900' }}>$9.99</span>
                 <span style={{ color: '#6b7280' }}>/month</span>
               </div>
               <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
@@ -263,8 +263,8 @@ export default function AppleSubscriptionModal({ onClose, onPurchaseSuccess }) {
 
             <div style={{ marginBottom: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.25rem', textDecoration: 'line-through', color: '#9ca3af' }}>$59.99</span>
-                <span style={{ fontSize: '2.5rem', fontWeight: '900' }}>$39.99</span>
+                <span style={{ fontSize: '1.25rem', textDecoration: 'line-through', color: '#9ca3af' }}>$119</span>
+                <span style={{ fontSize: '2.5rem', fontWeight: '900' }}>$79</span>
                 <span style={{ color: '#6b7280' }}>/year</span>
               </div>
               <p style={{ color: '#065f46', fontSize: '0.875rem', margin: '0.5rem 0 0 0', fontWeight: '600' }}>

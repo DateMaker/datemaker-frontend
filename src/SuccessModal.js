@@ -36,7 +36,35 @@ const SuccessModal = ({ message, onClose }) => {
           textAlign: 'center',
           position: 'relative'
         }}>
-    
+          {/* Close Button */}
+          <button
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.3)';
+              e.target.style.transform = 'rotate(90deg)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.2)';
+              e.target.style.transform = 'rotate(0deg)';
+            }}
+          >
+            <X size={20} style={{ color: 'white' }} />
+          </button>
 
           {/* Success Icon */}
           <div style={{

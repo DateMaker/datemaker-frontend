@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Users, TrendingUp, Trophy, MessageCircle, Heart, User, LogOut, UserPlus, Loader, LogIn, Target, BarChart3, Bell } from 'lucide-react';
+import { Menu, X, Users, TrendingUp, Trophy, MessageCircle, Heart, User, LogOut, UserPlus, Loader, LogIn } from 'lucide-react';
 
 export default function HamburgerMenu({ 
   user, 
@@ -11,11 +11,7 @@ export default function HamburgerMenu({
   onLogout,
   isGuestMode = false,
   bgTheme = null,
-  profilePhoto = null,
-  // 🆕 Phase 3 props
-  completedChallenges = [],
-  mysteryBonusActive = null,
-  currentStreak = 0
+  profilePhoto = null // 📸 Profile photo
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -54,38 +50,8 @@ export default function HamburgerMenu({
       gradient: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
       shadow: 'rgba(168, 85, 247, 0.4)'
     },
-    // 🆕 PHASE 3: Daily Challenges
     { 
-      id: 'challenges', 
-      icon: <Target size={20} />, 
-      label: 'Daily Challenges', 
-      gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-      shadow: 'rgba(249, 115, 22, 0.4)',
-      badge: completedChallenges.length < 3 ? (3 - completedChallenges.length) : null,
-      badgeText: completedChallenges.length >= 3 ? '✓' : null,
-      locked: subscriptionStatus === 'free' || isGuestMode,
-      mysteryBonus: mysteryBonusActive
-    },
-    // 🆕 PHASE 3: Monthly Recap
-    { 
-      id: 'recap', 
-      icon: <BarChart3 size={20} />, 
-      label: 'Monthly Recap', 
-      gradient: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)',
-      shadow: 'rgba(168, 85, 247, 0.4)',
-      locked: subscriptionStatus === 'free' || isGuestMode
-    },
-    // 🆕 PHASE 3: Notification Settings
-    { 
-      id: 'notifications', 
-      icon: <Bell size={20} />, 
-      label: 'Notifications', 
-      gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-      shadow: 'rgba(59, 130, 246, 0.4)',
-      locked: isGuestMode
-    },
-    { 
-      id: 'invite',
+      id: 'invite', 
       icon: <UserPlus size={20} />, 
       label: 'Invite Friends', 
       gradient: 'linear-gradient(135deg, #fb923c 0%, #f97316 100%)',
@@ -105,6 +71,15 @@ export default function HamburgerMenu({
       label: 'Achievements', 
       gradient: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
       shadow: 'rgba(255, 215, 0, 0.4)'
+    },
+    { 
+      id: 'social', 
+      icon: <MessageCircle size={20} />, 
+      label: 'Social', 
+      gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      shadow: 'rgba(16, 185, 129, 0.4)',
+      badge: notificationCount > 0 ? notificationCount : null,
+      locked: subscriptionStatus === 'free' || isGuestMode
     },
     { 
       id: 'saved', 
@@ -133,13 +108,13 @@ export default function HamburgerMenu({
       locked: isGuestMode
     },
     { 
-  id: 'streaks', 
-  icon: '🔥', 
-  label: currentStreak > 0 ? `${currentStreak} Week Streak` : 'Date Streaks', 
-  gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-  shadow: 'rgba(239, 68, 68, 0.4)',
-  locked: isGuestMode
-},
+      id: 'streaks', 
+      icon: '🔥', 
+      label: 'Date Streaks', 
+      gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      shadow: 'rgba(239, 68, 68, 0.4)',
+      locked: isGuestMode
+    },
     { 
       id: 'profile', 
       icon: <User size={20} />, 
@@ -445,37 +420,6 @@ export default function HamburgerMenu({
   {item.label}
 </span>
 
-{/* 🆕 Mystery Bonus Indicator */}
-{item.mysteryBonus && (
-  <span style={{
-    background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-    color: '#1a1a2e',
-    fontSize: '0.7rem',
-    fontWeight: '800',
-    padding: '0.2rem 0.5rem',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(255, 215, 0, 0.5)',
-    animation: 'pulse 2s ease-in-out infinite'
-  }}>
-    {item.mysteryBonus.multiplier}x XP!
-  </span>
-)}
-
-{/* Completed checkmark for challenges */}
-{item.badgeText && (
-  <span style={{
-    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-    color: 'white',
-    fontSize: '0.85rem',
-    fontWeight: '900',
-    padding: '0.25rem 0.625rem',
-    borderRadius: '12px',
-    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.5)'
-  }}>
-    {item.badgeText}
-  </span>
-)}
-
               {item.badge > 0 && (
                 <span style={{
                   background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
@@ -557,15 +501,15 @@ export default function HamburgerMenu({
       </div>
 
       <style>{`
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.9; }
-  }
-`}</style>
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+      `}</style>
     </>
   );
 }

@@ -7,7 +7,6 @@ import { Search, UserPlus, MessageCircle, Users, Heart, MapPin, Calendar, Send, 
 import { db } from './firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, arrayUnion, arrayRemove, serverTimestamp, onSnapshot, orderBy, getDoc, deleteDoc, setDoc, writeBatch, limit, Timestamp } from 'firebase/firestore';
 import SuccessModal from './SuccessModal';
-import { trackAction, ACTION_TYPES } from './ActivityTracker';
 import { setStatusBarColor, STATUS_BAR_COLORS } from './utils/statusBar';
 import NotificationBell from './NotificationBell';
 import { 
@@ -16,9 +15,6 @@ import {
   sendDateLikedNotification,
   sendMessageNotification 
 } from './NotificationService';
-import EmptyState, { InlineEmptyState, CardEmptyState } from './EmptyState';
-import HapticService from './HapticService';
-
 
 // 🎨 NEW: Softer, more elegant color palette
 const COLORS = {
@@ -52,8 +48,8 @@ const COLORS = {
   red: '#ef4444',
 };
 
-// 🎨 NEW: Avatar component with profile photo support and badge
-const Avatar = ({ user, size = 48, showOnline = false, isOnline = false, badge = null }) => {
+// 🎨 NEW: Avatar component with profile photo support
+const Avatar = ({ user, size = 48, showOnline = false, isOnline = false }) => {
   const [imageError, setImageError] = useState(false);
   
   const hasPhoto = user?.photoURL && !imageError;
@@ -67,19 +63,8 @@ const Avatar = ({ user, size = 48, showOnline = false, isOnline = false, badge =
     'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)',
   ];
   
-  // Badge configurations
-  const badgeConfig = {
-    crown: { emoji: '👑', gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' },
-    expert: { emoji: '❤️', gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' },
-    adventurer: { emoji: '🚀', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' },
-    globe: { emoji: '🌍', gradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)' },
-    flame: { emoji: '🔥', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' },
-    sparkle: { emoji: '✨', gradient: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)' }
-  };
-  
   // Generate consistent gradient based on email/name
   const gradientIndex = (user?.email || user?.name || '').length % gradients.length;
-  const badgeInfo = badge && badgeConfig[badge] ? badgeConfig[badge] : null;
   
   return (
     <div style={{
@@ -116,29 +101,8 @@ const Avatar = ({ user, size = 48, showOnline = false, isOnline = false, badge =
         )}
       </div>
       
-      {/* Badge indicator */}
-      {badgeInfo && (
-        <div style={{
-          position: 'absolute',
-          bottom: -2,
-          right: -2,
-          width: size * 0.45,
-          height: size * 0.45,
-          borderRadius: '8px',
-          background: badgeInfo.gradient,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-          border: '2px solid white',
-          fontSize: size * 0.2
-        }}>
-          {badgeInfo.emoji}
-        </div>
-      )}
-      
       {/* Online indicator */}
-      {showOnline && !badgeInfo && (
+      {showOnline && (
         <div style={{
           position: 'absolute',
           bottom: 0,
@@ -155,13 +119,75 @@ const Avatar = ({ user, size = 48, showOnline = false, isOnline = false, badge =
   );
 };
 
+// 🎨 NEW: Empty State component with illustrations
+const EmptyState = ({ type, title, subtitle }) => {
+  const illustrations = {
+    feed: (
+      <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.8 }}>
+        ✨📸💕
+      </div>
+    ),
+    friends: (
+      <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.8 }}>
+        👥💜🤝
+      </div>
+    ),
+    requests: (
+      <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.8 }}>
+        💌📬✉️
+      </div>
+    ),
+    messages: (
+      <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.8 }}>
+        💬🗨️💭
+      </div>
+    ),
+    search: (
+      <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.8 }}>
+        🔍👀🔎
+      </div>
+    ),
+    blocked: (
+      <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.8 }}>
+        🛡️✨🔒
+      </div>
+    )
+  };
 
+  return (
+    <div style={{
+      textAlign: 'center',
+      padding: '3rem 2rem',
+      background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+      borderRadius: '24px',
+      border: '2px dashed #e9d5ff'
+    }}>
+      {illustrations[type] || illustrations.feed}
+      <h3 style={{
+        fontSize: '1.375rem',
+        fontWeight: '800',
+        color: COLORS.textPrimary,
+        margin: '0 0 0.5rem 0'
+      }}>
+        {title}
+      </h3>
+      <p style={{
+        fontSize: '1rem',
+        color: COLORS.textSecondary,
+        margin: 0,
+        lineHeight: 1.5
+      }}>
+        {subtitle}
+      </p>
+    </div>
+  );
+};
 
 // 🎨 NEW: Message Reactions Component
 const MessageReactions = ({ reactions = {}, messageId, currentUserId, onReact }) => {
   const [showPicker, setShowPicker] = useState(false);
   
-  const reactionEmojis = ['❤️', '👍', '😂'];
+  const reactionEmojis = ['❤️', '😂', '😮', '😢', '👍', '🔥'];
   
   const reactionCounts = {};
   Object.entries(reactions).forEach(([emoji, users]) => {
@@ -251,16 +277,14 @@ const MessageReactions = ({ reactions = {}, messageId, currentUserId, onReact })
             position: 'absolute',
             bottom: '100%',
             left: 0,
-            marginBottom: '0.5rem',
-            background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
-            borderRadius: '20px',
-            padding: '0.625rem 0.75rem',
-            boxShadow: '0 8px 32px rgba(168, 85, 247, 0.25), 0 2px 8px rgba(0,0,0,0.1)',
-            border: '1.5px solid rgba(168, 85, 247, 0.2)',
+            marginBottom: '0.25rem',
+            background: 'white',
+            borderRadius: '16px',
+            padding: '0.5rem',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
             display: 'flex',
-            gap: '0.5rem',
-            zIndex: 100,
-            whiteSpace: 'nowrap'
+            gap: '0.25rem',
+            zIndex: 100
           }}>
             {reactionEmojis.map(emoji => (
               <button
@@ -316,7 +340,7 @@ const ReadReceipt = ({ isRead, isSent }) => {
   );
 };
 
-export default function Social({ user, userPurchases, onBack, feedNotificationCount = 0 }) {
+export default function Social({ user, onBack, feedNotificationCount = 0 }) {
   const [activeTab, setActiveTab] = useState('feed');
   const [searchQuery, setSearchQuery] = useState('');
   const searchTimeoutRef = useRef(null);
@@ -334,7 +358,6 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
   const [typingUsers, setTypingUsers] = useState({});
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [showCreateGroupChat, setShowCreateGroupChat] = useState(false);
-  const [showGroupMembers, setShowGroupMembers] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState({});
   const [viewingDate, setViewingDate] = useState(null);
   const [optimisticMessages, setOptimisticMessages] = useState([]);
@@ -351,7 +374,6 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
   const [blockedUsersList, setBlockedUsersList] = useState([]);
 
   const messagesEndRef = useRef(null);
-  const userJustSentMessage = useRef(false);
   const typingTimeoutRef = useRef(null);
   const messageTimeoutsRef = useRef(new Map());
 
@@ -448,19 +470,13 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
   const [hasScrolledInitially, setHasScrolledInitially] = useState(false);
 
   useEffect(() => {
-  // Initial scroll when opening conversation
-  if (selectedConversation && messages.length > 0 && !hasScrolledInitially) {
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
-      setHasScrolledInitially(true);
-    }, 100);
-  }
-  // Scroll when user sends a message
-  if (userJustSentMessage.current) {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    userJustSentMessage.current = false;
-  }
-}, [messages, selectedConversation, hasScrolledInitially]);
+    if (selectedConversation && messages.length > 0 && !hasScrolledInitially) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        setHasScrolledInitially(true);
+      }, 100);
+    }
+  }, [messages, selectedConversation, hasScrolledInitially]);
 
   useEffect(() => {
     setHasScrolledInitially(false);
@@ -591,28 +607,6 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
             const userDoc = await getDoc(doc(db, 'users', odedUserId));
             if (userDoc.exists()) {
               profiles[odedUserId] = userDoc.data();
-            }
-            // Load their equipped badge from userPurchases (default to sparkle)
-            try {
-              const purchasesDoc = await getDoc(doc(db, 'userPurchases', odedUserId));
-              if (purchasesDoc.exists() && purchasesDoc.data().selectedBadge !== undefined) {
-                profiles[odedUserId] = {
-                  ...profiles[odedUserId],
-                  selectedBadge: purchasesDoc.data().selectedBadge
-                };
-              } else {
-                // Default badge for users without userPurchases doc
-                profiles[odedUserId] = {
-                  ...profiles[odedUserId],
-                  selectedBadge: 'sparkle'
-                };
-              }
-            } catch (badgeErr) {
-              // Default to sparkle on error
-              profiles[odedUserId] = {
-                ...profiles[odedUserId],
-                selectedBadge: 'sparkle'
-              };
             }
           } catch (error) {
             console.error('Error loading profile:', error);
@@ -868,10 +862,9 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
   // 🛡️ UGC SAFETY: Submit report
   const submitReport = async (reason) => {
-  if (!reportTarget) return;
-  HapticService.tapMedium();
-  
-  try {
+    if (!reportTarget) return;
+    
+    try {
       await addDoc(collection(db, 'reportedContent'), {
         type: reportTarget.type,
         targetId: reportTarget.id,
@@ -893,19 +886,16 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
       
       setShowReportModal(false);
       setReportTarget(null);
-      HapticService.notifySuccess();
-    setSuccessMessage('Report submitted. We review all reports within 24 hours.');
+      setSuccessMessage('Report submitted. We review all reports within 24 hours.');
     } catch (error) {
       console.error('Error submitting report:', error);
-      HapticService.notifyError();
       alert('Failed to submit report. Please try again.');
     }
   };
 
   // 🛡️ UGC SAFETY: Block user
   const handleBlockUser = async (targetUserId, targetUserEmail) => {
-  HapticService.tapMedium();
-  if (!window.confirm(`Block ${targetUserEmail?.split('@')[0] || 'this user'}?`)) {
+    if (!window.confirm(`Block ${targetUserEmail?.split('@')[0] || 'this user'}?\n\nYou won't see their posts or messages.`)) {
       return;
     }
     
@@ -969,11 +959,9 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
   // 🛡️ UGC SAFETY: Unblock user
   const handleUnblockUser = async (blockRecord) => {
-  HapticService.tapLight();
-  try {
+    try {
       await deleteDoc(doc(db, 'blockedUsers', blockRecord.id));
-      HapticService.notifySuccess();
-    setSuccessMessage(`Unblocked ${blockRecord.blockedUserEmail?.split('@')[0] || 'user'}.`);
+      setSuccessMessage(`Unblocked ${blockRecord.blockedUserEmail?.split('@')[0] || 'user'}.`);
     } catch (error) {
       console.error('Error unblocking user:', error);
       alert('Failed to unblock user.');
@@ -1033,8 +1021,7 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
   // Send friend request
   const handleSendFriendRequest = async (toUser) => {
-  HapticService.tapMedium();
-  try {
+    try {
       const existingRequest = await getDocs(query(
         collection(db, 'friendRequests'),
         where('fromUserId', '==', user.uid),
@@ -1059,8 +1046,7 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
       await sendFriendRequestNotification(user, toUser.id);
 
-      HapticService.notifySuccess();
-    setSuccessMessage('Friend request sent! 🎉');
+      setSuccessMessage('Friend request sent! 🎉');
       setSearchResults(prev => prev.filter(u => u.id !== toUser.id));
     } catch (error) {
       console.error('Error sending friend request:', error);
@@ -1069,9 +1055,8 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
   // Accept friend request
   const handleAcceptFriendRequest = async (requestId) => {
-  HapticService.tapMedium();
-  try {
-    const requestRef = doc(db, 'friendRequests', requestId);
+    try {
+      const requestRef = doc(db, 'friendRequests', requestId);
       await updateDoc(requestRef, {
         status: 'accepted',
         acceptedAt: serverTimestamp()
@@ -1087,18 +1072,16 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
         });
 
         await sendFriendAcceptedNotification(user, request.fromUserId);
-    HapticService.notifySuccess();
-  }
-} catch (error) {
+      }
+    } catch (error) {
       console.error('Error accepting friend request:', error);
     }
   };
 
   // Reject friend request
   const handleRejectFriendRequest = async (requestId) => {
-  HapticService.tapLight();
-  try {
-    await deleteDoc(doc(db, 'friendRequests', requestId));
+    try {
+      await deleteDoc(doc(db, 'friendRequests', requestId));
     } catch (error) {
       console.error('Error rejecting friend request:', error);
     }
@@ -1114,75 +1097,37 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
     }
   };
 
-  // ✅ FIXED: Helper to remove friendship records
-  const removeFriendshipRecords = async (friendId) => {
-    // Query 1: Where current user sent the request
-    const sentQuery = query(
-      collection(db, 'friendRequests'),
-      where('fromUserId', '==', user.uid),
-      where('toUserId', '==', friendId),
-      where('status', '==', 'accepted')
-    );
-    
-    // Query 2: Where current user received the request
-    const receivedQuery = query(
-      collection(db, 'friendRequests'),
-      where('fromUserId', '==', friendId),
-      where('toUserId', '==', user.uid),
-      where('status', '==', 'accepted')
-    );
-    
-    const [sentSnapshot, receivedSnapshot] = await Promise.all([
-      getDocs(sentQuery),
-      getDocs(receivedQuery)
-    ]);
-    
-    const batch = writeBatch(db);
-    let deletedCount = 0;
-    
-    sentSnapshot.docs.forEach(docSnapshot => {
-      batch.delete(doc(db, 'friendRequests', docSnapshot.id));
-      deletedCount++;
-    });
-    
-    receivedSnapshot.docs.forEach(docSnapshot => {
-      batch.delete(doc(db, 'friendRequests', docSnapshot.id));
-      deletedCount++;
-    });
-    
-    if (deletedCount > 0) {
-      await batch.commit();
-    }
-    
-    return deletedCount;
-  };
-
-  // ✅ FIXED: Remove friend
+  // Remove friend
   const handleRemoveFriend = async (friendId) => {
-  HapticService.tapLight();
-  const friend = friends.find(f => f.id === friendId);
-    const friendName = friend?.name || friend?.email?.split('@')[0] || 'this friend';
-    
-    if (!window.confirm(`Remove ${friendName} from your friends?`)) return;
+    if (!window.confirm('Remove this friend?')) return;
     
     try {
-      const deletedCount = await removeFriendshipRecords(friendId);
+      const friendRequestsQuery = query(
+        collection(db, 'friendRequests'),
+        where('status', '==', 'accepted')
+      );
       
-      if (deletedCount > 0) {
-        setSuccessMessage(`Removed ${friendName} from friends`);
-      } else {
-        setSuccessMessage('Friend removed');
-      }
+      const snapshot = await getDocs(friendRequestsQuery);
+      const batch = writeBatch(db);
+      
+      snapshot.docs.forEach(docSnapshot => {
+        const data = docSnapshot.data();
+        if ((data.fromUserId === user.uid && data.toUserId === friendId) ||
+            (data.toUserId === user.uid && data.fromUserId === friendId)) {
+          batch.delete(doc(db, 'friendRequests', docSnapshot.id));
+        }
+      });
+      
+      await batch.commit();
+      
     } catch (error) {
       console.error('Error removing friend:', error);
-      setSuccessMessage('Could not remove friend. Try again.');
     }
   };
 
   // Start conversation
   const handleStartConversation = async (friendId) => {
-  HapticService.tapLight();
-  try {
+    try {
       const friend = friends.find(f => f.id === friendId);
       if (!friend) return;
 
@@ -1215,8 +1160,7 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
   // Create group chat
   const handleCreateGroupChat = async (groupName, selectedFriends) => {
-  HapticService.tapMedium();
-  try {
+    try {
       const participantIds = [user.uid, ...selectedFriends.map(f => f.id)];
       const participantEmails = [user.email, ...selectedFriends.map(f => f.email)];
 
@@ -1231,9 +1175,8 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
       const docRef = await addDoc(collection(db, 'conversations'), newConvo);
       setSelectedConversation({ id: docRef.id, ...newConvo });
-      HapticService.notifySuccess();
-    setShowCreateGroupChat(false);
-    setActiveTab('messages');
+      setShowCreateGroupChat(false);
+      setActiveTab('messages');
     } catch (error) {
       console.error('Error creating group chat:', error);
     }
@@ -1285,8 +1228,8 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
   // Send message
   const handleSendMessage = async () => {
-  if (!messageInput.trim() || !selectedConversation) return;
-  HapticService.tapLight();
+    if (!messageInput.trim() || !selectedConversation) return;
+
     if (messageInput.length > 1000) {
       alert('Message too long! Maximum 1000 characters.');
       return;
@@ -1307,7 +1250,6 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
     setOptimisticMessages(prev => [...prev, optimisticMessage]);
     setMessageInput('');
-    userJustSentMessage.current = true; 
     handleTyping(false);
 
     try {
@@ -1321,7 +1263,6 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
         createdAt: timestamp,
         reactions: {}
       });
-      trackAction(ACTION_TYPES.SEND_MESSAGE);
 
       const otherParticipants = selectedConversation.participants?.filter(p => p !== user.uid) || [];
       for (const recipientId of otherParticipants) {
@@ -1342,8 +1283,7 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
   // 🎨 NEW: Handle message reaction
   const handleMessageReaction = async (messageId, emoji) => {
-  HapticService.tapLight();
-  try {
+    try {
       const messageRef = doc(db, 'messages', messageId);
       const messageDoc = await getDoc(messageRef);
       
@@ -1370,8 +1310,7 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
   // Like date
   const handleLikeDate = async (dateId, currentLikes = []) => {
-  HapticService.doubleTap();
-  try {
+    try {
       const dateRef = doc(db, 'sharedDates', dateId);
       const hasLiked = currentLikes.includes(user.uid);
       
@@ -1407,8 +1346,7 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
 // Delete/Leave conversation
   const handleDeleteConversation = async (conversationId) => {
-  HapticService.tapLight();
-  try {
+    try {
       const conversationRef = doc(db, 'conversations', conversationId);
       const convDoc = await getDoc(conversationRef);
       
@@ -1654,18 +1592,15 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
           boxSizing: 'border-box'
         }}>
           {[
-  { id: 'feed', icon: Sparkles, count: feedNotificationCount },
-  { id: 'search', icon: Search, count: 0 },
-  { id: 'friends', icon: Users, count: 0 },
-  { id: 'requests', icon: UserPlus, count: friendRequests.filter(r => !r.seen).length },
-  { id: 'messages', icon: MessageCircle, count: totalUnreadMessages }
-].map(tab => (
-  <button
-    key={tab.id}
-    onClick={() => {
-      HapticService.selectionChanged();
-      setActiveTab(tab.id);
-    }}
+            { id: 'feed', icon: Sparkles, count: feedNotificationCount },
+            { id: 'search', icon: Search, count: 0 },
+            { id: 'friends', icon: Users, count: 0 },
+            { id: 'requests', icon: UserPlus, count: friendRequests.filter(r => !r.seen).length },
+            { id: 'messages', icon: MessageCircle, count: totalUnreadMessages }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
               style={{
                 flex: 1,
                 padding: '0.75rem 0.5rem',
@@ -1769,14 +1704,12 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
             </div>
 
             {feed.length === 0 ? (
-  <EmptyState 
-    type="savedDates"
-    onCtaClick={() => {
-      HapticService.tapLight();
-      // Navigate to create date - you may need to call onBack() or similar
-    }}
-  />
-) : (
+              <EmptyState 
+                type="feed"
+                title="No dates shared yet"
+                subtitle="Share your amazing dates with friends or make them public!"
+              />
+            ) : (
               <div style={{ display: 'grid', gap: '1.25rem' }}>
                 {feed.map(date => (
                   <div
@@ -2476,17 +2409,12 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
             </div>
 
             {searchResults.length === 0 && searchQuery.trim() && !loading && (
-  <EmptyState 
-    type="searchResults"
-    compact={true}
-    customTitle="No users found"
-    customSubtitle="Try searching with the start of their email address"
-    onCtaClick={() => {
-      HapticService.tapLight();
-      setSearchQuery('');
-    }}
-  />
-)}
+              <EmptyState 
+                type="search"
+                title="No users found"
+                subtitle="Try searching with the start of their email address"
+              />
+            )}
 
             {searchResults.length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
@@ -2610,14 +2538,12 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
             </div>
 
             {friends.length === 0 ? (
-  <EmptyState 
-    type="friends"
-    onCtaClick={() => {
-      HapticService.tapLight();
-      setActiveTab('search');
-    }}
-  />
-) : (
+              <EmptyState 
+                type="friends"
+                title="No friends yet"
+                subtitle="Search for users and send friend requests to get started!"
+              />
+            ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
                 {friends.map(friend => (
                   <div
@@ -2642,16 +2568,13 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{
-  margin: 0,
-  fontWeight: '700',
-  fontSize: '1rem',
-  color: COLORS.textPrimary,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap'
-}}>
-  {friend.name}
-</p>
+                        margin: 0,
+                        fontWeight: '700',
+                        fontSize: '1rem',
+                        color: COLORS.textPrimary
+                      }}>
+                        {friend.name}
+                      </p>
                       <p style={{
                         margin: 0,
                         fontSize: '0.8rem',
@@ -2743,14 +2666,12 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
             </div>
 
             {friendRequests.length === 0 ? (
-  <EmptyState 
-    type="friendRequests"
-    onCtaClick={() => {
-      HapticService.tapLight();
-      setActiveTab('search');
-    }}
-  />
-) : (
+              <EmptyState 
+                type="requests"
+                title="No pending requests"
+                subtitle="Friend requests will appear here when someone sends you one!"
+              />
+            ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
                 {friendRequests.map(request => (
                   <div
@@ -2989,16 +2910,13 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
                   </button>
                 </div>
 
-
                 {conversations.length === 0 ? (
-  <EmptyState 
-    type="messages"
-    onCtaClick={() => {
-      HapticService.tapLight();
-      setActiveTab('friends');
-    }}
-  />
-) : (
+                  <EmptyState 
+                    type="messages"
+                    title="No conversations yet"
+                    subtitle="Start chatting with your friends or create a group!"
+                  />
+                ) : (
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -3149,128 +3067,28 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
               />
             )}
 
-{/* Group Members Modal */}
-            {showGroupMembers && selectedConversation?.isGroup && (
-              <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(0, 0, 0, 0.6)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 10000,
-                backdropFilter: 'blur(8px)'
-              }}>
-                <div style={{
-                  background: 'white',
-                  borderRadius: '24px',
-                  padding: '1.5rem',
-                  maxWidth: '340px',
-                  width: '90%',
-                  maxHeight: '70vh',
-                  overflow: 'auto'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '1rem'
-                  }}>
-                    <h3 style={{
-                      margin: 0,
-                      fontSize: '1.25rem',
-                      fontWeight: '800',
-                      color: COLORS.textPrimary
-                    }}>
-                      Group Members
-                    </h3>
-                  </div>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {selectedConversation.participantEmails?.map((email, index) => (
-                      <div
-                        key={index}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.75rem',
-                          padding: '0.75rem',
-                          background: email === user.email ? 'rgba(139, 92, 246, 0.08)' : '#f9fafb',
-                          borderRadius: '12px',
-                          border: email === user.email ? '1.5px solid rgba(139, 92, 246, 0.3)' : '1.5px solid transparent'
-                        }}
-                      >
-                        <Avatar user={{ email }} size={40} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{
-                            margin: 0,
-                            fontWeight: '600',
-                            fontSize: '0.95rem',
-                            color: COLORS.textPrimary,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {email.split('@')[0]}
-                          </p>
-                          <p style={{
-                            margin: 0,
-                            fontSize: '0.75rem',
-                            color: COLORS.textSecondary
-                          }}>
-                            {email === user.email ? 'You' : email}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <button
-                    onClick={() => setShowGroupMembers(false)}
-                    style={{
-                      width: '100%',
-                      marginTop: '1.25rem',
-                      padding: '0.875rem',
-                      borderRadius: '14px',
-                      border: 'none',
-                      background: COLORS.primaryGradient,
-                      color: 'white',
-                      fontWeight: '700',
-                      fontSize: '1rem',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Selected Conversation */}
             {selectedConversation && (
-  <div style={{
-    display: 'flex',
-    flexDirection: 'column',
-    background: '#fafafa',
-    borderRadius: '20px',
-    border: `2px solid ${COLORS.cardBorder}`,
-    overflow: 'hidden',
-    height: '100%',
-    maxHeight: 'calc(100vh - 280px)'
-  }}>
+              <div style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                background: '#fafafa',
+                borderRadius: '20px',
+                border: `2px solid ${COLORS.cardBorder}`,
+                overflow: 'hidden',
+                height: '100%'
+              }}>
                 {/* Header */}
                 <div style={{
-  padding: '0.875rem 1rem',
-  borderBottom: `2px solid ${COLORS.cardBorder}`,
-  background: 'white',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.75rem',
-  flexShrink: 0,
-}}>
+                  padding: '0.875rem 1rem',
+                  borderBottom: `2px solid ${COLORS.cardBorder}`,
+                  background: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  flexShrink: 0
+                }}>
                   <button
                     onClick={() => setSelectedConversation(null)}
                     style={{
@@ -3311,39 +3129,20 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <h3 style={{
-  margin: 0,
-  fontSize: '1rem',
-  fontWeight: '700',
-  color: COLORS.textPrimary,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap'
-}}>
-  {selectedConversation.isGroup
-    ? selectedConversation.name
-    : selectedConversation.participantEmails?.find(e => e !== user.email)?.split('@')[0]
-  }
-</h3>
-{selectedConversation.isGroup && selectedConversation.participantEmails && (
-  <button
-    onClick={() => setShowGroupMembers(true)}
-    style={{
-      margin: 0,
-      padding: 0,
-      fontSize: '0.7rem',
-      color: COLORS.purple,
-      fontWeight: '600',
-      background: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      textDecoration: 'underline'
-    }}
-  >
-    {selectedConversation.participantEmails.length} members →
-  </button>
-)}
-
-{Object.keys(typingUsers).length > 0 && (
+                      margin: 0,
+                      fontSize: '1rem',
+                      fontWeight: '700',
+                      color: COLORS.textPrimary,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {selectedConversation.isGroup
+                        ? selectedConversation.name
+                        : selectedConversation.participantEmails?.find(e => e !== user.email)?.split('@')[0]
+                      }
+                    </h3>
+                    {Object.keys(typingUsers).length > 0 && (
                       <p style={{
                         margin: 0,
                         fontSize: '0.75rem',
@@ -3492,7 +3291,7 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
                 }}>
                   {displayMessages.map((msg, idx) => {
                     const isOwnMessage = msg.userId === user.uid;
-                    const showAvatar = true; // Show avatar for all messages
+                    const showAvatar = selectedConversation.isGroup && !isOwnMessage;
                     const isRead = selectedConversation.readBy?.[
                       selectedConversation.participants?.find(p => p !== user.uid)
                     ];
@@ -3502,26 +3301,19 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
                         key={msg.id || idx}
                         style={{
                           display: 'flex',
-                          flexDirection: isOwnMessage ? 'row-reverse' : 'row',
-                          alignItems: 'flex-start',
+                          justifyContent: isOwnMessage ? 'flex-end' : 'flex-start',
                           gap: '0.5rem',
                           opacity: msg.isOptimistic ? 0.7 : 1
                         }}
                       >
                         {showAvatar && (
-                          <div style={{ marginTop: isOwnMessage ? '0' : '1.25rem' }}>
-                            <Avatar 
-                              user={msg.userId === user.uid 
-                                ? { email: user.email, photoURL: user.photoURL, name: user.displayName }
-                                : { email: msg.userEmail, ...participantProfiles[msg.userId] }
-                              }
-                              size={32}
-                              badge={msg.userId === user.uid 
-                                ? userPurchases?.selectedBadge 
-                                : participantProfiles[msg.userId]?.selectedBadge
-                              }
-                            />
-                          </div>
+                          <Avatar 
+                            user={{ 
+                              email: msg.userEmail,
+                              ...participantProfiles[msg.userId]
+                            }}
+                            size={28}
+                          />
                         )}
                         
                         <div style={{
@@ -3530,7 +3322,7 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
                           flexDirection: 'column',
                           alignItems: isOwnMessage ? 'flex-end' : 'flex-start'
                         }}>
-                          {showAvatar && !isOwnMessage && (
+                          {showAvatar && (
                             <p style={{
                               margin: '0 0 0.25rem 0',
                               fontSize: '0.7rem',
@@ -3589,14 +3381,12 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
                               {msg.isOptimistic && ' • sending...'}
                             </p>
                             
-                            {!isOwnMessage && (
-                              <MessageReactions 
-                                reactions={msg.reactions || {}}
-                                messageId={msg.id}
-                                currentUserId={user.uid}
-                                onReact={handleMessageReaction}
-                              />
-                            )}
+                            <MessageReactions 
+                              reactions={msg.reactions || {}}
+                              messageId={msg.id}
+                              currentUserId={user.uid}
+                              onReact={handleMessageReaction}
+                            />
                           </div>
                         </div>
                       </div>
@@ -3842,12 +3632,12 @@ export default function Social({ user, userPurchases, onBack, feedNotificationCo
             </div>
 
             {blockedUsersList.length === 0 ? (
-  <EmptyState 
-    type="notifications"
-    customTitle="No blocked users"
-    customSubtitle="Users you block will appear here"
-  />
-) : (
+              <EmptyState 
+                type="blocked"
+                title="No blocked users"
+                subtitle="Users you block will appear here"
+              />
+            ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                 {blockedUsersList.map(blocked => (
                   <div
