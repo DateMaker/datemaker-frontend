@@ -7,7 +7,7 @@ import AchievementsPage from './AchievementsPage';
 import PaymentSuccess from './PaymentSuccess';
 import Subscribe from './Subscribe';
 import './index.css';
-
+import './PremiumEffects.css';
 import { SplashScreen } from '@capacitor/splash-screen';
 
 // Hide splash screen immediately when React loads

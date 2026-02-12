@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from './firebase';
 import { collection, query, where, orderBy, getDocs, deleteDoc, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ChevronLeft, Star, Trash2, Edit3, X, Check, Camera } from 'lucide-react';
+import { trackAction, ACTION_TYPES } from './ActivityTracker';
 import heic2any from 'heic2any';
 
 // =====================================================
@@ -289,6 +290,7 @@ export default function DateMemoryScrapbook({ currentUser, mode = 'view', dateTo
       };
 
       const docRef = await addDoc(collection(db, 'dateMemories'), memoryData);
+      trackAction(ACTION_TYPES.ADD_MEMORY);
       console.log('✅ Memory saved with ID:', docRef.id);
 
       setSaveStatus('Done!');
@@ -737,7 +739,7 @@ export default function DateMemoryScrapbook({ currentUser, mode = 'view', dateTo
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          gap: '1rem',
           marginBottom: '1.5rem'
         }}>
           <button
@@ -747,28 +749,29 @@ export default function DateMemoryScrapbook({ currentUser, mode = 'view', dateTo
               backdropFilter: 'blur(10px)',
               border: '2px solid rgba(255,255,255,0.3)',
               borderRadius: '14px',
-              padding: '0.75rem',
+              padding: '0.6rem',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              flexShrink: 0
             }}
           >
-            <ChevronLeft size={24} color="white" />
+            <ChevronLeft size={22} color="white" />
           </button>
           <h1 style={{
-            fontSize: '1.5rem',
+            fontSize: '1.4rem',
             fontWeight: '800',
             color: 'white',
             margin: 0,
             textShadow: '0 2px 10px rgba(0,0,0,0.2)',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem'
+            gap: '0.5rem',
+            whiteSpace: 'nowrap'
           }}>
             📸 Date Scrapbook
           </h1>
-          <div style={{ width: '50px' }} />
         </div>
 
         {/* Content */}

@@ -185,6 +185,14 @@ class IAPManager {
         await this.initialize();
       }
 
+      // Check if user is admin - skip sync for admins
+      const adminEmails = ['thedatemakerapp@outlook.com'];
+      const userEmail = window.currentUserEmail?.toLowerCase();
+      if (userEmail && adminEmails.includes(userEmail)) {
+        console.log('👑 Admin user detected - skipping RevenueCat sync');
+        return 'premium';
+      }
+
       console.log('🔍 Syncing subscription status with RevenueCat...');
       
       const customerInfo = await Purchases.getCustomerInfo();

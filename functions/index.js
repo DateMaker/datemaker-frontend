@@ -4,18 +4,17 @@ const {onRequest} = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
+
+console.log("Firebase initialized with project:", process.env.GCLOUD_PROJECT);
 const db = admin.firestore();
 const messaging = admin.messaging();
 
-// ============================================
-// PUSH NOTIFICATION HELPER
-// ============================================
 /**
  * Send push notification to a user
- * @param {string} userId - The user ID to send notification to
- * @param {object} notification - The notification title and body
- * @param {object} data - Additional data to send with notification
- * @return {Promise} - The messaging response
+ * @param {string} userId - Target user ID
+ * @param {object} notification - Notification content
+ * @param {object} data - Additional data
+ * @return {Promise} Result
  */
 async function sendPushNotification(userId, notification, data = {}) {
   try {
@@ -23,7 +22,7 @@ async function sendPushNotification(userId, notification, data = {}) {
 
     if (!userDoc.exists) {
       console.log("User not found:", userId);
-      return;
+      return null;
     }
 
     const userData = userDoc.data();
@@ -31,8 +30,10 @@ async function sendPushNotification(userId, notification, data = {}) {
 
     if (tokens.length === 0) {
       console.log("No FCM tokens for user:", userId);
-      return;
+      return null;
     }
+
+    console.log(`Sending to ${tokens.length} device(s) for user ${userId}`);
 
     const message = {
       notification: {
@@ -59,9 +60,16 @@ async function sendPushNotification(userId, notification, data = {}) {
     };
 
     const response = await messaging.sendEachForMulticast(message);
-    console.log(`Sent ${response.successCount}/${tokens.length} notifications to ${userId}`);
+    console.log(`Sent ${response.successCount}/${tokens.length} notifications`);
 
-    // Remove invalid tokens
+    if (response.failureCount > 0) {
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          console.error(`FCM Error for token ${idx}:`, resp.error?.code);
+        }
+      });
+    }
+
     if (response.failureCount > 0) {
       const tokensToRemove = [];
       response.responses.forEach((resp, idx) => {
@@ -85,12 +93,10 @@ async function sendPushNotification(userId, notification, data = {}) {
     return response;
   } catch (error) {
     console.error("Error sending notification:", error);
+    return null;
   }
 }
 
-// ============================================
-// NEW MESSAGE PUSH NOTIFICATION
-// ============================================
 exports.sendMessageNotification = onDocumentCreated(
     "messages/{messageId}",
     async (event) => {
@@ -101,22 +107,21 @@ exports.sendMessageNotification = onDocumentCreated(
 
         if (!conversationId) return null;
 
-        const convDoc = await db.collection("conversations").doc(conversationId).get();
+        const convDoc = await db.collection("conversations")
+            .doc(conversationId).get();
         if (!convDoc.exists) return null;
 
         const conversation = convDoc.data();
         const participants = conversation.participants || [];
 
-        // Get sender info
         const senderDoc = await db.collection("users").doc(senderId).get();
         const senderData = senderDoc.data() || {};
-        const senderName = senderData.name || senderData.email?.split("@")[0] || "Someone";
+        const senderName = senderData.name ||
+            senderData.email?.split("@")[0] || "Someone";
 
-        // Send to all participants except sender
         for (const participantId of participants) {
           if (participantId === senderId) continue;
 
-          // Check if blocked
           const blockedQuery = await db.collection("blockedUsers")
               .where("blockedBy", "==", participantId)
               .where("blockedUserId", "==", senderId)
@@ -130,7 +135,7 @@ exports.sendMessageNotification = onDocumentCreated(
             message.text;
 
           await sendPushNotification(participantId, {
-            title: title,
+            title: `${title} 💬`,
             body: body.length > 100 ? body.substring(0, 100) + "..." : body,
           }, {
             type: "message",
@@ -148,9 +153,6 @@ exports.sendMessageNotification = onDocumentCreated(
     },
 );
 
-// ============================================
-// FRIEND REQUEST NOTIFICATION
-// ============================================
 exports.sendFriendRequestNotification = onDocumentCreated(
     "friendRequests/{requestId}",
     async (event) => {
@@ -179,9 +181,6 @@ exports.sendFriendRequestNotification = onDocumentCreated(
     },
 );
 
-// ============================================
-// FRIEND ACCEPTED NOTIFICATION
-// ============================================
 exports.sendFriendAcceptedNotification = onDocumentUpdated(
     "friendRequests/{requestId}",
     async (event) => {
@@ -211,9 +210,6 @@ exports.sendFriendAcceptedNotification = onDocumentUpdated(
     },
 );
 
-// ============================================
-// DATE LIKED NOTIFICATION
-// ============================================
 exports.sendDateLikedNotification = onDocumentUpdated(
     "sharedDates/{dateId}",
     async (event) => {
@@ -234,7 +230,8 @@ exports.sendDateLikedNotification = onDocumentUpdated(
         for (const likerId of actualNewLikers) {
           const likerDoc = await db.collection("users").doc(likerId).get();
           const likerData = likerDoc.data() || {};
-          const likerName = likerData.name || likerData.email?.split("@")[0] || "Someone";
+          const likerName = likerData.name ||
+              likerData.email?.split("@")[0] || "Someone";
 
           const dateTitle = after.dateData?.title || after.name || "your date";
 
@@ -257,24 +254,105 @@ exports.sendDateLikedNotification = onDocumentUpdated(
     },
 );
 
-// ============================================
-// YOUR EXISTING FUNCTIONS BELOW
-// ============================================
+exports.checkStreaksAtRisk = onSchedule("0 20 * * *", async (event) => {
+  console.log("Checking streaks at risk");
 
-// Delete old messages (runs daily)
+  try {
+    const usersSnapshot = await db.collection("dateStreaks")
+        .where("currentStreak", ">", 0)
+        .get();
+
+    const now = new Date();
+    let warningsSent = 0;
+
+    for (const doc of usersSnapshot.docs) {
+      const streak = doc.data();
+      const lastDate = streak.lastDateAt?.toDate() || new Date(0);
+      const daysSince = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+
+      if (daysSince >= 5 && daysSince < 7) {
+        const daysRemaining = 7 - daysSince;
+
+        await sendPushNotification(doc.id, {
+          title: "Streak at Risk! ⚠️",
+          body: `Your ${streak.currentStreak}-week streak needs a date! ` +
+                `${daysRemaining} days left.`,
+        }, {
+          type: "streak_at_risk",
+          streakWeeks: String(streak.currentStreak),
+          daysRemaining: String(daysRemaining),
+        });
+
+        warningsSent++;
+      }
+    }
+
+    console.log("Sent streak warnings to", warningsSent, "users");
+    return null;
+  } catch (error) {
+    console.error("Error checking streaks:", error);
+    return null;
+  }
+});
+
+exports.sendMonthlyRecapReminder = onSchedule("0 10 1 * *", async (event) => {
+  console.log("Sending monthly recap reminders");
+
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+
+  const lastMonth = new Date();
+  lastMonth.setMonth(lastMonth.getMonth() - 1);
+  const monthName = monthNames[lastMonth.getMonth()];
+
+  try {
+    const startOfLastMonth = new Date(
+        lastMonth.getFullYear(), lastMonth.getMonth(), 1);
+    const endOfLastMonth = new Date(
+        lastMonth.getFullYear(), lastMonth.getMonth() + 1, 0);
+
+    const memoriesSnapshot = await db.collection("dateMemories")
+        .where("createdAt", ">=", startOfLastMonth)
+        .where("createdAt", "<=", endOfLastMonth)
+        .get();
+
+    const userIds = new Set();
+    memoriesSnapshot.docs.forEach((doc) => {
+      userIds.add(doc.data().userId);
+    });
+
+    for (const odUserId of userIds) {
+      await sendPushNotification(odUserId, {
+        title: `Your ${monthName} Recap is Ready! 📊`,
+        body: "See your date highlights and stats",
+      }, {
+        type: "monthly_recap",
+        monthName: monthName,
+      });
+    }
+
+    console.log("Sent recap reminders to", userIds.size, "users");
+    return null;
+  } catch (error) {
+    console.error("Error sending recap reminders:", error);
+    return null;
+  }
+});
+
 exports.deleteOldMessages = onSchedule("every 24 hours", async (event) => {
   try {
     const threeDaysAgo = new Date(Date.now() - (3 * 24 * 60 * 60 * 1000));
 
-    console.log("🗑️ Starting message cleanup...");
+    console.log("Starting message cleanup...");
 
     const oldMessagesQuery = db.collection("messages")
-        .where("createdAt", "<", admin.firestore.Timestamp.fromDate(threeDaysAgo));
+        .where("createdAt", "<",
+            admin.firestore.Timestamp.fromDate(threeDaysAgo));
 
     const oldMessages = await oldMessagesQuery.get();
 
     if (oldMessages.empty) {
-      console.log("✅ No old messages to delete");
+      console.log("No old messages to delete");
       return null;
     }
 
@@ -295,27 +373,27 @@ exports.deleteOldMessages = onSchedule("every 24 hours", async (event) => {
       deletedCount += batchDocs.length;
     }
 
-    console.log(`✅ Successfully deleted ${deletedCount} old messages`);
+    console.log(`Successfully deleted ${deletedCount} old messages`);
     return null;
   } catch (error) {
-    console.error("❌ Error deleting old messages:", error);
+    console.error("Error deleting old messages:", error);
     return null;
   }
 });
 
-// Cleanup typing indicators (runs hourly)
 exports.cleanupTypingIndicators = onSchedule("every 1 hours", async (event) => {
   try {
     const fiveMinutesAgo = new Date(Date.now() - (5 * 60 * 1000));
 
-    console.log("🧹 Cleaning up stale typing indicators...");
+    console.log("Cleaning up stale typing indicators...");
 
     const staleTyping = await db.collection("typing")
-        .where("timestamp", "<", admin.firestore.Timestamp.fromDate(fiveMinutesAgo))
+        .where("timestamp", "<",
+            admin.firestore.Timestamp.fromDate(fiveMinutesAgo))
         .get();
 
     if (staleTyping.empty) {
-      console.log("✅ No stale typing indicators");
+      console.log("No stale typing indicators");
       return null;
     }
 
@@ -325,15 +403,14 @@ exports.cleanupTypingIndicators = onSchedule("every 1 hours", async (event) => {
     });
 
     await batch.commit();
-    console.log(`✅ Deleted ${staleTyping.size} stale typing indicators`);
+    console.log(`Deleted ${staleTyping.size} stale typing indicators`);
     return null;
   } catch (error) {
-    console.error("❌ Error cleaning typing indicators:", error);
+    console.error("Error cleaning typing indicators:", error);
     return null;
   }
 });
 
-// Update conversation on new message (KEEP THIS - it updates unread counts)
 exports.updateConversationOnNewMessage = onDocumentCreated(
     "messages/{messageId}",
     async (event) => {
@@ -342,15 +419,16 @@ exports.updateConversationOnNewMessage = onDocumentCreated(
         const conversationId = message.conversationId;
 
         if (!conversationId) {
-          console.log("⚠️ Message has no conversationId");
+          console.log("Message has no conversationId");
           return null;
         }
 
-        const conversationRef = db.collection("conversations").doc(conversationId);
+        const conversationRef = db.collection("conversations")
+            .doc(conversationId);
         const conversationSnap = await conversationRef.get();
 
         if (!conversationSnap.exists) {
-          console.log("⚠️ Conversation not found:", conversationId);
+          console.log("Conversation not found:", conversationId);
           return null;
         }
 
@@ -362,7 +440,8 @@ exports.updateConversationOnNewMessage = onDocumentCreated(
         const unreadUpdates = {};
         recipients.forEach((recipientId) => {
           const currentCount = conversationData.unreadCount?.[recipientId] || 0;
-          unreadUpdates[`unreadCount.${recipientId}`] = Math.max(0, currentCount + 1);
+          unreadUpdates[`unreadCount.${recipientId}`] = Math.max(
+              0, currentCount + 1);
         });
 
         await conversationRef.update({
@@ -371,20 +450,20 @@ exports.updateConversationOnNewMessage = onDocumentCreated(
           ...unreadUpdates,
         });
 
-        console.log(`✅ Updated conversation ${conversationId}`);
+        console.log(`Updated conversation ${conversationId}`);
         return null;
       } catch (error) {
-        console.error("❌ Error updating conversation:", error);
+        console.error("Error updating conversation:", error);
         return null;
       }
     },
 );
 
-// Test function
 exports.testFunction = onRequest(async (req, res) => {
   try {
     const messagesCount = await db.collection("messages").count().get();
-    const conversationsCount = await db.collection("conversations").count().get();
+    const conversationsCount = await db.collection("conversations").count()
+        .get();
     const usersCount = await db.collection("users").count().get();
 
     res.json({
@@ -401,18 +480,19 @@ exports.testFunction = onRequest(async (req, res) => {
   }
 });
 
-// Track message stats (runs daily)
 exports.trackMessageStats = onSchedule("every 24 hours", async (event) => {
   try {
     const now = new Date();
     const yesterday = new Date(now.getTime() - (24 * 60 * 60 * 1000));
 
     const recentMessages = await db.collection("messages")
-        .where("createdAt", ">", admin.firestore.Timestamp.fromDate(yesterday))
+        .where("createdAt", ">",
+            admin.firestore.Timestamp.fromDate(yesterday))
         .get();
 
     const activeConversations = await db.collection("conversations")
-        .where("lastMessageTime", ">", admin.firestore.Timestamp.fromDate(yesterday))
+        .where("lastMessageTime", ">",
+            admin.firestore.Timestamp.fromDate(yesterday))
         .get();
 
     await db.collection("analytics").add({
@@ -422,43 +502,43 @@ exports.trackMessageStats = onSchedule("every 24 hours", async (event) => {
       type: "daily_stats",
     });
 
-    console.log(`📈 Stats: ${recentMessages.size} messages`);
+    console.log(`Stats: ${recentMessages.size} messages`);
     return null;
   } catch (error) {
-    console.error("❌ Error tracking stats:", error);
+    console.error("Error tracking stats:", error);
     return null;
   }
 });
 
-// Detect spammers (runs every 6 hours)
 exports.detectSpammers = onSchedule("every 6 hours", async (event) => {
   try {
     const oneHourAgo = new Date(Date.now() - (60 * 60 * 1000));
 
     const recentMessages = await db.collection("messages")
-        .where("createdAt", ">", admin.firestore.Timestamp.fromDate(oneHourAgo))
+        .where("createdAt", ">",
+            admin.firestore.Timestamp.fromDate(oneHourAgo))
         .get();
 
     const messageCounts = {};
     recentMessages.docs.forEach((doc) => {
-      const userId = doc.data().userId;
-      messageCounts[userId] = (messageCounts[userId] || 0) + 1;
+      const odUserId = doc.data().userId;
+      messageCounts[odUserId] = (messageCounts[odUserId] || 0) + 1;
     });
 
     const spammers = Object.entries(messageCounts)
-        .filter(([userId, count]) => count > 100)
-        .map(([userId]) => userId);
+        .filter(([, count]) => count > 100)
+        .map(([odUserId]) => odUserId);
 
     if (spammers.length === 0) {
-      console.log("✅ No spammers detected");
+      console.log("No spammers detected");
       return null;
     }
 
-    console.log(`🚨 Detected ${spammers.length} potential spammers`);
+    console.log(`Detected ${spammers.length} potential spammers`);
 
     const batch = db.batch();
-    spammers.forEach((userId) => {
-      const userRef = db.collection("users").doc(userId);
+    spammers.forEach((odUserId) => {
+      const userRef = db.collection("users").doc(odUserId);
       batch.update(userRef, {
         potentialSpammer: true,
         flaggedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -466,10 +546,46 @@ exports.detectSpammers = onSchedule("every 6 hours", async (event) => {
     });
 
     await batch.commit();
-    console.log(`✅ Flagged ${spammers.length} users for review`);
+    console.log(`Flagged ${spammers.length} users for review`);
     return null;
   } catch (error) {
-    console.error("❌ Error detecting spammers:", error);
+    console.error("Error detecting spammers:", error);
     return null;
+  }
+});
+
+exports.testFCM = onRequest(async (req, res) => {
+  try {
+    const userId = req.query.userId || "FquIxocntndQlTrX83yZevjkYZh2";
+
+    const userDoc = await db.collection("users").doc(userId).get();
+    const fcmToken = userDoc.data()?.fcmTokens?.[0];
+
+    if (!fcmToken) {
+      res.json({error: "No FCM token found for user"});
+      return;
+    }
+
+    const result = await messaging.send({
+      token: fcmToken,
+      notification: {
+        title: "Test Notification 🎉",
+        body: "Push notifications are working!",
+      },
+      apns: {
+        payload: {
+          aps: {
+            "badge": 1,
+            "sound": "default",
+          },
+        },
+      },
+    });
+
+    console.log("FCM test result:", result);
+    res.json({success: true, messageId: result});
+  } catch (error) {
+    console.error("Test error:", error);
+    res.json({error: error.message, code: error.code});
   }
 });

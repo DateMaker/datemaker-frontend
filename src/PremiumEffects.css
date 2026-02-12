@@ -1,0 +1,481 @@
+/**
+ * 🎨 PremiumEffects.css
+ * Snappy animations & premium feel for DateMaker
+ * Philosophy: FAST feedback, not slow fades
+ */
+
+/* ============================================
+   CSS VARIABLES
+   ============================================ */
+:root {
+  --dm-purple: #8B5CF6;
+  --dm-pink: #EC4899;
+  --dm-gradient: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+  --dm-gold: #F59E0B;
+  --dm-success: #10B981;
+  --dm-error: #EF4444;
+  
+  /* Animation speeds - FAST */
+  --dm-speed-instant: 100ms;
+  --dm-speed-fast: 150ms;
+  --dm-speed-normal: 200ms;
+  
+  /* Easing */
+  --dm-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --dm-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --dm-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* ============================================
+   BUTTON EFFECTS
+   ============================================ */
+
+/* Standard button press - scale down instantly */
+.dm-button-press {
+  transition: transform var(--dm-speed-instant) var(--dm-ease-out),
+              box-shadow var(--dm-speed-instant) var(--dm-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dm-button-press:active {
+  transform: scale(0.97);
+}
+
+/* Primary button with glow */
+.dm-button-primary {
+  background: var(--dm-gradient);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--dm-speed-instant) var(--dm-ease-out),
+              box-shadow var(--dm-speed-fast) var(--dm-ease-out);
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dm-button-primary:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);
+}
+
+/* Secondary/outline button */
+.dm-button-secondary {
+  background: transparent;
+  color: var(--dm-purple);
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--dm-speed-instant) var(--dm-ease-out),
+              background var(--dm-speed-fast) var(--dm-ease-out),
+              border-color var(--dm-speed-fast) var(--dm-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dm-button-secondary:active {
+  transform: scale(0.97);
+  background: rgba(139, 92, 246, 0.08);
+}
+
+/* Icon button (circular) */
+.dm-button-icon {
+  background: rgba(139, 92, 246, 0.1);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dm-speed-instant) var(--dm-ease-out),
+              background var(--dm-speed-fast) var(--dm-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dm-button-icon:active {
+  transform: scale(0.93);
+  background: rgba(139, 92, 246, 0.2);
+}
+
+/* ============================================
+   CARD EFFECTS
+   ============================================ */
+
+/* Card with subtle lift on press */
+.dm-card {
+  background: white;
+  border-radius: 20px;
+  transition: transform var(--dm-speed-instant) var(--dm-ease-out),
+              box-shadow var(--dm-speed-fast) var(--dm-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dm-card:active {
+  transform: scale(0.99);
+}
+
+/* Selectable card (for lists) */
+.dm-card-selectable {
+  cursor: pointer;
+  transition: transform var(--dm-speed-instant) var(--dm-ease-out),
+              background var(--dm-speed-fast) var(--dm-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dm-card-selectable:active {
+  transform: scale(0.98);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+/* ============================================
+   TAB EFFECTS
+   ============================================ */
+
+/* Tab bar item */
+.dm-tab {
+  transition: transform var(--dm-speed-instant) var(--dm-ease-out),
+              color var(--dm-speed-fast) var(--dm-ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dm-tab:active {
+  transform: scale(0.95);
+}
+
+.dm-tab-active {
+  color: var(--dm-purple);
+}
+
+/* Tab indicator slide */
+.dm-tab-indicator {
+  transition: transform var(--dm-speed-normal) var(--dm-ease-spring);
+}
+
+/* ============================================
+   TOGGLE / SWITCH
+   ============================================ */
+
+.dm-toggle {
+  transition: background var(--dm-speed-fast) var(--dm-ease-out);
+}
+
+.dm-toggle-thumb {
+  transition: transform var(--dm-speed-fast) var(--dm-ease-spring);
+}
+
+/* ============================================
+   MODAL EFFECTS
+   ============================================ */
+
+/* Modal backdrop */
+.dm-modal-backdrop {
+  animation: dmFadeIn var(--dm-speed-fast) var(--dm-ease-out);
+}
+
+/* Modal content - quick scale up */
+.dm-modal-content {
+  animation: dmScaleIn var(--dm-speed-normal) var(--dm-ease-spring);
+}
+
+@keyframes dmFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dmScaleIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95);
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+}
+
+/* Modal exit */
+.dm-modal-exit {
+  animation: dmScaleOut var(--dm-speed-fast) var(--dm-ease-out) forwards;
+}
+
+@keyframes dmScaleOut {
+  from { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  to { 
+    opacity: 0; 
+    transform: scale(0.95);
+  }
+}
+
+/* ============================================
+   CELEBRATION EFFECTS
+   ============================================ */
+
+/* Confetti container */
+.dm-confetti {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Heart pop animation (for likes) */
+.dm-heart-pop {
+  animation: dmHeartPop 0.4s var(--dm-ease-bounce);
+}
+
+@keyframes dmHeartPop {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* Success checkmark animation */
+.dm-success-check {
+  animation: dmSuccessCheck 0.5s var(--dm-ease-spring);
+}
+
+@keyframes dmSuccessCheck {
+  0% { 
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+  50% { 
+    transform: scale(1.2) rotate(0deg);
+  }
+  100% { 
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* Level up / achievement animation */
+.dm-level-up {
+  animation: dmLevelUp 0.6s var(--dm-ease-bounce);
+}
+
+@keyframes dmLevelUp {
+  0% { 
+    transform: scale(0.5) translateY(20px);
+    opacity: 0;
+  }
+  60% { 
+    transform: scale(1.1) translateY(-5px);
+    opacity: 1;
+  }
+  100% { 
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Streak flame animation */
+.dm-flame {
+  animation: dmFlame 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes dmFlame {
+  from { 
+    transform: scale(1) translateY(0);
+    filter: brightness(1);
+  }
+  to { 
+    transform: scale(1.1) translateY(-2px);
+    filter: brightness(1.1);
+  }
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+
+/* Pulse animation for loading elements */
+.dm-pulse {
+  animation: dmPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dmPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Spinner (simple, fast) */
+.dm-spinner {
+  animation: dmSpin 0.8s linear infinite;
+}
+
+@keyframes dmSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Dot loading animation */
+.dm-loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.dm-loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dm-purple);
+  animation: dmDotBounce 0.6s ease-in-out infinite;
+}
+
+.dm-loading-dot:nth-child(2) { animation-delay: 0.1s; }
+.dm-loading-dot:nth-child(3) { animation-delay: 0.2s; }
+
+@keyframes dmDotBounce {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* ============================================
+   NOTIFICATION / TOAST
+   ============================================ */
+
+.dm-toast {
+  animation: dmToastIn var(--dm-speed-normal) var(--dm-ease-spring);
+}
+
+@keyframes dmToastIn {
+  from { 
+    transform: translateY(-100%) scale(0.95);
+    opacity: 0;
+  }
+  to { 
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.dm-toast-exit {
+  animation: dmToastOut var(--dm-speed-fast) var(--dm-ease-out) forwards;
+}
+
+@keyframes dmToastOut {
+  from { 
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  to { 
+    transform: translateY(-100%) scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   INTERACTIVE HIGHLIGHTS
+   ============================================ */
+
+/* Purple glow effect */
+.dm-glow {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+/* Pulsing glow (for CTAs) */
+.dm-glow-pulse {
+  animation: dmGlowPulse 2s ease-in-out infinite;
+}
+
+@keyframes dmGlowPulse {
+  0%, 100% { 
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+  }
+  50% { 
+    box-shadow: 0 4px 24px rgba(139, 92, 246, 0.5);
+  }
+}
+
+/* Gold/special glow */
+.dm-glow-gold {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+}
+
+/* ============================================
+   BADGE / COUNTER ANIMATIONS
+   ============================================ */
+
+/* Badge bounce (for new notifications) */
+.dm-badge-bounce {
+  animation: dmBadgeBounce 0.4s var(--dm-ease-bounce);
+}
+
+@keyframes dmBadgeBounce {
+  0% { transform: scale(0); }
+  60% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Counter increment animation */
+.dm-counter-up {
+  animation: dmCounterUp 0.3s var(--dm-ease-out);
+}
+
+@keyframes dmCounterUp {
+  from { 
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to { 
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   SHAKE EFFECT (for errors, date jar)
+   ============================================ */
+
+.dm-shake {
+  animation: dmShake 0.5s var(--dm-ease-out);
+}
+
+@keyframes dmShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* ============================================
+   FLOAT ANIMATION (for empty states)
+   ============================================ */
+
+.dm-float {
+  animation: dmFloat 3s ease-in-out infinite;
+}
+
+@keyframes dmFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Remove tap highlight on mobile */
+.dm-no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hardware acceleration hint */
+.dm-accelerated {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Disable pointer events during animation */
+.dm-animating {
+  pointer-events: none;
+}
